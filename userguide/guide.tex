@@ -6,7 +6,7 @@
 
 \begin{document}
 \captionsetup{width=.75\textwidth,font=small,labelfont=bf}
-\title{\bf Landslide: \\ Systematic Dynamic Race Detection in Kernel-space \\ User Guide}
+\title{\bf Landslide: \\ Systematic Dynamic Race Detection in Kernel-space \\ (User Guide)}
 \author{Benjamin Blum (\textbf{bblum})}
 \maketitle
 
@@ -26,13 +26,129 @@
 \newcommand\ZZ{\mathbb{Z}}
 
 \begin{abstract}
-
 \end{abstract}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Race conditions are notoriously difficult to debug. Because of their nondeterministic nature, they often do not manifest at all during testing, and when they do manifest, it is difficult to reproduce
+Race conditions are notoriously difficult to debug.
+Because of their nondeterministic nature, they frequently do not manifest at all during testing, and when they do manifest, it is difficult to reproduce them reliably enough to collect enough information to help debug.
+In kernel-space, race condition debugging becomes even more difficult, as many aspects of the concurrency implementation itself are part of the system being tested, and may themselves have race-inducing flaws.
+
+Landslide is an effort to make easier the process of debugging kernel-space races.
+It is geared towards kernels that meet the Pebbles specification, which students in Operating System Design and Implementation (15-410) at CMU implement, and implemented as a module for Simics, the x86 simulator that students use to run their Pebbles kernels.
+During execution of a kernel, Landslide records important actions performed by the kernel, attempts to decide at which points in the kernel's execution a preemption will be most likely to expose a bug, and then exercises all possible interleavings of kernel threads around such points.
+When Landslide finds a bug (determined with a set of various checks and heuristics), it stops execution and prints information about the sequence of interleavings that caused the bug to show up.
+
+With Landslide, we see testing a kernel as a process of manipulating test parameters in two ways: first, in the choice of test case (the userspace program that exercises a specific set of system calls), and second, in the configuration of Landslide in regard to which parts of the kernel are ``interesting'' in the behaviour of the test case and which are irrelevant.
+Searching for and understanding race conditions exposed by a given test becomes a joint effort between the programmer and Landslide, combining the programmer's specific knowledge about the design of the kernel and Landslide's ability to explore many interleavings efficiently.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Landslide's View of the World}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{On Simics}
+
+Landslide runs as a Simics module. When running the kernel, Simics calls into Landslide once every time the kernel executes an instruction or performs a memory read or write. Landslide uses this information to determine ``what the kernel is doing'' at each instruction, and triggers timer interrupts in certain patterns to cause a currently-running kernel thread to get preempted by another one.
+
+Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the execution state at certain points in the execution of the test. This enables it to try multiple possibilities in terms of which kernel threads run when.
+
+Once Simics is run with a custom \texttt{config.simics}, the above is all done automatically.
+
+\subsection{Components of Landslide}
+
+Between getting called at every instruction and deciding when to trigger timer interrupts or checkpoint or restore execution state, Landslide needs to model the kernel's behaviour and the concurrency properties of the test case. Several different components help achieve this.
+
+\subsubsection{Kernel-specific Hooks}
+%TODO
 
 
+\subsubsection{Scheduling}
+\subsubsection{Decision Points}
+\subsubsection{The Decision Tree}
+
+Modelling the decisions and interleavings in this way presents the ``mysterious nondeterminism'' of the race condition in a new way: If a test case can race, then the resulting bug will appear in some, but not all, of the branches of the tree.
+Therefore, ``systematic dynamic race detection'' means to explore all branches of the tree and test for the bug in each one.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{What to Expect}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+When working with Landslide, please remember to keep realistic expectations about the nature of the tool.
+
+Landslide is not a stress tester or a fuzzer, like the \texttt{cho} family of test cases.
+Tests such as \texttt{cho} attempt to break the kernel by making many system calls in as many different calling patterns as possible, and hoping that some of them will fail.
+Landslide (when paired with a Landslide-friendly test case - see section~\ref{sec:testcase}) attempts to break the kernel by exploring all possible interleavings of kernel threads in one particular pattern of a few system calls.
+Systematic testing (Landslide) and stress testing (\texttt{cho}) are orthogonal testing strategies.
+\footnote{Also not that it is completely infeasible to run \texttt{cho} under Landslide. Because the test case does so much stuff on its own, the decision tree will be enormous, and Landslide will not be able to make any meaningful progress trying to explore it.}
+
+Landslide is not a ``race condition oracle''. If you run Landslide with a certain test case and a certain set of decision points, and it finishes exploring the decision tree and found no bugs, it does not mean that the system calls that got executed are free of race conditions.
+It does, however, mean that the interactions caused by the test case's pattern of system calls do not race at the granularity of the specific decision points chosen.
+\footnote{Note that if you chose every instruction to be a choice point, the granularity would be perfect, and then you could say there are no races in the specific test case. This would make the decision tree impossibly large, though.}
+
+Landslide is a {\em framework} that enables you, the programmer, to explore properties of a concurrent test case that you previously could not. It relies on you to configure it accurately in accordance with your goals: whether you are seeking to find a race that you suspect exists, or seeking to show that your kernel doesn't race on a particular test, it is your responsibility to choose a set of choice points that is relevant, granular enough to yield a meaningful exploration, yet minimal enough that Landslide can finish in a reasonable amount of time. More on this in section~\ref{sec:choice}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Running Landslide}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Kernel Requirements}
+% TODO
+
+\subsection{Instrumenting Your Kernel with Landslide}
+
+This is the hardest part of using Landslide. Please pay extra attention to this section.
+
+Landslide tries to be as design-agnostic as possible, after assuming that the kernel implements the Pebbles specification, but it still needs to know about the implementation of certain abstractions within the kernel. The file \texttt{kernel\_specifics.c} contains several ``hook'' functions, which landslide uses to know what the guest kernel is doing, and which you need to implement for your kernel.
+
+One step towards doing this is to generate a header file containing \texttt{\#define}s for the addresses of certain functions and global variables in your kernel.
+We provide a script, \texttt{definegen.sh}, which makes it easy to extract such addresses from your kernel image, and which automatically generates the header file.
+% TODO
+
+\begin{enumerate}
+	\item
+% TODO
+\end{enumerate}
+
+\subsection{Editing Your Kernel}
+
+A design goal of the instrumentation process was that you should never need to change your kernel itself to allow it to run on Landslide. (After all, changing a program with bugs can change the bugs!)
+Nevertheless, some types of changes to the kernel may prove {\em very helpful} in making your job of using Landslide easier.
+
+\begin{itemize}
+	\item When implementing hooks that tell where in a function or where in the codebase a specific event happens, it is best to refactor code so that the event happens at one centralised place.
+		For example, when implementing \texttt{kern\_thread\_runnable} and \texttt{kern\_thread\_descheduling}, make sure there is one function in the entire kernel that is always called when adding or removing threads to the runqueue.
+		\footnote{This is especially relevant to \texttt{variable\_queue} users - using macros like \texttt{Q\_INSERT\_HEAD} in many places will cause you to have to instrument each place. Instead, write a one-line \texttt{add\_to\_runqueue} helper function that invokes the macro.}
+		\footnote{Also make sure when instrumenting helper functions such as these that they are {\em not} marked \texttt{static}! When using \texttt{gcc -O1} to build the kernel, \texttt{static} functions may get optimised in ways that violate standard calling convention, which Landslide relies on.}
+	\item Landslide's most reliable found-a-bug check is checking for \texttt{panic} getting called.
+		The more important invariants for which you have \texttt{assert}s in your kernel, the more likely Landslide is to find bugs that would trigger them - otherwise, even if they do happen, Landslide might never know (just like in conventional stress testing).
+\end{itemize}
+
+\subsection{Userspace Test Cases}
+\label{sec:testcase}
+
+We ship Landslide with a suite of small test cases designed to expose several common bugs that students frequently encounter during 15-410 Project 3.
+
+\begin{itemize}
+	\item \texttt{vanish\_vanish} - Tests when a parent and child process \texttt{vanish()} simultaneously. (This test is identical to \texttt{fork\_test1} from the P3 hurdle suite.)
+	\item \texttt{fork\_wait} - Tests basic interaction of \texttt{fork()} and \texttt{wait()}. (This test is from the P3 hurdle suite.)
+	\item \texttt{wild\_test2} - Tests simultaneous thread death by unnatural causes. (This test is an upgrade of \texttt{wild\_test1} from the P3 hurdle suite.)
+	\item \texttt{double\_wait} - Tests interactions of multiple waiters on a single child. (new)
+	\item \texttt{double\_thread\_fork} - Tests for interactions of multiple threads in the same process vanishing. (new)
+\end{itemize}
+
+It may help your intuition to note why all of these test cases are ``Landslide-friendly'': they all perform very little work on a single run, enabling Landslide to completely explore the state-space 
+
+\subsection{Configuring Choice Points}
+\label{sec:choice}
+% TODO
+
+\subsection{Interpreting Landslide's Results}
+% TODO
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Feedback}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO
 
 \end{document}
