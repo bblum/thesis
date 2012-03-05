@@ -26,6 +26,7 @@
 \newcommand\ZZ{\mathbb{Z}}
 
 \begin{abstract}
+% TODO
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,7 +37,9 @@ Race conditions are notoriously difficult to debug.
 Because of their nondeterministic nature, they frequently do not manifest at all during testing, and when they do manifest, it is difficult to reproduce them reliably enough to collect enough information to help debug.
 In kernel-space, race condition debugging becomes even more difficult, as many aspects of the concurrency implementation itself are part of the system being tested, and may themselves have race-inducing flaws.
 
-Landslide is an effort to make easier the process of debugging kernel-space races.
+Landslide
+\footnote{Landslide {\em (n)} - A phenomenon which demonstrates that Pebbles are not as stable as you might think.}
+is an effort to make easier the process of debugging kernel-space races.
 It is geared towards kernels that meet the Pebbles specification, which students in Operating System Design and Implementation (15-410) at CMU implement, and implemented as a module for Simics, the x86 simulator that students use to run their Pebbles kernels.
 During execution of a kernel, Landslide records important actions performed by the kernel, attempts to decide at which points in the kernel's execution a preemption will be most likely to expose a bug, and then exercises all possible interleavings of kernel threads around such points.
 When Landslide finds a bug (determined with a set of various checks and heuristics), it stops execution and prints information about the sequence of interleavings that caused the bug to show up.
@@ -60,15 +63,44 @@ Once Simics is run with a custom \texttt{config.simics}, the above is all done a
 Between getting called at every instruction and deciding when to trigger timer interrupts or checkpoint or restore execution state, Landslide needs to model the kernel's behaviour and the concurrency properties of the test case. Several different components help achieve this.
 
 \subsubsection{Kernel-specific Hooks}
-%TODO
 
+The file \texttt{kernel\_specifics.c} contains a set of functions that inform Landslide about the current state of the kernel.
+These typically involve comparing \texttt{\%eip} against certain addresses (to know what function is being executed), and sometimes reading memory from the stack or other variables (to know the arguments passed to functions or the state of certain data structures).
+
+An example hook is the function \texttt{kern\_thread\_runnable}, which tells whether a thread is about to be added to the runqueue, and reads that thread's TID out of memory and returns it if so.
+
+These are different for every kernel, so you need to implement these. Specific details are in section~\ref{sec:hooks}.
 
 \subsubsection{Scheduling}
+
+From several of the hooks, Landslide is able to maintain a queue of threads that mirrors the kernel's runqueue, and hence know which threads are runnable at any given point during the execution. (See section~\ref{sec:schedfunc}.)
+
+At any point during the test (provided interrupts are on and preemption is enabled), Landslide may choose to preempt the currently-running thread and run somebody else.
+This is done by triggering successive timer interrupts to induce context switches until the desired thread is switched to.
+
 \subsubsection{Decision Points}
+
+A perfectly accurate race detection tool would need to consider every single instruction
+\footnote{actually, just every single access to shared memory while interrupts are on}
+as a potential point at which a preemption might expose a race condition.
+This would make enumerating all interleavings impossibly expensive, however, so a feasible race detection tool needs to have intelligent heuristics to judge which instructions are more likely to be places where preemptions will trigger race conditions. At these ``decision points'', then, Landslide will choose whether to continue running the current thread or to preempt and run a different one.
+
+Good decision points are most likely to be voluntary reschedules (i.e., calls to \texttt{yield} or similar - these are mandatory to have as decision points), calls to synchronisation primitives, accesses to shared data structures, and so on.
+
+You do not need to configure the set of decision points in order to use landslide, but doing so is certainly more likely than using the default set. More on this in section~\ref{sec:choice}.
+
 \subsubsection{The Decision Tree}
 
-Modelling the decisions and interleavings in this way presents the ``mysterious nondeterminism'' of the race condition in a new way: If a test case can race, then the resulting bug will appear in some, but not all, of the branches of the tree.
+After one execution of the test case, Landslide analyses each decision point that was encountered, and chooses from one of them a thread that was runnable but different from the one that was run. It then uses Simics bookmarks to ``time travel'' to that decision point, and causes timer interrupts in a pattern that causes the kernel to schedule the newly chosen thread, executes the test with this new interleaving, and repeats. In this way we see that the many possible interleavings, as defined by the set of decision points, form a tree, which represents all possible ways the threads can run concurrently.
+
+Modelling the decisions and interleavings as a tree presents the ``mysterious nondeterminism'' of the race condition in a new way: If a test case can race, then the resulting bug will appear in some, but not all, of the branches of the tree.
 Therefore, ``systematic dynamic race detection'' means to explore all branches of the tree and test for the bug in each one.
+
+You might imagine that if Landslide had to try each runnable thread at each decision point, exponential explosion would make most trees take forever to explore.
+Landslide uses an algorithm called {\em dynamic partial order reduction} to prune redundant branches out of the tree to speed up exploration. %TODO: reference flanagan here
+An intuitive explanation of the pruning: Imagine that at decision point A, threads 1 and 2 are runnable, and that they don't interfere with each other, so that running 1 followed by 2 yields the same state as running 2 followed by 1.
+Partial order reduction identifies redundancies resulting from such ``independent'' transitions, and eliminates them.
+You don't need to worry about partial order reduction itself, except to realise that using it means that adding extra decision points will increase the size of the tree, but usually not cause exponential explosion.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{What to Expect}
@@ -93,22 +125,94 @@ Landslide is a {\em framework} that enables you, the programmer, to explore prop
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Kernel Requirements}
-% TODO
+
+\subsubsection{Scheduler Functionality}
+\label{sec:schedfunc}
+
+In order to cause desired preemptions, Landslide needs to assume that the core of your scheduler works. In short, this means that timer interrupts will trigger context switches, and that if a thread is ``runnable'' (see section \ref{sec:hooks}), at any point where interrupts/preemption is enabled, a finite number of timer preemptions will eventually cause that thread to run.
+
+\subsubsection{VM}
+
+Landslide does not have much to do with the VM, but your kernel must direct-map all memory below \texttt{USER\_MEM\_START}.
+
+\subsubsection{System Calls}
+
+In order to run with Landslide, your kernel must be able to boot up to the shell prompt, receive keyboard input to make the shell start a test case, and return to the shell prompt after the test case finishes. This means you must have the following system calls implemented and working in at least a rudimentary way:
+\begin{itemize}
+	\item \texttt{fork}
+	\item \texttt{exec}
+	\item \texttt{vanish}
+	\item \texttt{wait}
+	\item \texttt{readline}
+\end{itemize}
+The following system calls are exercised in some, but not all, of the test cases we distribute, so will be helpful to have:
+\begin{itemize}
+	\item \texttt{thread\_fork}
+	\item \texttt{yield}
+\end{itemize}
+Apart from the system calls which init and shell execute, the rest are irrelevant and do not need to be implemented to use Landslide on your kernel.
 
 \subsection{Instrumenting Your Kernel with Landslide}
-
-This is the hardest part of using Landslide. Please pay extra attention to this section.
+\label{sec:hooks}
+{\large \em This is the hardest part of using Landslide: you will need to write code that tells Landslide what your kernel is doing when, and it is essential that your code is accurate.
+Please pay extra attention to this section.}
 
 Landslide tries to be as design-agnostic as possible, after assuming that the kernel implements the Pebbles specification, but it still needs to know about the implementation of certain abstractions within the kernel. The file \texttt{kernel\_specifics.c} contains several ``hook'' functions, which landslide uses to know what the guest kernel is doing, and which you need to implement for your kernel.
 
-One step towards doing this is to generate a header file containing \texttt{\#define}s for the addresses of certain functions and global variables in your kernel.
+You need to implement the following functions in \texttt{kernel\_specifics.c}. There are other functions there too, but you should not need to change them.
+\begin{enumerate}
+	\item \texttt{kern\_get\_current\_tcb} - Returns the address of the TCB for the currently-running thread.
+	\item \texttt{kern\_get\_current\_tid} - Returns the TID of the currently-running thread.
+	\item \texttt{kern\_scheduler\_locked} - Tells whether or not the scheduler is ``locked''; i.e., whether a timer interrupt at the current instruction would {\em not} cause a preemption. (In kernels that use explicit scheduler locking, this is typically a global variable.)
+	\item \texttt{kern\_mutex\_locking} - 
+	\item \texttt{kern\_mutex\_blocking} - 
+	\item \texttt{kern\_mutex\_locking\_done} - 
+	\item \texttt{kern\_mutex\_unlocking} - 
+	\item \texttt{kern\_mutex\_unlocking\_done} - 
+	\item \texttt{kern\_thread\_runnable} - Is a thread about to be added to the runqueue? Also returns the TID of that thread.
+	\item \texttt{kern\_thread\_descheduling} - Is a thread about to be removed from the runqueue? Also returns the TID of that thread.
+	\item \texttt{kern\_address\_own\_kstack} - Is a memory access within the current thread's stack region? % TODO: remove the need for this at all
+	\item \texttt{kern\_address\_other\_kstack} - 
+	\item \texttt{kern\_get\_init\_tid} - Returns the TID assigned to init. Typically 1.
+	\item \texttt{kern\_get\_idle\_tid} - Returns the TID of idle, if the kernel uses an idle thread. (This will be called only if \texttt{kern\_has\_idle} returns true.)
+	\item \texttt{kern\_get\_shell\_tid} - Returns the TID assigned to the shell. Typically 2.
+	\item \texttt{kern\_get\_first\_tid} - Returns the TID of the first thread to run (typically init's TID).
+	\item \texttt{kern\_has\_idle} - Returns whether or not the kernel uses an explicit thread for the idle loop.
+	\item \texttt{kern\_init\_threads} - Given a callback function, calls it once per thread that exists on the system after the scheduler is initialised (also with flags for whether each of those threads are on the runqueue and/or in the middle of a context switch).
+	\item \texttt{kern\_fork\_returns\_to\_cs} - Returns whether or not a newly-forked thread returns through the context-switcher path the first time it runs.
+	\item \texttt{kern\_fork\_return\_spot} - Returns whether or not the current instruction pointer is at the location that a newly-forked thread returns to. (If \texttt{kern\_fork\_returns\_to\_cs} returns true, this function should always return false.)
+	\item \texttt{kern\_current\_extra\_runnable} - Returns whether or not the current thread is {\em not} on the runqueue, but is ``runnable`` anyway. (This might involve reading a flag out of the current TCB.) (For kernels that keep the current thread on the runqueue, this function should always return false.)
+\end{enumerate}
+One step towards implementing these functions (and towards making some already-implemented functions work properly) is to generate a header file containing \texttt{\#define}s for the addresses of certain functions and global variables in your kernel.
 We provide a script, \texttt{definegen.sh}, which makes it easy to extract such addresses from your kernel image, and which automatically generates the header file.
 % TODO
-
+% kern_timer_entering/exiting
+% kern_get_timer_wrap_begin
+% kern_context_switch_entering/exiting
+% kern_sched_init_done
+% kern_in_scheduler
+% kern_access_in_scheduler
+% kern_mutex_ignore
+% kern_forking/vanishing/sleeping/readline
 \begin{enumerate}
-	\item
-% TODO
+	\item % TODO - clean this script up a ton
 \end{enumerate}
+There are several macros / interfaces that are already defined for your implementing convenience.
+\footnote{Peruse \texttt{x86.h} for more.}
+\begin{itemize}
+	\item \texttt{GET\_CPU\_ATTR(cpu, name)} - returns the value of the cpu's specified register. (e.g., write \texttt{eax} for \texttt{name}).
+	\item \texttt{READ\_MEMORY(cpu, addr)} - retrieves the 4-byte value at the given address.
+	\item \texttt{READ\_BYTE(cpu, addr)} - retrieves the 1-byte value at the given address.
+	\item \texttt{READ\_STACK(cpu, slot)} - equivalent to \texttt{READ\_MEMORY(cpu, \%esp + 4*slot)}.
+		(useful, for example, if you're at the first instruction of a function; \texttt{READ\_STACK(cpu, N)} returns the \texttt{N}th argument.)
+\end{itemize}
+There are also several functions in the \texttt{definegen.sh} script to help you generate the header file.
+\begin{itemize}
+	\item \texttt{get\_sym x} - Gets the address of the global symbol \texttt{x}.
+	\item \texttt{get\_func x} - Gets the address of the function \texttt{x}.
+	\item \texttt{get\_func\_end x} - Gets the address of the {\em last} instruction (almost always \texttt{ret} or \texttt{iret}) in the function \texttt{x}.
+	\item \texttt{get\_last\_such\_instruction x y} - Gets the address of the last instruction in function \texttt{x} that matches pattern \texttt{y}.
+\end{itemize}
 
 \subsection{Editing Your Kernel}
 
@@ -134,10 +238,16 @@ We ship Landslide with a suite of small test cases designed to expose several co
 	\item \texttt{fork\_wait} - Tests basic interaction of \texttt{fork()} and \texttt{wait()}. (This test is from the P3 hurdle suite.)
 	\item \texttt{wild\_test2} - Tests simultaneous thread death by unnatural causes. (This test is an upgrade of \texttt{wild\_test1} from the P3 hurdle suite.)
 	\item \texttt{double\_wait} - Tests interactions of multiple waiters on a single child. (new)
-	\item \texttt{double\_thread\_fork} - Tests for interactions of multiple threads in the same process vanishing. (new)
+	\item \texttt{double\_thread\_fork} - Tests for interactions of multiple threads in one process vanishing. (new)
+		\footnote{Really, the point of this test is to expose a use-after-free bug if your \texttt{thread\_fork} implementation has ``\texttt{return child->tid;}'' as its last line of code.}
+	\item \texttt{yield\_vanish} - Tests for interactions between \texttt{yield()} and \texttt{vanish()}. (new)
+		\footnote{You may wonder why some of these are written in assembly. This is because using your userspace thread library for thread creation (a) is not guaranteed to work, and (b) necessitates many more system calls, which dramatically increases the size of the decision tree.}
 \end{itemize}
 
-It may help your intuition to note why all of these test cases are ``Landslide-friendly'': they all perform very little work on a single run, enabling Landslide to completely explore the state-space 
+It may help your intuition to note why all of these test cases are ``Landslide-friendly'': they all perform very little work on a single run, enabling Landslide to completely explore the state-space. They also run several, but not too many, threads at once, producing potentially interleavings.
+
+To warm up, we recommend you test \texttt{double\_thread\_fork} (and edit your kernel explicitly to make sure it has a bug that this will expose - see the footnote in the test's description above).
+After that, we recommend trying \texttt{vanish\_vanish}, which is the most likely to expose many different types of bugs in many different \texttt{vanish} implementations.
 
 \subsection{Configuring Choice Points}
 \label{sec:choice}
