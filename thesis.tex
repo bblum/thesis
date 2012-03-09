@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[twocolumn]{article}
 \usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,subfig,wrapfig,appendix,hyperref,mdwlist,wasysym}
 \usepackage{upgreek}
 \usepackage{epsfig}
@@ -32,17 +32,70 @@
 \section{Introduction}
 
 
+Race conditions are notoriously difficult to debug.
+Because of their nondeterministic nature, they frequently do not manifest at all during testing, and when they do manifest, it is difficult to reproduce them reliably enough to collect enough information to help debug.
+In kernel-space, race condition debugging becomes even more difficult, as many aspects of the concurrency implementation itself are part of the system being tested, and may themselves have race-inducing flaws.
+
+% Write here a paragraph about userspace techniques. Write about kernel races.
+
+Landslide
+\footnote{Landslide {\em (n)} - A phenomenon which demonstrates that Pebbles are not as stable as you might think.}
+is an effort to make easier the process of debugging kernel-space races.
+It is geared towards kernels that meet the Pebbles specification, which students in Operating System Design and Implementation (15-410) at CMU implement, and implemented as a module for Simics, the x86 simulator that students use to run their Pebbles kernels.
+During execution of a kernel, Landslide records important actions performed by the kernel, attempts to decide at which points in the kernel's execution a preemption will be most likely to expose a bug, and then exercises all possible interleavings of kernel threads around such points.
+When Landslide finds a bug (determined with a set of various checks and heuristics), it stops execution and prints information about the sequence of interleavings that caused the bug to show up.
+
+With Landslide, we see testing a kernel as a process of manipulating test parameters in two ways: first, in the choice of test case (the userspace program that exercises a specific set of system calls), and second, in the configuration of Landslide in regard to which parts of the kernel are ``interesting'' in the behaviour of the test case and which are irrelevant.
+Searching for and understanding race conditions exposed by a given test becomes a joint effort between the programmer and Landslide, combining the programmer's specific knowledge about the design of the kernel and Landslide's ability to explore many interleavings efficiently.
+
+% ``The contributions of this work are as follows.''
+In this work, we present Landslide, a tool and framework for finding race conditions in kernels using systematic exploration, implemented as a module for the Simics simulator and geared towards Pebbles, the specification implemented by students in 15-410 at CMU.
+We study the challenges inherent in applying systematic testing techniques in kernel-space, in contrast with user-space applications, and present techniques (some sound, and some heuristic) for addressing them.
+% We study the relationship between the developer and the tool during the debugging process, in terms of what information the tool needs the developer to provide beforehand in order to provide meaningful test results.
+% Compared to conventional race condition debugging, we show that the relationship Landslide provides makes it a better strategy.
+We evaluate Landslide's usefulness in helping students of 15-410 better understand and solve the concurrency problems while implementing a Pebbles kernel, and also as a testing framework for TAs to use while grading student submissions.
+We show that Landslide is an effective tool for both purposes.
+
 \section{Related Work}
+% Look up 'nooks'? re kernel space.
+
+\section{Challenges of Kernel-space}
+% concurrency implementation itself
+% inter-thread communication is not idealised!
 
 \section{Design and Implementation}
 \subsection{Components of Landslide}
+
 \subsection{On Simics}
 
+\subsection{Techniques}
+% use-after-free, partial order, etc
+% talk about the all-ancestors vs induction thing
+% how to even schedule threads
 
+% Have a section or subsection to talk about the tool-user relationship.
 
 \section{Evaluation}
+% 410 - talk about current state/methods (for students and for TAS)
+% test suite presented
+% process of instrumenting
+
+\section{Future Work}
+% new techniques for landslide:
+% - hybrid with data-race/lockset/static-analysis; shm choices
+% - parallelism
+% - ICB as in chess
+% - garth's shaping
+% linux, device drivers
+% VM instead of simics
+% - how to interpose? single-step, or unmap heap, and/or annotate (for hooks) with hypercalls
+% - how to time travel? instead of time travel, snapshot once and replay
+% embedded microcontroller operating systems, simulated
+% teaching tool, study thinking patterns
 
 \section{Conclusion}
 
+\section{Acknowledgements}
+% Save this for last :)
 
 \end{document}
