@@ -1,13 +1,18 @@
-\documentclass[twocolumn]{article}
-\usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,subfig,wrapfig,appendix,hyperref,mdwlist,wasysym}
+\documentclass[10pt,twocolumn]{article}
+%\usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,subfig,wrapfig,appendix,hyperref,mdwlist,wasysym}
+\usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,appendix,hyperref,mdwlist,wasysym}
 \usepackage{upgreek}
-\usepackage{epsfig}
+%\usepackage{times}
+\usepackage[charter]{mathdesign}
+\usepackage{hyperref}
+\usepackage{draftwatermark}
+%\usepackage{epsfig}
 \usepackage[bottom]{footmisc}
 
 \begin{document}
-\captionsetup{width=.75\textwidth,font=small,labelfont=bf}
+%\captionsetup{width=.75\textwidth,font=small,labelfont=bf}
 \title{\bf Landslide: \\ Systematic Dynamic Race Detection in Kernel-space}
-\author{Benjamin Blum (\textbf{bblum})}
+\author{Benjamin Blum (\texttt{bblum@andrew.cmu.edu})}
 \maketitle
 
 \newcommand\true{\;\textit{true}}
@@ -26,61 +31,131 @@
 \newcommand\ZZ{\mathbb{Z}}
 
 \begin{abstract}
+Systematic exploration is an approach to finding race conditions by deterministically executing every possible interleaving of thread transitions and identifying which ones expose bugs.
+Current systematic exploration techniques are suitable for testing user-space programs, but are inadequate for testing kernels, where the testing framework's control over concurrency is more complicated.
 
+We present Landslide, a systematic exploration tool for finding races in kernels.
+Landslide targets Pebbles, the kernel specification that students implement in the undergraduate Operating Systems course at Carnegie Mellon University (15-410).
+We discuss the techniques Landslide uses to address the general challenges of kernel-level concurrency, and we evaluate its effectiveness and usability as a debugging aid.
+We show that our techniques make systematic testing in kernel-space feasible, and that Landslide is a useful tool for doing so in the context of 15-410.
 \end{abstract}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Race conditions are notoriously difficult to debug.
 Because of their nondeterministic nature, they frequently do not manifest at all during testing, and when they do manifest, it is difficult to reproduce them reliably enough to collect enough information to help debug.
-In kernel-space, race condition debugging becomes even more difficult, as many aspects of the concurrency implementation itself are part of the system being tested, and may themselves have race-inducing flaws.
 
-% Write here a paragraph about userspace techniques. Write about kernel races.
+In kernel-space, race condition debugging becomes even more difficult. Many aspects of the concurrency implementation itself are part of the system being tested, and may themselves have race-inducing flaws.
+
+% TODO: talk about systematic exploration
+%It provides a better alternative to conventional long-running stress tests, because it is less likely to overlook buggy execution patterns, and it enables a testing framework to report more thorough debugging information.
+
 
 Landslide
 \footnote{Landslide {\em (n)} - A phenomenon which demonstrates that Pebbles are not as stable as you might think.}
 is an effort to make easier the process of debugging kernel-space races.
-It is geared towards kernels that meet the Pebbles specification, which students in Operating System Design and Implementation (15-410) at CMU implement, and implemented as a module for Simics, the x86 simulator that students use to run their Pebbles kernels.
+It is geared towards kernels that meet the Pebbles specification, the main project in Operating System Design and Implementation (15-410) at CMU, and implemented as a module for Simics, the x86 simulator that students use to run their Pebbles kernels.
 During execution of a kernel, Landslide records important actions performed by the kernel, attempts to decide at which points in the kernel's execution a preemption will be most likely to expose a bug, and then exercises all possible interleavings of kernel threads around such points.
 When Landslide finds a bug (determined with a set of various checks and heuristics), it stops execution and prints information about the sequence of interleavings that caused the bug to show up.
 
 With Landslide, we see testing a kernel as a process of manipulating test parameters in two ways: first, in the choice of test case (the userspace program that exercises a specific set of system calls), and second, in the configuration of Landslide in regard to which parts of the kernel are ``interesting'' in the behaviour of the test case and which are irrelevant.
 Searching for and understanding race conditions exposed by a given test becomes a joint effort between the programmer and Landslide, combining the programmer's specific knowledge about the design of the kernel and Landslide's ability to explore many interleavings efficiently.
 
-% ``The contributions of this work are as follows.''
-In this work, we present Landslide, a tool and framework for finding race conditions in kernels using systematic exploration, implemented as a module for the Simics simulator and geared towards Pebbles, the specification implemented by students in 15-410 at CMU.
+% TODO: this paragraph is incongruous in light of the above three; what audience are you writing for, anyway?
+Many techniques exist for dynamic testing of concurrent systems for race conditions.
+Systematic exploration, the strategy that Landslide uses, involves modelling a concurrent test case as a series of {\em transitions} by each of a set of {\em agents}
+\footnote{In this work, we equate agents with a kernel's scheduler threads.}
+between {\em decision points} (i.e., actions which the tool and/or the user determine to be relevant to the concurrent behaviour of the test), and attempting to exercise all possible orderings of the transitions in hopes that one or more ordering will expose a bug.
+Within this strategy
+
+In this work, we present Landslide as a tool and framework for finding race conditions in kernels using systematic exploration, implemented as a module for the Simics simulator and geared towards Pebbles, the specification implemented by students in 15-410 at CMU.
 We study the challenges inherent in applying systematic testing techniques in kernel-space, in contrast with user-space applications, and present techniques (some sound, and some heuristic) for addressing them.
 % We study the relationship between the developer and the tool during the debugging process, in terms of what information the tool needs the developer to provide beforehand in order to provide meaningful test results.
 % Compared to conventional race condition debugging, we show that the relationship Landslide provides makes it a better strategy.
 We evaluate Landslide's usefulness in helping students of 15-410 better understand and solve the concurrency problems while implementing a Pebbles kernel, and also as a testing framework for TAs to use while grading student submissions.
 We show that Landslide is an effective tool for both purposes.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Related Work}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Look up 'nooks'? re kernel space.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Challenges of Kernel-space}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % concurrency implementation itself
 % inter-thread communication is not idealised!
+% kernels are designed in different ways; what can we assume
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Design and Implementation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Components of Landslide}
+
+\subsubsection{Kernel Instrumentation}
+
+\subsubsection{Scheduling}
+
+\subsubsection{The Arbiter}
+
+\subsubsection{The Decision Tree}
 
 \subsection{On Simics}
 
+Landslide is implemented as a module for Simics\cite{simics}
+
 \subsection{Techniques}
-% use-after-free, partial order, etc
+
+\subsubsection{Thread Scheduling}
+
+\subsubsection{Identifying Bugs}
+
+% A healthy dose of snark. Perhaps cite the formally-proved haskell kernel here.
+Without a formal specification of the internals of the guest kernel's implementation, it is of course impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
+In order to identify when the guest kernel has done something incorrect, Landslide performs several different types of checks, some accurate but noncomprehensive, and some heuristic-based.
+We list the metrics here in order of reliability.
+\begin{enumerate}
+	\item Kernel panic bugs - 
+	\item Use-after-free bugs - 
+	\item Deadlock bugs - 
+	\item Memory leak bugs - % this could fail if..
+	\item Infinite loop bugs - f
+\end{enumerate}
+Landslide's bug reporting is false-negative oriented, meaning that it does not check for suspicious behaviours that might indicate underlying bugs, so it may report that it found no bugs even if some existed. If Landslide does report a bug, though, it is almost certainly correct (except in cases as listed above).
+
+\subsubsection{Partial-Order Reduction}
 % talk about the all-ancestors vs induction thing
-% how to even schedule threads
+
+\subsubsection{Selective Ignorance}
+
+\subsection{Debugging Feedback}
+
+In its unique position of control over when the kernel gets preempted and which thread gets scheduled at each context-switch, Landslide has the capability to provide the user with detailed information about a test case's execution.
+When Landslide determines that a bug was found, it immediately aborts exploration of the decision tree, and prints a {\em decision trace} - a comprehensive report of the particular interleaving of thread transitions that caused the bug to appear.
+
+The decision trace explains each preemption or voluntary reschedule in the interleaving: which thread used to be running, which thread was chosen to run instead, and the stack trace of the former thread at the point from which it was switched away.
+
+
+Landslide is impleAdditional information, such as the number of instructions executed during each transition, and the shared memory accesses that conflicted with other transitions, can also be printed at the user's configuration options.
+% Should it also print conflicting memory accesses? Configurable by the user?
+% Make the user able to replay the choices.
+
+% Discuss combining this with a choice trace minimisation tool. Reference future work.
 
 % Have a section or subsection to talk about the tool-user relationship.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 410 - talk about current state/methods (for students and for TAS)
 % test suite presented
 % process of instrumenting
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Future Work}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % new techniques for landslide:
 % - hybrid with data-race/lockset/static-analysis; shm choices
 % - parallelism
@@ -92,10 +167,24 @@ We show that Landslide is an effective tool for both purposes.
 % - how to time travel? instead of time travel, snapshot once and replay
 % embedded microcontroller operating systems, simulated
 % teaching tool, study thinking patterns
+% symbolic execution
+% theory things to study:
+% - prove the soundness of the every-evil-ancestor thing
+% - study the implications of backwards vs forward exploration
+% - nadim's backtrack depth
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Acknowledgements}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Save this for last :)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliography{citations}{}
+\bibliographystyle{alpha}
 
 \end{document}
