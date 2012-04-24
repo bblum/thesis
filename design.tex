@@ -3,30 +3,54 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Components of Landslide}
 
+Here we briefly describe each major component of Landslide. % TODO: provide a figure landslide.png
+
 \subsubsection{Kernel Instrumentation}
+% TODO
 
 \subsubsection{Scheduling}
 
+In Landslide's view of the world, timer interrupts are the only source of nondeterminism for the guest kernel, and controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. However, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
+% TODO
+
 \subsubsection{The Arbiter}
 
-\subsubsection{The Decision Tree}
+The arbiter identifies points during execution should count as decision points. The selection is mainly controlled by the user, during the annotation and configuration process, but it also automatically identifies {\em voluntary reschedules}, which comprise the ``minimal necessary set'' of decision points.
+
+A voluntary reschedule is identified when the previously-running thread entered the context switcher without first entering the timer interrupt handler, and any one of the following:
+\begin{itemize}
+	\item The currently-running thread was handling a timer interrupt, and exits the {\em timer interrupt handler}.
+	\item The currently-running thread was not handling a timer interrupt, and exits the {\em context switcher}.
+	\item The currently-running thread was {\em just forked} (i.e, it has never run before), and hence may never exit either the timer handler or context switcher.
+\end{itemize}
+
+It is always necessary to identify a decision point during a voluntary reschedule, to maintain the invariant that each transition between decision points is comprised of the execution of only one thread.
+
+In future work (Section~\ref{sec:future-new}), the arbiter may also automatically identify extra decision points, such as on conflicting shared memory accesses.
+
+\subsubsection{The Explorer}
+
+The explorer maintains a representation of the current branch of the decision tree. It is responsible for checkpointing at each decision point, deciding at the end of the test which branch of the tree to execute next (i.e., selecting which decision point should have been decided differently), and backtracking to appropriate points in the test's execution.
 
 \subsection{On Simics}
 
-Landslide is implemented as a module for Simics\cite{simics}
+Landslide is implemented as a module for Simics\cite{simics}. When running the kernel, Simics calls into Landslide once every time the kernel executes an instruction or performs a memory read or write. Landslide uses this information, in conjunction with the user-provided instrumentation, to maintain its internal representations of the state of the guest kernel.
+
+Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the execution state at decision points during the test.
 
 \subsection{Techniques}
 
 \subsubsection{Thread Scheduling}
+% TODO
 
 \subsubsection{Identifying Bugs}
 
-% A healthy dose of snark. Perhaps cite the formally-proved haskell kernel here.
-Without a formal specification of the internals of the guest kernel's implementation, it is of course impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
+% A healthy dose of snark.
+Without a formal specification of the internals of the guest kernel's implementation\cite{sel4}, it is of course impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
 In order to identify when the guest kernel has done something incorrect, Landslide performs several different types of checks, some accurate but noncomprehensive, and some heuristic-based.
 We list the metrics here in order of reliability.
 \begin{enumerate}
-	\item Kernel panic bugs - 
+	\item Kernel panic bugs - % TODO
 	\item Use-after-free bugs - 
 	\item Deadlock bugs - 
 	\item Memory leak bugs - % this could fail if..
@@ -38,8 +62,10 @@ Landslide's bug reporting is false-negative oriented, meaning that it does not c
 \label{sec:techniques-por}
 % talk about the all-ancestors vs induction thing
 % talk about ignoring runqueue accesses, etc
+% TODO
 
 \subsubsection{Selective Ignorance}
+% TODO
 
 \subsection{Debugging Feedback}
 
@@ -48,12 +74,15 @@ When Landslide determines that a bug was found, it immediately aborts exploratio
 
 The decision trace explains each preemption or voluntary reschedule in the interleaving: which thread used to be running, which thread was chosen to run instead, and the stack trace of the former thread at the point from which it was switched away.
 
+Landslide also prints the stack trace of the currently-running thread at the point where the bug was found, and (optionally) drops the user into the Simics debugging prompt. Depending on the nature of the bug found, Landslide also provides more detailed information:
 
-% TODO: this sentence lies somewhat
-Additional information, such as the number of instructions executed during each transition, and the shared memory accesses that conflicted with other transitions, can also be printed at the user's configuration options.
-% Should it also print conflicting memory accesses? Configurable by the user?
-% Make the user able to replay the choices.
+\begin{enumerate}
+	\item If the kernel has panicked, Landslide prints the message used in the panic/assertion.
+	\item If a use-after-free bug is found, Landslide prints information about the most-recently-freed chunk containing the accessed address: the stack trace and TID both for when it was allocated and freed.
+	\item If deadlock is detected (currently only using the annotations for yielding mutexes), Landslide prints the cycle of TIDs that are blocked on each other.
+	\item If a memory leak is detected, Landslide prints 
+\end{enumerate}
 
-% Discuss combining this with a choice trace minimisation tool. Reference future work.
+Landslide can also provide other useful information, even in cases where it did not find bugs, to help with the user's process of configuring decision points. Instead of exploring alternative interleavings, it can stop execution after the first interleaving and print out the set of decision points that were identified, along with the shared memory conflicts and happens-before relations for pairs of transitions between the decision points.
 
-% Have a section or subsection to talk about the tool-user relationship.
+% TODO: Discuss combining this with a choice trace minimisation tool. Reference future work.

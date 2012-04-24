@@ -12,21 +12,30 @@ Certain regions of code may be non-preemptible, so a testing tool must know when
 Also, a context switch between threads is no longer "instantaneous"; many instructions must be run between when we decide to preempt and when the next thread begins running, and the tool must be aware of this "intermediate state". % TODO: why? don't overflow the stack, for one; for two, ignore runqueue conflicts
 Finally, the kernel's scheduler and the tool must cooperate in some way so that the tool can both know what threads are runnable at every point during execution and cause any given runnable thread to begin running in place of the current one.
 
-% TODO reference future work sections
-In future work, we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
+In future work (Section~\ref{sec:future-linux}), we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
 
 \subsection{Ad-hoc Thread Communication}
 % inter-thread communication is not idealised!
+% TODO
 
 \subsection{Kernel Design}
 
 One challenge particular to the context of 15-410 is that the kernels Landslide must be able to test may all use slightly different implementations to achieve the same goals. For Landslide to be generally applicable to (almost) any kernel that students may submit, it must make some abstract assumptions about the kernel design which are compatible with many different implementations.
 
-% TODO: reference future work section on linux here
-In certain avenues of future work, remaining agnostic of most implementation details becomes less of an issue. For example, if we target Landslide to Linux, it is unlikely that core scheduler or interrupt-handling behaviour will change for as long as Landslide remains useful for finding bugs. In 15-410, however, repeated re-targetting is a necessity.
+In certain avenues of future work (Section~\ref{sec:future-linux}), remaining agnostic of most implementation details becomes less of an issue. For example, if we target Landslide to Linux, it is unlikely that core scheduler or interrupt-handling behaviour will change for as long as Landslide remains useful for finding bugs. In 15-410, however, repeated re-targetting is a necessity.
+
+We built Landslide to be compatible with multiple designs for the following major scheduling behaviours:
 
 \begin{itemize}
-% TODO
-	\item
+	\item {\bf Runqueues}: Does the kernel store the currently-running thread on the runqueue, or is it removed and stored separately?
+	\item {\bf Mutexes}: When a thread blocks on a mutex, is it left on the runqueue in a yield-loop, or is it explicitly descheduled? In yield-looping mutexes, when do blocked threads become ``unblocked'', notionally? (This might happen before the blocked thread runs next.)
+	\item {\bf Idling}: Does the kernel have an explicit idle thread, or is there an idle loop that runs on the stack of whatever thread was last running? Do explicit idle threads run their idle loop in userspace or in kernelspace?
+	\item {\bf Thread Creation}: When a thread is newly forked, is it placed onto the runqueue for later, or is it context-switched to immediately? Do just-forked threads begin life through the usual context-switch-return path, or is there a special path for that?
 \end{itemize}
 
+Conversely, Landslide needs to make some assumptions about scheduling behaviour, in order for its control over scheduling to work:
+
+\begin{itemize}
+	\item With the exception of a non-preemptible ``scheduler lock'', and yield-looping mutexes (both of which must be instrumented by the user), a thread's presence on the runqueue indicates that a finite number of timer interrupts in succession will eventually cause it to run.
+	\item The kernel must not enter its idle loop (whether in an explicit idle thread or no) when the kernel is not truly idle. Landslide uses the idle loop to detect when a test begins/ends and to detect when all threads in a test are wedged.
+\end{itemize}
