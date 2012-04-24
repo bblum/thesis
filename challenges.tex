@@ -1,0 +1,32 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Challenges of Kernel-space}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Causes of Concurrency}
+
+% TODO: cite dbug
+In user-space, a systematic exploration tool may use the underlying kernel to help control the concurrent behaviour of the system. Simple system call invocations can cause a particular thread to run at a particular time, or to block while another thread runs first.
+
+In kernel-space, however, the scheduler is part of the system being tested, and we can no longer always interrupt the execution of a test case to ask the scheduler to instantly start running a different thread.
+Certain regions of code may be non-preemptible, so a testing tool must know when it is legal to preempt a kernel thread.
+Also, a context switch between threads is no longer "instantaneous"; many instructions must be run between when we decide to preempt and when the next thread begins running, and the tool must be aware of this "intermediate state". % TODO: why? don't overflow the stack, for one; for two, ignore runqueue conflicts
+Finally, the kernel's scheduler and the tool must cooperate in some way so that the tool can both know what threads are runnable at every point during execution and cause any given runnable thread to begin running in place of the current one.
+
+% TODO reference future work sections
+In future work, we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
+
+\subsection{Ad-hoc Thread Communication}
+% inter-thread communication is not idealised!
+
+\subsection{Kernel Design}
+
+One challenge particular to the context of 15-410 is that the kernels Landslide must be able to test may all use slightly different implementations to achieve the same goals. For Landslide to be generally applicable to (almost) any kernel that students may submit, it must make some abstract assumptions about the kernel design which are compatible with many different implementations.
+
+% TODO: reference future work section on linux here
+In certain avenues of future work, remaining agnostic of most implementation details becomes less of an issue. For example, if we target Landslide to Linux, it is unlikely that core scheduler or interrupt-handling behaviour will change for as long as Landslide remains useful for finding bugs. In 15-410, however, repeated re-targetting is a necessity.
+
+\begin{itemize}
+% TODO
+	\item
+\end{itemize}
+

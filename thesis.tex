@@ -12,7 +12,7 @@
 \begin{document}
 %\captionsetup{width=.75\textwidth,font=small,labelfont=bf}
 \title{\bf Landslide: \\ Systematic Dynamic Race Detection in Kernel-space}
-\author{Benjamin Blum (\texttt{bblum@andrew.cmu.edu})}
+\author{Benjamin Blum (\texttt{bblum@andrew.cmu.edu}) \and Garth Gibson (\texttt{garth@cs.cmu.edu})}
 \maketitle
 
 \newcommand\true{\;\textit{true}}
@@ -77,137 +77,13 @@ We study the challenges inherent in applying systematic testing techniques in ke
 We evaluate Landslide's usefulness in helping students of 15-410 better understand and solve the concurrency problems while implementing a Pebbles kernel, and also as a testing framework for TAs to use while grading student submissions.
 We show that Landslide is an effective tool for both purposes.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Related Work}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{related}
+\input{challenges}
+\input{design}
+\input{evaluation}
+\input{futurework}
+\input{acknowledgements}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Challenges of Kernel-space}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Causes of Concurrency}
-
-% TODO: cite dbug
-In user-space, a systematic exploration tool may use the underlying kernel to help control the concurrent behaviour of the system. Simple system call invocations can cause a particular thread to run at a particular time, or to block while another thread runs first.
-
-In kernel-space, however, the scheduler is part of the system being tested, and we can no longer always interrupt the execution of a test case to ask the scheduler to instantly start running a different thread.
-Certain regions of code may be non-preemptible, so a testing tool must know when it is legal to preempt a kernel thread.
-Also, a context switch between threads is no longer "instantaneous"; many instructions must be run between when we decide to preempt and when the next thread begins running, and the tool must be aware of this "intermediate state". % TODO: why? don't overflow the stack, for one; for two, ignore runqueue conflicts
-Finally, the kernel's scheduler and the tool must cooperate in some way so that the tool can both know what threads are runnable at every point during execution and cause any given runnable thread to begin running in place of the current one.
-
-\subsection{Ad-hoc Thread Communication}
-% inter-thread communication is not idealised!
-
-\subsection{Kernel Design}
-
-One challenge particular to the context of 15-410 is that the kernels Landslide must be able to test may all use slightly different implementations to achieve the same goals. For Landslide to be generally applicable to (almost) any kernel that students may submit, it must make some abstract assumptions about the kernel design which are compatible with many different implementations.
-
-\begin{itemize}
-% TODO
-	\item
-\end{itemize}
-
-% TODO: reference future work section on linux here
-In certain avenues of future work, remaining agnostic of most implementation details becomes less of an issue. For example, if we target Landslide to Linux, it is unlikely that core scheduler or interrupt-handling behaviour will change for as long as Landslide remains useful for finding bugs. In 15-410, however, repeated re-targetting is a necessity.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Design and Implementation}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Components of Landslide}
-
-\subsubsection{Kernel Instrumentation}
-
-\subsubsection{Scheduling}
-
-\subsubsection{The Arbiter}
-
-\subsubsection{The Decision Tree}
-
-\subsection{On Simics}
-
-Landslide is implemented as a module for Simics\cite{simics}
-
-\subsection{Techniques}
-
-\subsubsection{Thread Scheduling}
-
-\subsubsection{Identifying Bugs}
-
-% A healthy dose of snark. Perhaps cite the formally-proved haskell kernel here.
-Without a formal specification of the internals of the guest kernel's implementation, it is of course impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
-In order to identify when the guest kernel has done something incorrect, Landslide performs several different types of checks, some accurate but noncomprehensive, and some heuristic-based.
-We list the metrics here in order of reliability.
-\begin{enumerate}
-	\item Kernel panic bugs - 
-	\item Use-after-free bugs - 
-	\item Deadlock bugs - 
-	\item Memory leak bugs - % this could fail if..
-	\item Infinite loop bugs - f
-\end{enumerate}
-Landslide's bug reporting is false-negative oriented, meaning that it does not check for suspicious behaviours that might indicate underlying bugs, so it may report that it found no bugs even if some existed. If Landslide does report a bug, though, it is almost certainly correct (except in cases as listed above).
-
-\subsubsection{Partial-Order Reduction}
-\label{sec:techniques-por}
-% talk about the all-ancestors vs induction thing
-% talk about ignoring runqueue accesses, etc
-
-\subsubsection{Selective Ignorance}
-
-\subsection{Debugging Feedback}
-
-In its unique position of control over when the kernel gets preempted and which thread gets scheduled at each context-switch, Landslide has the capability to provide the user with detailed information about a test case's execution.
-When Landslide determines that a bug was found, it immediately aborts exploration of the decision tree, and prints a {\em decision trace} - a comprehensive report of the particular interleaving of thread transitions that caused the bug to appear.
-
-The decision trace explains each preemption or voluntary reschedule in the interleaving: which thread used to be running, which thread was chosen to run instead, and the stack trace of the former thread at the point from which it was switched away.
-
-
-Landslide is impleAdditional information, such as the number of instructions executed during each transition, and the shared memory accesses that conflicted with other transitions, can also be printed at the user's configuration options.
-% Should it also print conflicting memory accesses? Configurable by the user?
-% Make the user able to replay the choices.
-
-% Discuss combining this with a choice trace minimisation tool. Reference future work.
-
-% Have a section or subsection to talk about the tool-user relationship.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Evaluation}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 410 - talk about current state/methods (for students and for TAS)
-% test suite presented
-% process of instrumenting
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Future Work}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% new techniques for landslide:
-% - hybrid with data-race/lockset/static-analysis; shm choices
-% - parallelism
-% - ICB as in chess
-% - garth's shaping
-% linux, device drivers
-% VM instead of simics
-% - how to interpose? single-step, or unmap heap, and/or annotate (for hooks) with hypercalls
-% - how to time travel? instead of time travel, snapshot once and replay
-% embedded microcontroller operating systems, simulated
-% teaching tool, study thinking patterns
-% symbolic execution
-% theory things to study:
-% - prove the soundness of the every-evil-ancestor thing
-% - study the implications of backwards vs forward exploration
-% - nadim's backtrack depth
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Conclusion}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Acknowledgements}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Save this for last :)
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \bibliography{citations}{}
 \bibliographystyle{alpha}
 
