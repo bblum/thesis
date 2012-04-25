@@ -8,11 +8,13 @@
 In user-space, a systematic exploration tool may use the underlying kernel to help control the concurrent behaviour of the system. Simple system call invocations can cause a particular thread to run at a particular time, or to block while another thread runs first.
 
 In kernel-space, however, the scheduler is part of the system being tested, and we can no longer always interrupt the execution of a test case to ask the scheduler to instantly start running a different thread.
-Certain regions of code may be non-preemptible, so a testing tool must know when it is legal to preempt a kernel thread.
-Also, a context switch between threads is no longer "instantaneous"; many instructions must be run between when we decide to preempt and when the next thread begins running, and the tool must be aware of this "intermediate state". % TODO: why? don't overflow the stack, for one; for two, ignore runqueue conflicts
-Finally, the kernel's scheduler and the tool must cooperate in some way so that the tool can both know what threads are runnable at every point during execution and cause any given runnable thread to begin running in place of the current one.
+\begin{itemize}
+	\item Certain regions of code may be non-preemptible, so a testing tool must know when it is legal to preempt a kernel thread.
+	\item A context switch between threads is no longer "instantaneous"; many instructions must be run between when we decide to preempt and when the next thread begins running, and the tool must be aware of this "intermediate state". % TODO: why? don't overflow the stack, for one; for two, ignore runqueue conflicts
+	\item The kernel's scheduler and the tool must cooperate in some way so that the tool can both know what threads are runnable at every point during execution and cause any given runnable thread to begin running in place of the current one.
+\end{itemize}
 
-In future work (Section~\ref{sec:future-linux}), we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
+In this work, we focus specifically on nondeterministic scheduling driven by timer interrupts. In future work (Section~\ref{sec:future-linux}), we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
 
 \subsection{Ad-hoc Thread Communication}
 % inter-thread communication is not idealised!
