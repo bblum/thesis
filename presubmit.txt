@@ -1,0 +1,2 @@
+Pre-submit checks:
+	Ensure sane placement of alg:inflight

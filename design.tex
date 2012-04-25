@@ -49,7 +49,43 @@ Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the e
 
 In Landslide's view of the world, timer interrupts are the only source of nondeterminism for the guest kernel, and controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. However, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
 
-Landslide's scheduling technique, called the {\em schedule in-flight}, involves successive triggering of timer interrupts to trigger context switches until the desired thread begins to run. % TODO: make an algorithm listing for the schedule-in-flight alg
+Landslide's scheduling technique, called the {\em schedule in-flight}, involves successive triggering of timer interrupts to trigger context switches until the desired thread begins to run. Algorithm~\ref{alg:inflight} shows how Landslide makes this happen.
+
+One alternative, simpler method would be, when triggering a timer interrupt, to tell the guest kernel explicitly which thread should be run next. This would require the kernel programmer to write extra code in their timer handler and/or context switcher. We chose the ``in-flight'' approach instead, because it does not require additional kernel modifications.
+
+\begin{algorithm*}[t!]
+	\label{alg:inflight}
+	\begin{algorithmic}
+		\State {\em Global scheduler state.}
+		\State bool schedule\_in\_flight;
+		\State int target\_tid;
+		\\
+		\State {\em Per-thread state. (Updated elsewhere.)}
+		\State bool in\_timer\_handler, in\_context\_switch;
+		\State int current\_tid;
+		\\
+		\Function{scheduler\_update}{int eip}
+			\If{schedule\_in\_flight}
+				\State {\sc assert}(in\_timer\_handler || in\_context\_switch);
+				\If { {\sc kernel\_exiting\_timer}(eip) || (!handling\_timer \&\& {\sc kernel\_exiting\_context\_switch}(eip))}
+					\State {\em Then the kernel has just finished rescheduling and is about to resume normal thread execution.}
+					\If {current\_tid != target\_tid}
+						\State {\em The kernel switched to an undesirable thread. Keep the schedule operation ``in-flight''.}
+						\State {\sc cause\_timer\_interrupt}();
+					\Else
+						\State {\em The in-flight schedule is ``landing''.}
+						\State schedule\_in\_flight $\gets$ false;
+					\EndIf
+				\EndIf
+			\ElsIf{{\sc need\_to\_preempt}()}
+				\State target\_tid $\gets$ {\sc choose\_new\_thread}();
+				\State schedule\_in\_flight $\gets$ true;
+				\State {\sc cause\_timer\_interrupt}();
+			\EndIf
+		\EndFunction
+	\end{algorithmic}
+	\caption{The scheduling algorithm. This procedure for updating the scheduler's state is executed once per instruction, with a corresponding value for \texttt{eip} each time. The predicates on \texttt{eip} are part of the kernel instrumentation which tell what the guest kernel is doing at the current instruction.}
+\end{algorithm*}
 
 \subsubsection{Identifying Bugs}
 
