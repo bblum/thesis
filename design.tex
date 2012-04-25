@@ -12,6 +12,12 @@ Here we briefly describe each major component of Landslide. % TODO: provide a fi
 
 % TODO
 
+\subsubsection{Memory Tracking}
+
+Landslide maintains a mirror image of the guest kernel's dynamic allocation heap, so it can know at any point what memory ranges are allocated and what ranges used to be allocated but now are freed. This set is updated each time the guest kernel calls \texttt{malloc} or \texttt{free}.
+
+Landslide also maintains a set of memory accesses. % TODO
+
 \subsubsection{The Arbiter}
 
 The arbiter identifies points during execution should count as decision points. The selection is mainly controlled by the user, during the annotation and configuration process, but it also automatically identifies {\em voluntary reschedules}, which comprise the ``minimal necessary set'' of decision points.
@@ -52,11 +58,12 @@ Without a formal specification of the internals of the guest kernel's implementa
 In order to identify when the guest kernel has done something incorrect, Landslide performs several different types of checks, some accurate but noncomprehensive, and some heuristic-based.
 We list the metrics here in order of reliability.
 \begin{enumerate}
-	\item Kernel panic bugs - % TODO
-	\item Use-after-free bugs - 
-	\item Deadlock bugs - 
+	\item Kernel panic bugs - If the kernel invoked \texttt{panic}, it detected its own bug, and Landslide need do nothing but report it.
+	\item Use-after-free bugs - Whenever the kernel accesses memory in the heap (when not in the dynamic allocator itself), Landslide verifies that the address is within an allocated range. If not, Landslide proclaims the access to be illegal.
+	\item Deadlock bugs -
 	\item Memory leak bugs - % this could fail if..
 	\item Infinite loop bugs - f
+	% TODO
 \end{enumerate}
 Landslide's bug reporting is false-negative oriented, meaning that it does not check for suspicious behaviours that might indicate underlying bugs, so it may report that it found no bugs even if some existed. If Landslide does report a bug, though, it is almost certainly correct (except in cases as listed above).
 
@@ -75,6 +82,12 @@ The independence relation expresses which transitions do not read-and-write or w
 
 \subsubsection{Coarse Granularity}
 % talk about the all-ancestors vs induction thing TODO
+
+\subsection{Freed Memory Poisoning}
+
+A use-after-free bug happens whenever one thread accesses an address within an allocated block that another thread previously freed. Even if no other code makes a conflicting access to the same address after the \texttt{free}, the C idiom says that accessing dynamically-allocated memory after it has been freed is illegal no matter what.
+
+Hence, even if the second thread that freed the block never accesses the particular address that the first thread used, the second thread's \texttt{free} still logically conflicts with the first thread's access. Landslide addresses this by treating every call to \texttt{free} as a {\em write} access to every address within the freed block when computing shared memory conflicts.
 
 \subsection{Debugging Feedback}
 
