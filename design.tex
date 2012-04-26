@@ -9,6 +9,7 @@ Here we briefly describe each major component of Landslide. % TODO: provide a fi
 % TODO
 
 \subsubsection{Scheduling}
+\label{sec:components-sched}
 
 % TODO
 
@@ -44,7 +45,6 @@ Landslide is implemented as a module for Simics\cite{simics}. When running the k
 Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the execution state at decision points during the test.
 
 \subsection{Techniques}
-
 \subsubsection{Thread Scheduling}
 
 In Landslide's view of the world, timer interrupts are the only source of nondeterminism for the guest kernel, and controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. However, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
@@ -92,14 +92,22 @@ One alternative, simpler method would be, when triggering a timer interrupt, to 
 % A healthy dose of snark.
 Without a formal specification of the internals of the guest kernel's implementation\cite{sel4}, it is of course impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
 In order to identify when the guest kernel has done something incorrect, Landslide performs several different types of checks, some accurate but noncomprehensive, and some heuristic-based.
-We list the metrics here in order of reliability.
+
+Certain metrics:
 \begin{enumerate}
-	\item Kernel panic bugs - If the kernel invoked \texttt{panic}, it detected its own bug, and Landslide need do nothing but report it.
-	\item Use-after-free bugs - Whenever the kernel accesses memory in the heap (when not in the dynamic allocator itself), Landslide verifies that the address is within an allocated range. If not, Landslide proclaims the access to be illegal.
-	\item Deadlock bugs -
-	\item Memory leak bugs - % this could fail if..
-	\item Infinite loop bugs - f
-	% TODO
+	\item {\bf Kernel panic bugs}: If the kernel invoked \texttt{panic}, it detected its own bug, and Landslide need do nothing but report it.
+	\item {\bf Use-after-free bugs}: Whenever the kernel accesses memory in the heap (when not in the dynamic allocator itself), Landslide verifies that the address is within an allocated range. If not, Landslide proclaims the access to be illegal.\footnote{In the same way, Landslide also detects calls to \texttt{free} on blocks that were already freed or never allocated at all.}
+	\item {\bf Deadlock bugs}: If Landslide finds no runnable threads on the runqueue\footnote{Except for idle, if it exists.}, or if it detects a cycle of threads blocked on each other, it declares that the kernel has deadlocked.
+\end{enumerate}
+Uncertain metrics:
+\begin{enumerate}
+	\item {\bf Memory leak bugs}: Landslide records the state of the heap before the test case begins, and compares it to the state of the heap after the test case ends. If memory allocated during the test was not freed, Landslide assumes that it was leaked.
+		(Some kernel designs may legitimately behave this way, so this bug-check may be disabled when testing such kernels.)\footnote{There is, of course, much room for improvement in this metric, but it is not part of the research contribution.}
+	\item {\bf Infinite loop bugs}: Landslide judges whether the kernel has entered an infinite loop by comparing the current state of the decision tree to past executions of the same test case.
+	\begin{itemize}
+		\item While exploring the decision tree, Landslide computes the average number of instructions executed between two consecutive decision points. If at any point the current number of instructions executed since the most recent decision point exceeds this average times a constant factor (arbitrarily chosen to be 2000), Landslide assumes the kernel must have gotten stuck in an infinite loop.
+		\item Landslide also computes the average number of decision points in each branch of the decision tree (the average ``branch depth''). If the depth of the current branch ever exceeds this average times a constant factor (arbitrarily chosen to be 20), Landslide assumes the kernel must have gotten stuck in an infinite loop.
+	\end{itemize}
 \end{enumerate}
 Landslide's bug reporting is false-negative oriented, meaning that it does not check for suspicious behaviours that might indicate underlying bugs, so it may report that it found no bugs even if some existed. If Landslide does report a bug, though, it is almost certainly correct (except in cases as listed above).
 
