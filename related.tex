@@ -2,10 +2,28 @@
 \section{Related Work}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+Systematic exploration is a relatively young approach to concurrency verification.
+Recent work has focused on theoretical aspects of the technique, on distributed systems, and in userspace in general.
+Other efforts have focused on kernel verification apart from systematic exploration, using techniques such as data race detection and formal model verification.
+
+Landslide distinguishes itself from related systematic testing tools in its field as more of an exploratory work, presenting techniques to make systematic testing compatible with kernel-level code; less so as a development on the core testing approach itself.
+
 \subsection{Systematic Exploration}
+
+Dynamic Partial Order Reduction (DPOR) \cite{dpor,sdpor,dbug-retreat} is an algorithm for reducing the state space of ``all possible thread interleavings'' by identifying independent thread transitions and pruning the redundant state spaces that result from interleaving those transitions. Landslide makes generous use of the DPOR algorithm.
+
+dBug\cite{dbug-ssv} is a systematic testing tool which makes use of DPOR. It focuses on multithreaded userspace applications, identifying when to preempt by interposing on \texttt{libc} library calls. It uses a message-passing model for inter-thread communication and for establishing a happens-before relationship between transitions. The dBug project heavily inspired the development of Landslide.
+
+CHESS\cite{chess} is another userspace systematic testing tool. They explore the insight that many races require very few forced preemptions to uncover, and develop a search strategy which prioritises thread interleavings with fewer preemptions. Landslide does not (yet) make use of this strategy, though we did find a related insight which we discuss in Section~\ref{sec:future-backwards}.
+
+DeMeter\cite{demeter} is a more recent tool for systematic exploration that introduces Dynamic Interface Reduction as a strategy for constraining the size of the state space, which means targetting the testing technique on only one component of the program at a time. Landslide makes use of the same general concept in its user interface (Section~\ref{sec:using}) - it provides the user with options to constrain decision point identification to certain subsets of the kernel.
 
 \subsection{Kernel-level Testing}
 
-\subsection{Orthogonal Testing Techniques}
+% TODO
+
+
+%\subsection{Orthogonal Testing Techniques}
+% TODO: talk about DMT systems?
 
 % vim: ft=tex
