@@ -6,6 +6,7 @@
 Here we briefly describe each major component of Landslide. % TODO: provide a figure landslide.png
 
 \subsubsection{Kernel Instrumentation}
+\label{sec:components-kern}
 % TODO
 
 \subsubsection{Scheduling}
@@ -17,7 +18,11 @@ Here we briefly describe each major component of Landslide. % TODO: provide a fi
 
 Landslide maintains a mirror image of the guest kernel's dynamic allocation heap, so it can know at any point what memory ranges are allocated and what ranges used to be allocated but now are freed. This set is updated each time the guest kernel calls \texttt{malloc} or \texttt{free}.
 
-Landslide also maintains a set of memory accesses. % TODO
+Landslide also maintains a set of shared memory accesses made since the last decision point. Whenever the guest kernel accesses memory in its heap or in its global data regions, Landslide adds the address of the access to the set, with a flag indicating whether it was a read or a write. (If the address was already present, and the recorded access was a read and the current access is a write, we upgrade the recorded access to a write. Otherwise if the address was already present, we do nothing.)
+
+Landslide ignores shared memory accesses from the kernel's dynamic allocator itself, and it also ignores shared memory accesses from the components of the kernel's scheduler which run every transition (Section~\ref{sec:por-independence}).
+
+When Landslide reaches a decision point, this accumulated set is copied in the decision tree (Section~\ref{sec:components-explore}), and reset to empty before continuing execution.
 
 \subsubsection{The Arbiter}
 
@@ -37,6 +42,8 @@ In future work (Section~\ref{sec:future-new}), the arbiter may also automaticall
 \subsubsection{The Explorer}
 
 The explorer maintains a representation of the current branch of the decision tree. It is responsible for checkpointing at each decision point, deciding at the end of the test which branch of the tree to execute next (i.e., selecting which decision point should have been decided differently), and backtracking to appropriate points in the test's execution.
+
+At each decision point, Landslide creates a new node in the decision tree. It stores the TID of the thread that was chosen, the state of the scheduler (what threads are on the runqueue), the state of the heap and the accumulated set of shared memory accesses, and a stack trace of the thread that was running.
 
 \subsection{On Simics}
 
@@ -68,7 +75,7 @@ One alternative, simpler method would be, when triggering a timer interrupt, to 
 			\If{schedule\_in\_flight}
 				\State {\sc assert}(in\_timer\_handler || in\_context\_switch);
 				\If { {\sc kernel\_exiting\_timer}(eip) || (!handling\_timer \&\& {\sc kernel\_exiting\_context\_switch}(eip))}
-					\State {\em Then the kernel has just finished rescheduling and is about to resume normal thread execution.}
+					\State {\em The kernel has just finished rescheduling and is about to resume normal thread execution.}
 					\If {current\_tid != target\_tid}
 						\State {\em The kernel switched to an undesirable thread. Keep the schedule operation ``in-flight''.}
 						\State {\sc cause\_timer\_interrupt}();
@@ -84,7 +91,7 @@ One alternative, simpler method would be, when triggering a timer interrupt, to 
 			\EndIf
 		\EndFunction
 	\end{algorithmic}
-	\caption{The scheduling algorithm. This procedure for updating the scheduler's state is executed once per instruction, with a corresponding value for \texttt{eip} each time. The predicates on \texttt{eip} are part of the kernel instrumentation which tell what the guest kernel is doing at the current instruction.}
+	\caption{The scheduling algorithm. This procedure for updating the scheduler's state is executed once per instruction, with a corresponding value for \texttt{eip} each time. The predicates on \texttt{eip} are part of the kernel instrumentation (Section~\ref{sec:components-kern}).}
 \end{algorithm*}
 
 \subsubsection{Identifying Bugs}
@@ -120,7 +127,7 @@ We make use of Dynamic Partial-Order Reduction, the state-space pruning algorith
 % TODO
 
 \subsubsection{Memory Independence Relation}
-
+\label{sec:por-independence}
 The independence relation expresses which transitions do not read-and-write or write-and-write to the same shared memory addresses.
 % talk about ignoring runqueue accesses, etc TODO
 
@@ -134,6 +141,8 @@ A use-after-free bug happens whenever one thread accesses an address within an a
 Hence, even if the second thread that freed the block never accesses the particular address that the first thread used, the second thread's \texttt{free} still logically conflicts with the first thread's access. Landslide addresses this by treating every call to \texttt{free} as a {\em write} access to every address within the freed block when computing shared memory conflicts.
 
 \subsection{Debugging Feedback}
+
+% TODO: provide a figure
 
 In its unique position of control over when the kernel gets preempted and which thread gets scheduled at each context-switch, Landslide has the capability to provide the user with detailed information about a test case's execution.
 When Landslide determines that a bug was found, it immediately aborts exploration of the decision tree, and prints a {\em decision trace} - a comprehensive report of the particular interleaving of thread transitions that caused the bug to appear.
@@ -151,5 +160,3 @@ Landslide also prints the stack trace of the currently-running thread at the poi
 \end{enumerate}
 
 Landslide can also provide other useful information, even in cases where it did not find bugs, to help with the user's process of configuring decision points. Instead of exploring alternative interleavings, it can stop execution after the first interleaving and print out the set of decision points that were identified, along with the shared memory conflicts and happens-before relations for pairs of transitions between the decision points.
-
-% TODO: Discuss combining this with a choice trace minimisation tool. Reference future work.
