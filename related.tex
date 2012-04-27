@@ -4,7 +4,9 @@
 
 Systematic exploration is a relatively young approach to concurrency verification.
 Recent work has focused on theoretical aspects of the technique, on distributed systems, and in userspace in general.
-Other efforts have focused on kernel verification apart from systematic exploration, using techniques such as data race detection and formal model verification.
+Other work has focused on kernel verification apart from systematic exploration, using techniques such as data race detection and formal model verification.
+Still other efforts are for testing and verification techniques that are orthogonal to systematic exploration and kernel-level testing entirely.
+Here we discuss related work in all three categories.
 
 Landslide distinguishes itself from related systematic testing tools in its field as more of an exploratory work, presenting techniques to make systematic testing compatible with kernel-level code; less so as a development on the core testing approach itself.
 
@@ -22,12 +24,20 @@ DeMeter\cite{demeter} is a more recent tool for systematic exploration that intr
 
 \subsection{Kernel-level Verification}
 
-% TODO
+\cite{racepro}
+\cite{sel4}
+\cite{datacollider}
+\cite{carburizer}
 
 \subsection{Orthogonal Testing Techniques}
 
 Research in dynamic verification has also seen other techniques apart from systematic exploration.
 
-% TODO
+Symbolic execution\cite{symbolic,symbolic-disks} is a technique for testing programs by abstractly interpretating symbols and operations within a program, rather than directly executing its compiled code, which grants the ability to analyse conditional statements and cause-effect relationships among certain code paths.
+Tools such as KLEE\cite{klee} and projects such as Automated Exploit Generation\cite{aeg} demonstrate the effectiveness of symbolic execution in dynamic verification.
+We discuss the possibility of integrating symbolic execution into a testing framework such as Landslide in Section~\ref{sec:future-new}.
+
+Deterministic multithreading is a different technique for dealing with concurrency bugs which focuses on avoiding them when running production code rather than trying to expose them during testing. Deterministic multithreading tools, such as Kendo\cite{kendo}, PEREGRINE\cite{peregrine}, and DThreads\cite{dthreads}, analyse the execution of a concurrent system and compute particular scheduling patterns which will not produce buggy behaviours, and force the system to follow those schedules while maintaining good parallel performance.
+Deterministic multithreading serves a different purpose than systematic exploration; it aims to ensure that code already running in the real world does not encounter concurrency bugs even though they might exist, while our goals are instead to uncover such bugs and help fix them beforehand.
 
 % vim: ft=tex

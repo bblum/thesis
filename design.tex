@@ -40,6 +40,7 @@ It is always necessary to identify a decision point during a voluntary reschedul
 In future work (Section~\ref{sec:future-new}), the arbiter may also automatically identify extra decision points, such as on conflicting shared memory accesses.
 
 \subsubsection{The Explorer}
+\label{sec:components-explore}
 
 The explorer maintains a representation of the current branch of the decision tree. It is responsible for checkpointing at each decision point, deciding at the end of the test which branch of the tree to execute next (i.e., selecting which decision point should have been decided differently), and backtracking to appropriate points in the test's execution.
 
