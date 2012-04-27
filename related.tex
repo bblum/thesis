@@ -16,14 +16,18 @@ dBug\cite{dbug-ssv} is a systematic testing tool which makes use of DPOR. It foc
 
 CHESS\cite{chess} is another userspace systematic testing tool. They explore the insight that many races require very few forced preemptions to uncover, and develop a search strategy which prioritises thread interleavings with fewer preemptions. Landslide does not (yet) make use of this strategy, though we did find a related insight which we discuss in Section~\ref{sec:future-backwards}.
 
+There are also several tools, such as MaceMC\cite{macemc} and MODIST\cite{modist}, which provide systematic testing frameworks for networked and distributed applications.
+
 DeMeter\cite{demeter} is a more recent tool for systematic exploration that introduces Dynamic Interface Reduction as a strategy for constraining the size of the state space, which means targetting the testing technique on only one component of the program at a time. Landslide makes use of the same general concept in its user interface (Section~\ref{sec:using}) - it provides the user with options to constrain decision point identification to certain subsets of the kernel.
 
-\subsection{Kernel-level Testing}
+\subsection{Kernel-level Verification}
 
 % TODO
 
+\subsection{Orthogonal Testing Techniques}
 
-%\subsection{Orthogonal Testing Techniques}
-% TODO: talk about DMT systems?
+Research in dynamic verification has also seen other techniques apart from systematic exploration.
+
+% TODO
 
 % vim: ft=tex
