@@ -25,6 +25,7 @@ Landslide ignores shared memory accesses from the kernel's dynamic allocator its
 When Landslide reaches a decision point, this accumulated set is copied in the decision tree (Section~\ref{sec:components-explore}), and reset to empty before continuing execution.
 
 \subsubsection{The Arbiter}
+\label{sec:components-arbiter}
 
 The arbiter identifies points during execution should count as decision points. The selection is mainly controlled by the user, during the annotation and configuration process, but it also automatically identifies {\em voluntary reschedules}, which comprise the ``minimal necessary set'' of decision points.
 
@@ -96,6 +97,7 @@ One alternative, simpler method would be, when triggering a timer interrupt, to 
 \end{algorithm*}
 
 \subsubsection{Identifying Bugs}
+\label{sec:techniques-bugs}
 
 % A healthy dose of snark.
 Without a formal specification of the internals of the guest kernel's implementation\cite{sel4}, it is of course impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
