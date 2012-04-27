@@ -20,14 +20,23 @@ CHESS\cite{chess} is another userspace systematic testing tool. They explore the
 
 There are also several tools, such as MaceMC\cite{macemc} and MODIST\cite{modist}, which provide systematic testing frameworks for networked and distributed applications.
 
-DeMeter\cite{demeter} is a more recent tool for systematic exploration that introduces Dynamic Interface Reduction as a strategy for constraining the size of the state space, which means targetting the testing technique on only one component of the program at a time. Landslide makes use of the same general concept in its user interface (Section~\ref{sec:using}) - it provides the user with options to constrain decision point identification to certain subsets of the kernel.
+RacePRO\cite{racepro} is a tool based in kernel-space which uncovers ``process races'' using systematic exploration of multi-process interactions in user-space. They use system calls, such as filesystem accesses, as points to explore different interleavings of concurrent code, and detect bugs which can corrupt persistent system resources.
+
+Finally, DeMeter\cite{demeter} is a more recent tool for systematic exploration that introduces Dynamic Interface Reduction as a strategy for constraining the size of the state space, which means targetting the testing technique on only one component of the program at a time. Landslide makes use of the same general concept in its user interface (Section~\ref{sec:using}) - it provides the user with options to constrain decision point identification to certain subsets of the kernel.
 
 \subsection{Kernel-level Verification}
 
-\cite{racepro}
-\cite{sel4}
-\cite{datacollider}
-\cite{carburizer}
+DataCollider\cite{datacollider} is a tool for detecting data races, a special kind of concurrency bug which involve concurrent unprotected accesses to memory that can interleave unsafely on a fine-grained level.
+DataCollider uses memory access sampling, and remains largely agnostic of synchronisation operations, to find data races in the Windows 7 kernel.
+In Section~\ref{sec:future-new} we discuss how systematic execution might be enhanced by integrating data race detection techniques.
+
+Carburizer\cite{carburizer} is an effort to make imperfect kernel-level drivers work more reliably in the presence of faulty peripheral devices. They use static analysis to identify variables ``tainted'' by device input and unsafe uses thereof. Carburizer is able to transform such badly-written code to be more robust.
+Kernel device drivers are a ripe breeding ground for bugs, because it is frequently written by less careful developers, and the sheer volume of code makes it difficult to rigorously review.
+Due to the interrupt-driven nature of many drivers, they are also prone to concurrency bugs, which Carburizer does not address.
+In Section~\ref{sec:future-linux} we discuss the potential applicability of systematic exploration to concurrency bugs in kernel device drivers.
+
+On the far end of the ``formality and correctness'' spectrum for kernel verification lies seL4\cite{sel4}, a microkernel fully designed and specified in Haskell and translated directly into C. Because Haskell is type-safe (strict constraints on legal program behaviour that make it easier to reason about) and pure (most code cannot have stateful side-effects), the developers of seL4 were able to formally prove the specification's correctness and the implementation's adherence to the spec.
+Developing kernel code in languages and environments that enable formal complete verification, even in small components of a larger codebase, represents an admirable step towards writing correct code to begin with and avoiding many classes of bugs entirely. However, such steps have little bearing on code that exists in the world today, and it is also important to find ways to verify such sloppily-written code that already has bugs.
 
 \subsection{Orthogonal Testing Techniques}
 
@@ -37,7 +46,7 @@ Symbolic execution\cite{symbolic,symbolic-disks} is a technique for testing prog
 Tools such as KLEE\cite{klee} and projects such as Automated Exploit Generation\cite{aeg} demonstrate the effectiveness of symbolic execution in dynamic verification.
 We discuss the possibility of integrating symbolic execution into a testing framework such as Landslide in Section~\ref{sec:future-new}.
 
-Deterministic multithreading is a different technique for dealing with concurrency bugs which focuses on avoiding them when running production code rather than trying to expose them during testing. Deterministic multithreading tools, such as Kendo\cite{kendo}, PEREGRINE\cite{peregrine}, and DThreads\cite{dthreads}, analyse the execution of a concurrent system and compute particular scheduling patterns which will not produce buggy behaviours, and force the system to follow those schedules while maintaining good parallel performance.
+Deterministic multithreading is a different technique for dealing with concurrency bugs which focuses on avoiding them when running production code rather than trying to expose them during testing. Deterministic multithreading tools, such as Kendo\cite{kendo}, Peregrine\cite{peregrine}, and DThreads\cite{dthreads}, analyse the execution of a concurrent system and compute particular scheduling patterns which will not produce buggy behaviours, and force the system to follow those schedules while maintaining good parallel performance.
 Deterministic multithreading serves a different purpose than systematic exploration; it aims to ensure that code already running in the real world does not encounter concurrency bugs even though they might exist, while our goals are instead to uncover such bugs and help fix them beforehand.
 
 % vim: ft=tex
