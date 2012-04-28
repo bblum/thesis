@@ -15,6 +15,7 @@ Here we briefly describe each major component of Landslide. % TODO: provide a fi
 % TODO
 
 \subsubsection{Memory Tracking}
+\label{sec:components-memory}
 
 Landslide maintains a mirror image of the guest kernel's dynamic allocation heap, so it can know at any point what memory ranges are allocated and what ranges used to be allocated but now are freed. This set is updated each time the guest kernel calls \texttt{malloc} or \texttt{free}.
 
@@ -46,6 +47,12 @@ In future work (Section~\ref{sec:future-new}), the arbiter may also automaticall
 The explorer maintains a representation of the current branch of the decision tree. It is responsible for checkpointing at each decision point, deciding at the end of the test which branch of the tree to execute next (i.e., selecting which decision point should have been decided differently), and backtracking to appropriate points in the test's execution.
 
 At each decision point, Landslide creates a new node in the decision tree. It stores the TID of the thread that was chosen, the state of the scheduler (what threads are on the runqueue), the state of the heap and the accumulated set of shared memory accesses, and a stack trace of the thread that was running.
+
+\subsubsection{Test Lifecycle}
+\label{sec:components-test}
+% Talk about the test lifecycle - pre-readline; pre-test-start; etc.
+% Talk about the population tricks.
+% Talk about how we want idle/shell's wait() to be part of the test.
 
 \subsection{On Simics}
 

@@ -26,6 +26,7 @@ Scheduling terminology:
 \suspend{enumerate}
 
 Systematic exploration terminology:
+% TODO: have a diagram of the decision tree
 \resume{enumerate}
 	\item {\bf Decision point} (or {\bf Choice point}):
 		A point during execution (between two consecutive instructions, precisely) which is deemed ``interesting'' in terms of the likelihood that thread switches at that point will cause concurrency bugs to arise. All thread switches occur at a decision point; some are voluntary reschedules caused by the kernel and others are involuntary preemptions caused by Landslide.

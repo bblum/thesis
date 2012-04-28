@@ -12,7 +12,7 @@ Landslide distinguishes itself from related systematic testing tools in its fiel
 
 \subsection{Systematic Exploration}
 
-Dynamic Partial Order Reduction (DPOR) \cite{dpor,sdpor,dbug-retreat} is an algorithm for reducing the state space of ``all possible thread interleavings'' by identifying independent thread transitions and pruning the redundant state spaces that result from interleaving those transitions. Landslide makes generous use of the DPOR algorithm.
+Dynamic Partial Order Reduction (DPOR) \cite{dpor,sdpor,dbug-retreat,distributed-dpor} is an algorithm for reducing the state space of ``all possible thread interleavings'' by identifying independent thread transitions and pruning the redundant state spaces that result from interleaving those transitions. Landslide makes generous use of the DPOR algorithm.
 
 dBug\cite{dbug-ssv} is a systematic testing tool which makes use of DPOR. It focuses on multithreaded userspace applications, identifying when to preempt by interposing on \texttt{libc} library calls. It uses a message-passing model for inter-thread communication and for establishing a happens-before relationship between transitions. The dBug project heavily inspired the development of Landslide.
 
@@ -35,8 +35,15 @@ Kernel device drivers are a ripe breeding ground for bugs, because it is frequen
 Due to the interrupt-driven nature of many drivers, they are also prone to concurrency bugs, which Carburizer does not address.
 In Section~\ref{sec:future-linux} we discuss the potential applicability of systematic exploration to concurrency bugs in kernel device drivers.
 
+\subsubsection{New Kernel Architectures}
+
 On the far end of the ``formality and correctness'' spectrum for kernel verification lies seL4\cite{sel4}, a microkernel fully designed and specified in Haskell and translated directly into C. Because Haskell is type-safe (strict constraints on legal program behaviour that make it easier to reason about) and pure (most code cannot have stateful side-effects), the developers of seL4 were able to formally prove the specification's correctness and the implementation's adherence to the spec.
-Developing kernel code in languages and environments that enable formal complete verification, even in small components of a larger codebase, represents an admirable step towards writing correct code to begin with and avoiding many classes of bugs entirely. However, such steps have little bearing on code that exists in the world today, and it is also important to find ways to verify such sloppily-written code that already has bugs.
+Developing kernel code in languages and environments that enable formal complete verification, even in small components of a larger codebase, represents an admirable step towards writing correct code to begin with and avoiding many classes of bugs entirely.
+
+Barrelfish\cite{barrelfish} is another novel kernel architecture designed with concurrency in mind. The barrelfish kernel relies exclusively on message-passing for inter-thread communication, for increased performance on massively multi-core systems. While not a verification project, the strict limitation of inter-thread communication makes the concurrent properties of the system easy to reason about in ways that modern production kernels do not provide.
+We believe this work, like seL4, is a step in the right direction for bringing better concurrent code into the world.
+
+However, in both cases, such steps have little bearing on code that exists in the world today, and it is also important to find ways to verify such sloppily-written code that already has bugs, which is the focus of our work.
 
 \subsection{Orthogonal Testing Techniques}
 
