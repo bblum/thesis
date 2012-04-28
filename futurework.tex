@@ -35,8 +35,12 @@ Landslide currently never alters its set of decision points once it begins execu
 
 Most notably among the information Landslide has at its disposal is the collection of conflicting shared memory accesses among transitions. Theoretically, to identify a decision point immediately before and after each such access would generate an execution tree with perfect granularity (i.e., exactly one shared memory access per transition), and thence find every possible race condition - this is, of course, the opposite extreme to the current setup.
 
-Landslide could make use of data race detection techniques\cite{datacollider}, however, to strike a middle ground in which shared memory accesses it chooses. First, it should be aware of the types and interfaces associated with the kernel's synchronisation primitives (mutexes, condvars, semaphores, etc), and be able to treat operations on those as ``guaranteed to work'' (similar to Section~\ref{sec:por-independence}).
-Next, it should recognise acquire and release (or sleep and wake) operations on synchronisation primitives, and use that information to track lockset-type information, and use that to identify which memory accesses are raciest, and add decision points around those.
+Landslide could make use of data race detection techniques\cite{datacollider}, however, to strike a middle ground in which shared memory accesses it chooses.
+\begin{enumerate}
+	\item It should be aware of the types and interfaces associated with the kernel's synchronisation primitives (mutexes, condvars, semaphores, etc), and be able to treat operations on those as ``guaranteed to work'' (similar to Section~\ref{sec:por-independence}).
+	\item Next, it should recognise acquire and release (or sleep and wake) operations on synchronisation primitives, and use that information to track lockset-type information.
+	\item Ultimately, it should use the lockset information in conjunction with the happens-before relation to identify which memory accesses are ``raciest'', and add decision points around those.
+\end{enumerate}
 
 There may also exist static analysis techniques that would identify the most "at-risk" memory accesses, which could also be used in this manner.
 

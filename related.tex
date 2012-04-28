@@ -41,7 +41,7 @@ On the far end of the ``formality and correctness'' spectrum for kernel verifica
 Developing kernel code in languages and environments that enable formal complete verification, even in small components of a larger codebase, represents an admirable step towards writing correct code to begin with and avoiding many classes of bugs entirely.
 
 Barrelfish\cite{barrelfish} is another novel kernel architecture designed with concurrency in mind. The barrelfish kernel relies exclusively on message-passing for inter-thread communication, for increased performance on massively multi-core systems. While not a verification project, the strict limitation of inter-thread communication makes the concurrent properties of the system easy to reason about in ways that modern production kernels do not provide.
-We believe this work, like seL4, is a step in the right direction for bringing better concurrent code into the world.
+We believe Barrelfish, like seL4, is a step in the right direction for bringing better concurrent code into the world.
 
 However, in both cases, such steps have little bearing on code that exists in the world today, and it is also important to find ways to verify such sloppily-written code that already has bugs, which is the focus of our work.
 
