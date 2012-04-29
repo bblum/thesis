@@ -1,0 +1,111 @@
+pobbles double_wait
+
+----> default:
+[BUG!]          Total choice points 23, total backtracks 4
+[BUG!]          Average instrs/choice 23850, average branch depth 6
+0m24.460s
+0m22.590s
+0m22.859s
+0m23.732s
+0m22.946s
+
+----> lock:
+[BUG!]          Total choice points 102, total backtracks 17
+[BUG!]          Average instrs/choice 10629, average branch depth 10
+0m26.959s
+0m28.864s
+0m27.191s
+0m28.639s
+0m27.673s
+
+----> unlock:
+[BUG!]          Total choice points 74, total backtracks 12
+[BUG!]          Average instrs/choice 11434, average branch depth 9
+0m26.414s
+0m31.892s
+0m26.405s
+0m26.739s
+0m28.047s
+----> both:
+[BUG!]          Total choice points 378, total backtracks 56
+[BUG!]          Average instrs/choice 6561, average branch depth 14
+0m43.053s
+0m41.675s
+0m42.186s
+0m42.274s
+0m38.855s
+
+---
+
+pobbles vanish_vanish deadlock
+
+----> default:
+[LANDSLIDE]     Total choice points 56, total backtracks 16
+[LANDSLIDE]     Average instrs/choice 24978, average branch depth 5
+0m32.301s
+0m32.506s
+0m31.664s
+0m31.038s
+0m31.273s
+
+----> lock:
+[BUG!]          Total choice points 1296, total backtracks 376
+[BUG!]          Average instrs/choice 1836, average branch depth 19
+0m55.905s
+0m59.685s
+0m57.185s
+0m57.902s
+0m54.855s
+
+----> unlock:
+running on ghc17 18 20 21 22 23 24
+17 is likely to suck
+----> both:
+running on 01 01 02 02 03 03
+
+---
+
+pobbles thread_fork
+
+----> default:
+[BUG!]          Total choice points 24, total backtracks 5
+[BUG!]          Average instrs/choice 16169, average branch depth 5
+0m23.190s
+0m21.890s
+0m21.495s
+0m22.070s
+0m21.542s
+
+----> lock:
+[BUG!]          Total choice points 394, total backtracks 70
+[BUG!]          Average instrs/choice 3929, average branch depth 16
+0m37.746s
+0m37.635s
+0m35.582s
+0m38.848s
+0m37.373s
+
+----> unlock:
+[BUG!]          Total choice points 273, total backtracks 56
+[BUG!]          Average instrs/choice 2370, average branch depth 14
+0m28.306s
+0m27.792s
+0m27.659s
+0m26.897s
+0m27.395s
+
+----> both:
+[BUG!]          Total choice points 2269, total backtracks 410
+[BUG!]          Average instrs/choice 1308, average branch depth 23
+1m8.613s
+1m10.042s
+1m11.609s
+1m13.734s
+1m15.889s
+---
+
+pobbles vanish_vanish data race
+----> default:
+----> lock:
+----> unlock:
+----> both:
