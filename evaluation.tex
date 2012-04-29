@@ -26,13 +26,13 @@
 	\begin{center}
 	\begin{tabular}{|l||c|c|c|c||c|}
 		\hline
-		\multirow{2}{*}{\bf Kernel and test case} & \multicolumn{4}{c||}{\bf Custom decision points} & \multirow{2}{*}{\bf Stress test} \\
+		\multirow{2}{*}{\bf Kernel and test case} & \multicolumn{4}{c||}{\bf Decision points used} & \multirow{2}{*}{\bf Stress test} \\
 		\cline{2-5}
 		& \bf default & \bf lock & \bf unlock & \bf both & \\
 		\hline\hline
 		POBBLES vanish/vanish (a) & \nobugnum{31.8}{0.6} & \bugnum{57.1}{1.7} & $\infty$ & $\infty$ & \\
 		\hline
-		POBBLES vanish/vanish (b) & \nobugnum{32}{0.4} & \bugnum{51.5}{2.1} & & $\infty$ & \\
+		POBBLES vanish/vanish (b) & \nobugnum{32}{0.4} & \bugnum{51.5}{2.1} & \nobugnum{8057.9}{336.9} & $\infty$ & \\
 		\hline
 		POBBLES wait/wait & \bugnum{23.3}{0.7} & \bugnum{27.9}{0.8} & \bugnum{27.9}{2.1} & \bugnum{41.6}{1.4} & \\
 		\hline
@@ -46,7 +46,7 @@
 	\end{center}
 	\caption{Comparison of time taken (in seconds) to find bugs using Landslide and using conventional stress testing.
 	Landslide's times are given for several different sets of decision points: the default set, consisting only of voluntary reschedules (Section~\ref{sec:components-arbiter}); and using custom decision points in addition to the default set: calls to \texttt{mutex\_lock}, calls to \texttt{mutex\_unlock}, and both.
-	All numbers represent the average elapsed time in seconds from 5 trials, and the standard deviation is shown in parentheses. ``\nobugnum{$X$}{$s$}'' indicates the bug was not found with a given test setup (and instead, Landslide took $X$ time to explore the entire decision tree). ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: after how long? what timeout?
+	All numbers represent the average from 5 trials, with the standard deviation shown in parentheses. ``\nobugnum{$X$}{$s$}'' indicates the bug was not found with a given test setup (and instead, Landslide took $X$ time to explore the entire decision tree). ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: after how long? what timeout?
 	}
 	\label{fig:numbers}
 \end{figure*}
@@ -81,7 +81,7 @@ Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using
 	\begin{center}
 	\begin{tabular}{|l|l||c|c|c|c|}
 		\hline
-		\multirow{2}{*}{\bf Kernel and test case} & \multirow{2}{*}{\bf Property of tree} & \multicolumn{4}{|c|}{\bf Custom decision points} \\
+		\multirow{2}{*}{\bf Kernel and test case} & \multirow{2}{*}{\bf Property of tree} & \multicolumn{4}{|c|}{\bf Decision points used} \\
 		\cline{3-6}
 		& & \bf default & \bf lock & \bf unlock & \bf both \\
 		\hline\hline
@@ -139,6 +139,7 @@ In short, even though Landslide may give false negatives from using imperfect se
 When running LudicrOS yield/vanish with decision points on \texttt{mutex\_unlock} but not on \texttt{mutex\_lock}, we found that the ordering invariant failed - ``backwards'' exploration found no bug, while ``forwards'' exploration did. We attribute this to a bug in Landslide itself, and present the results for the backwards exploration as usual, in which Landslide found no bug.}
 
 \subsubsection{Recommended Testing Strategies}
+\label{sec:discussion-strategies}
 
 % TODO
 
