@@ -8,9 +8,9 @@ In user-space, a systematic exploration tool may use the underlying kernel to he
 
 In kernel-space, however, the scheduler is part of the system being tested, and we can no longer always interrupt the execution of a test case to ask the scheduler to instantly start running a different thread.
 \begin{itemize}
-	\item Certain regions of code may be non-preemptible, so a testing tool must know when it is legal to preempt a kernel thread.
-	\item A context switch between threads is no longer "instantaneous"; many instructions must be run between when we decide to preempt and when the next thread begins running, and the tool must be aware of this "intermediate state". A tool must be aware of the context switch process both to avoid flooding the kernel with interrupt frames that would overflow the stack, and to be able to ignore shared memory conflicts common to all thread transitions (Section~\ref{sec:por-independence}).
-	\item The kernel's scheduler and the tool must cooperate in some way so that the tool can both know what threads are runnable at every point during execution and cause any given runnable thread to begin running in place of the current one.
+	\item {\bf Non-preemptibility.} Certain regions of code may be non-preemptible, so a testing tool must know when it is legal to preempt a kernel thread.
+	\item {\bf The context switcher.} A context switch between threads is no longer "instantaneous"; many instructions must be run between when we decide to preempt and when the next thread begins running, and the tool must be aware of this "intermediate state". A tool must be aware of the context switch process both to avoid flooding the kernel with interrupt frames that would overflow the stack, and to be able to ignore shared memory conflicts common to all thread transitions (Section~\ref{sec:por-independence}).
+	\item {\bf Runqueue tracking.} The kernel's scheduler and the tool must cooperate in some way so that the tool can both know what threads are runnable at every point during execution and cause any given runnable thread to begin running in place of the current one.
 \end{itemize}
 
 In this work, we focus specifically on nondeterministic scheduling driven by timer interrupts. In future work (Section~\ref{sec:future-linux}), we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
@@ -20,10 +20,10 @@ In this work, we focus specifically on nondeterministic scheduling driven by tim
 Inter-thread communication can be much more ad-hoc in kernel-space than in user-space\cite{datacollider}, and a systematic testing framework needs to be aware of all the kernel's synchronisation idioms.
 
 \begin{itemize}
-	\item Some systems for user-space systematic testing require that threads communicate only by message-passing, to better track the concurrency relationships between thread transitions\cite{dbug-ssv}. With few exceptions\cite{barrelfish}, kernels do not rely on message-passing as a primary communication mechanism, and to be compatible with the kernels of today, a testing framework must allow for less idealised state-sharing (Section~\ref{sec:components-memory}).
-	\item It is difficult to detect when threads are ready to do useful work. Even if notionally runnable, they may be waiting in a yield loop (Sections~\ref{sec:using-annotations} and \ref{sec:future-linux}). A tool that did not recognise this might decide to attempt to run that thread over and over, and get stuck because the other threads would never be allowed to make progress.
-	\item It is also difficult to demarcate threads' lifecycles: when a new thread gets created, when is it available to run? and when a thread is exiting, at what point does it stop running code (Section~\ref{sec:using-annotations})? In user-space, these boundaries are defined by the system call instructions, but in kernel-space, the boundary is fuzzier.
-	\item The kernel's complete control over the machine's virtual memory system means a system for tracking memory accesses must be aware of changing virtual memory mappings (Section~\ref{sec:using-requirements}).
+	\item {\bf Avoiding reliance on message-passing.} Some systems for user-space systematic testing require that threads communicate only by message-passing, to better track the concurrency relationships between thread transitions\cite{dbug-ssv}. With few exceptions\cite{barrelfish}, kernels do not rely on message-passing as a primary communication mechanism, and to be compatible with the kernels of today, a testing framework must allow for less idealised state-sharing (Section~\ref{sec:components-memory}).
+	\item {\bf Recognising blocked threads.} It is difficult to detect when threads are ready to do useful work. Even if notionally runnable, they may be waiting in a yield loop (Sections~\ref{sec:using-annotations} and \ref{sec:future-linux}). A tool that did not recognise this might decide to attempt to run that thread over and over, and get stuck because the other threads would never be allowed to make progress.
+	\item {\bf Thread lifecycle tracking.} It is also difficult to demarcate threads' lifecycles: when a new thread gets created, when is it available to run? and when a thread is exiting, at what point does it stop running code (Section~\ref{sec:using-annotations})? In user-space, these boundaries are defined by the system call instructions, but in kernel-space, the boundary is fuzzier.
+	\item {\bf Use of virtual memory.} The kernel's complete control over the machine's virtual memory system means a system for tracking memory accesses must be aware of changing virtual memory mappings (Section~\ref{sec:using-requirements}).
 \end{itemize}
 
 \subsection{Kernel Design}
@@ -45,6 +45,6 @@ We built Landslide to be compatible with multiple designs for the following majo
 Conversely, Landslide needs to make some assumptions about scheduling behaviour, in order for its control over scheduling to work:
 
 \begin{itemize}
-	\item With the exception of a non-preemptible ``scheduler lock'', and yield-looping mutexes (both of which must be instrumented by the user), a thread's presence on the runqueue indicates that a finite number of timer interrupts in succession will eventually cause it to run.
-	\item The kernel must not enter its idle loop (whether in an explicit idle thread or no) when the kernel is not truly idle. Landslide uses the idle loop to detect when a test begins/ends and to detect when all threads in a test are wedged.
+	\item {\bf Timer ticks control ``runnable'' threads.} With the exception of a non-preemptible ``scheduler lock'', and yield-looping mutexes (both of which must be instrumented by the user), a thread's presence on the runqueue indicates that a finite number of timer interrupts in succession will eventually cause it to run.
+	\item {\bf No idling when progress can be made.} The kernel must not enter its idle loop (whether in an explicit idle thread or no) when the kernel is not truly idle. Landslide uses the idle loop to detect when a test begins/ends and to detect when all threads in a test are wedged.
 \end{itemize}

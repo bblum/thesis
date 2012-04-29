@@ -1,2 +1,3 @@
 Pre-submit checks:
 	Ensure sane placement of alg:inflight
+convert most bullet points to paragraphs with bold lead sentences

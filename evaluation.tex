@@ -30,9 +30,9 @@
 		\cline{2-5}
 		& \bf default & \bf lock & \bf unlock & \bf both & \\
 		\hline\hline
-		POBBLES vanish/vanish (a) & \nobugnum{31.8}{0.6} & \bugnum{57.1}{1.7} & & & \\
+		POBBLES vanish/vanish (a) & \nobugnum{31.8}{0.6} & \bugnum{57.1}{1.7} & $\infty$ & $\infty$ & \\
 		\hline
-		POBBLES vanish/vanish (b) & \nobugnum{32}{0.4} & \bugnum{51.5}{2.1} & & & \\
+		POBBLES vanish/vanish (b) & \nobugnum{32}{0.4} & \bugnum{51.5}{2.1} & & $\infty$ & \\
 		\hline
 		POBBLES wait/wait & \bugnum{23.3}{0.7} & \bugnum{27.9}{0.8} & \bugnum{27.9}{2.1} & \bugnum{41.6}{1.4} & \\
 		\hline
@@ -46,7 +46,7 @@
 	\end{center}
 	\caption{Comparison of time taken (in seconds) to find bugs using Landslide and using conventional stress testing.
 	Landslide's times are given for several different sets of decision points: the default set, consisting only of voluntary reschedules (Section~\ref{sec:components-arbiter}); and using custom decision points in addition to the default set: calls to \texttt{mutex\_lock}, calls to \texttt{mutex\_unlock}, and both.
-	All numbers represent the average elapsed time in seconds from 5 trials, and the standard deviation is shown in parentheses. ``\nobugnum{$X$}{$s$}'' indicates the bug was not found with a given test setup (and instead, Landslide took $X$ time to explore the entire decision tree). ``$\infty$'' indicates the bug was not found with stress testing. % TODO: after how long? what timeout?
+	All numbers represent the average elapsed time in seconds from 5 trials, and the standard deviation is shown in parentheses. ``\nobugnum{$X$}{$s$}'' indicates the bug was not found with a given test setup (and instead, Landslide took $X$ time to explore the entire decision tree). ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: after how long? what timeout?
 	}
 	\label{fig:numbers}
 \end{figure*}
@@ -85,13 +85,13 @@ Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using
 		\cline{3-6}
 		& & \bf default & \bf lock & \bf unlock & \bf both \\
 		\hline\hline
-		\multirow{4}{*}{POBBLES vanish/vanish (a)} & Decision points & \nobugtree{56} & \bugtree{1296} & & \\
-		& Total backtracks   & \nobugtree{16} & \bugtree{376} & & \\
-		& Average branch depth & \nobugtree{5} & \bugtree{19} & & \\
+		\multirow{4}{*}{POBBLES vanish/vanish (a)} & Decision points & \nobugtree{56} & \bugtree{1296} & N/A & N/A \\
+		& Total backtracks   & \nobugtree{16} & \bugtree{376} & N/A & N/A \\
+		& Average branch depth & \nobugtree{5} & \bugtree{19} & N/A & N/A \\
 		\hline
-		\multirow{4}{*}{POBBLES vanish/vanish (b)} & Decision points & \nobugtree{56} & \bugtree{1295} & \nobugtree{382071} & \\
-		& Total backtracks   & \nobugtree{16} & \bugtree{376} & \nobugtree{112706} & \\
-		& Average branch depth & \nobugtree{5} & \bugtree{17} & \nobugtree{16} & \\
+		\multirow{4}{*}{POBBLES vanish/vanish (b)} & Decision points & \nobugtree{56} & \bugtree{1295} & \nobugtree{382071} & N/A \\
+		& Total backtracks   & \nobugtree{16} & \bugtree{376} & \nobugtree{112706} & N/A \\
+		& Average branch depth & \nobugtree{5} & \bugtree{17} & \nobugtree{16} & N/A \\
 		\hline
 		\multirow{4}{*}{POBBLES wait/wait} & Decision points & \bugtree{23} & \bugtree{102} & \bugtree{74} & \bugtree{378} \\
 		& Total backtracks   & \bugtree{4} & \bugtree{17} & \bugtree{12} & \bugtree{56} \\
@@ -131,8 +131,8 @@ For each set of decision points on each bug, we give the total number of decisio
 While evaluating Landslide on these bugs, we determined two invariants that should hold for multiple explorations on the same test case.
 
 \begin{enumerate}
-	\item {\bf Ordering invariant}: For a given set of decision points, exploring the tree in multiple different orders (``forwards''/``backwards'') should produce the same result in terms of whether a bug was found or not. The bugs found may be different, and the number of branches explored may be different, but it should never be that one ordering finds a bug while another ordering of the same tree finds no bug.
-	\item {\bf Superset invariant}: For a given set of decision points, if an exploration of the resulting tree finds a bug, using a superset of that set of decision points should also find a bug. This is because the first tree will be a sub-tree of the second, as shown by never preempting at a decision point that appears in the second set but not the first.
+	\item {\bf Ordering invariant.} For a given set of decision points, exploring the tree in multiple different orders (``forwards''/``backwards'') should produce the same result in terms of whether a bug was found or not. The bugs found may be different, and the number of branches explored may be different, but it should never be that one ordering finds a bug while another ordering of the same tree finds no bug.
+	\item {\bf Superset invariant.} For a given set of decision points, if an exploration of the resulting tree finds a bug, using a superset of that set of decision points should also find a bug. This is because the first tree will be a sub-tree of the second, as shown by never preempting at a decision point that appears in the second set but not the first.
 \end{enumerate}
 
 In short, even though Landslide may give false negatives from using imperfect sets of decision points, the exploration itself must be sound (i.e. not missing any bugs that exist in the resulting tree).\footnote{

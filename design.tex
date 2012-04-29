@@ -65,14 +65,7 @@ Landslide is implemented as a module for Simics\cite{simics}. When running the k
 
 Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the execution state at decision points during the test.
 
-\subsection{Techniques}
-\subsubsection{Thread Scheduling}
-
-In Landslide's view of the world, timer interrupts are the only source of nondeterminism for the guest kernel, and controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. However, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
-
-Landslide's scheduling technique, called the {\em schedule in-flight}, involves successive triggering of timer interrupts to trigger context switches until the desired thread begins to run. Algorithm~\ref{alg:inflight} shows how Landslide makes this happen.
-
-One alternative simpler method would be, when triggering a timer interrupt, to tell the guest kernel explicitly which thread should be run next. This would require the kernel programmer to write extra code in their timer handler and/or context switcher. We chose the ``in-flight'' approach instead, because it does not require additional kernel modifications.
+\subsection{Thread Scheduling}
 
 \begin{algorithm*}[t!]
 	\label{alg:inflight}
@@ -108,36 +101,40 @@ One alternative simpler method would be, when triggering a timer interrupt, to t
 	\caption{The scheduling algorithm. This procedure for updating the scheduler's state is executed once per instruction, with a corresponding value for \texttt{pc} (the program counter) each time. The predicates on \texttt{pc} are part of the kernel instrumentation (Section~\ref{sec:components-kern}).}
 \end{algorithm*}
 
-\subsubsection{Identifying Bugs}
+In Landslide's view of the world, timer interrupts are the only source of nondeterminism for the guest kernel, and controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. However, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
+
+Landslide's scheduling technique, called the {\em schedule in-flight}, involves successive triggering of timer interrupts to trigger context switches until the desired thread begins to run. Algorithm~\ref{alg:inflight} shows how Landslide makes this happen.
+
+One alternative simpler method would be, when triggering a timer interrupt, to tell the guest kernel explicitly which thread should be run next. This would require the kernel programmer to write extra code in their timer handler and/or context switcher. We chose the ``in-flight'' approach instead, because it does not require additional kernel modifications.
+
+\subsection{Identifying Bugs}
 \label{sec:techniques-bugs}
 
 % A healthy dose of snark.
 Without a formal specification of the internals of the guest kernel's implementation\cite{sel4}, it is of course impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
 In order to identify when the guest kernel has done something incorrect, Landslide performs several different types of checks, some accurate but noncomprehensive, and some heuristic-based.
 
-Certain metrics:
+Landslide's bug reporting is false-negative oriented, meaning that it does not check for suspicious behaviours that might indicate underlying bugs, so it may report that it found no bugs even if some existed. If Landslide does report a bug, though, it is almost certainly correct (except in cases as listed below).
+
+\subsubsection{Accurate Bug-Detection Conditions}
+
 \begin{enumerate}
-	\item {\bf Kernel panic bugs}: If the kernel invoked \texttt{panic}, it detected its own bug, and Landslide need do nothing but report it.
-	\item {\bf Use-after-free bugs}: Whenever the kernel accesses memory in the heap (when not in the dynamic allocator itself), Landslide verifies that the address is within an allocated range. If not, Landslide proclaims the access to be illegal.\footnote{In the same way, Landslide also detects calls to \texttt{free} on blocks that were already freed or never allocated at all.}
-	\item {\bf Deadlock bugs}: If Landslide finds no runnable threads on the runqueue\footnote{Except for idle, if it exists.}, or if it detects a cycle of threads blocked on each other, it declares that the kernel has deadlocked.
+	\item {\bf Kernel panic bugs.} If the kernel invoked \texttt{panic}, it detected its own bug, and Landslide need do nothing but report it.
+	\item {\bf Use-after-free bugs.} Whenever the kernel accesses memory in the heap (when not in the dynamic allocator itself), Landslide verifies that the address is within an allocated range. If not, Landslide proclaims the access to be illegal.\footnote{In the same way, Landslide also detects calls to \texttt{free} on blocks that were already freed or never allocated at all.}
+	\item {\bf Deadlock bugs.} If Landslide finds no runnable threads on the runqueue\footnote{Except for idle, if it exists.}, or if it detects a cycle of threads blocked on each other, it declares that the kernel has deadlocked.
 \suspend{enumerate}
-Uncertain metrics:
+
+\subsubsection{Uncertain Bug-Detection Conditions}
+
 \resume{enumerate}
-	\item {\bf Memory leak bugs}: Landslide records the state of the heap before the test case begins, and compares it to the state of the heap after the test case ends. If memory allocated during the test was not freed, Landslide assumes that it was leaked.
+	\item {\bf Memory leak bugs.} Landslide records the state of the heap before the test case begins, and compares it to the state of the heap after the test case ends. If memory allocated during the test was not freed, Landslide assumes that it was leaked.
 		(Some kernel designs may legitimately behave this way, so this bug-check may be disabled when testing such kernels.)\footnote{There is, of course, much room for improvement in this metric, but it is not part of the research contribution.}
-	\item {\bf Infinite loop bugs}: Landslide judges whether the kernel has entered an infinite loop by comparing the current state of the decision tree to past executions of the same test case.
+	\item {\bf Infinite loop bugs.} Landslide judges whether the kernel has entered an infinite loop by comparing the current state of the decision tree to past executions of the same test case.
 	\begin{itemize}
 		\item While exploring the decision tree, Landslide computes the average number of instructions executed between two consecutive decision points. If at any point the current number of instructions executed since the most recent decision point exceeds this average times a constant factor (arbitrarily chosen to be 2000), Landslide assumes the kernel must have gotten stuck in an infinite loop.
 		\item Landslide also computes the average number of decision points in each branch of the decision tree (the average ``branch depth''). If the depth of the current branch ever exceeds this average times a constant factor (arbitrarily chosen to be 20), Landslide assumes the kernel must have gotten stuck in an infinite loop.
 	\end{itemize}
 \end{enumerate}
-Landslide's bug reporting is false-negative oriented, meaning that it does not check for suspicious behaviours that might indicate underlying bugs, so it may report that it found no bugs even if some existed. If Landslide does report a bug, though, it is almost certainly correct (except in cases as listed above).
-
-\subsubsection{Freed Memory Poisoning}
-
-A use-after-free bug happens whenever one thread accesses an address within an allocated block that another thread previously freed. Even if no other code makes a conflicting access to the same address after the \texttt{free}, the C idiom says that accessing dynamically-allocated memory after it has been freed is illegal no matter what.
-
-Hence, even if the second thread that freed the block never accesses the particular address that the first thread used, the second thread's \texttt{free} still logically conflicts with the first thread's access. Landslide addresses this by treating every call to \texttt{free} as a {\em write} access to every address within the freed block when computing shared memory conflicts.
 
 \subsection{Partial-Order Reduction}
 \label{sec:techniques-por}
@@ -150,7 +147,14 @@ We make use of Dynamic Partial-Order Reduction, the state-space pruning algorith
 \subsubsection{Memory Independence Relation}
 \label{sec:por-independence}
 The independence relation expresses which transitions do not read-and-write or write-and-write to the same shared memory addresses.
-% talk about ignoring runqueue accesses, etc TODO
+
+\begin{itemize}
+	\item {\bf Always-accessed memory locations.} % talk about ignoring runqueue accesses, etc TODO
+	\item {\bf Freed memory poisoning.}
+		A use-after-free bug happens whenever one thread accesses an address within an allocated block that another thread previously freed. Even if no other code makes a conflicting access to the same address after the \texttt{free}, the C idiom says that accessing dynamically-allocated memory after it has been freed is illegal no matter what.
+
+		Hence, even if the second thread that freed the block never accesses the particular address that the first thread used, the second thread's \texttt{free} still logically conflicts with the first thread's access. Landslide addresses this by treating every call to \texttt{free} as a {\em write} access to every address within the freed block when computing shared memory conflicts.
+\end{itemize}
 
 \subsubsection{Coarse Granularity}
 % talk about the all-ancestors vs induction thing TODO

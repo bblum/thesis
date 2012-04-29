@@ -5,7 +5,8 @@
 
 In this section we define certain terms that have specific meanings in the context of Landslide.
 
-Basic terminology:
+\subsection{Basic Terms}
+
 \begin{enumerate}
 	\item {\bf Guest kernel}:
 		The kernel which is being tested for concurrency bugs by Landslide.
@@ -13,7 +14,8 @@ Basic terminology:
 		Abstractly, the set of inputs under which the guest kernel is tested. Practically, a user-space program which runs on top of the guest kernel to execute a particular set of system calls, while Landslide performs systematic exploration
 \suspend{enumerate}
 
-Scheduling terminology:
+\subsection{Scheduling Terms}
+
 \resume{enumerate}
 	\item {\bf Thread}:
 		One participating agent in a concurrent program, which executes code sequentially, with the potential to be interleaved with the execution of other threads in the system.
@@ -25,7 +27,8 @@ Scheduling terminology:
 		See Section~\ref{sec:components-arbiter}.
 \suspend{enumerate}
 
-Systematic exploration terminology:
+\subsection{Systematic Exploration Terms}
+
 % TODO: have a diagram of the decision tree
 \resume{enumerate}
 	\item {\bf Decision point} (or {\bf Choice point}):
