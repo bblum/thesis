@@ -7,110 +7,139 @@
 
 \subsection{User Experience}
 
-%\subsubsection{
+% TODO
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Bug Case Studies}
 \label{sec:eval-casestudy}
+
+\subsubsection{Bug Descriptions}
 
 % TODO: intro text goes here
 
 \subsubsection{Numbers}
 
-Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using Landslide, configured with several different sets of decision points, and using conventional stress testing.
-All numbers represent the average of 5 trials. ``N/A ($X$)'' indicates the bug was not found with a given test setup (and instead, Landslide took $X$ time to explore the entire decision tree). ``$infty$'' indicates the bug was not found with stress testing. % TODO: after how long? what timeout?
-All Landslide trial times include the Simics start-up and kernel boot-up time (time between issuing the command and the test case beginning to run), roughly 15 seconds.
-
-All Landslide trials were run on the Gates-Hillman cluster machines (2.6 GHz Xeon).
-% TODO: say specs of crash machine
+\newcommand\bugnum[2]{\textcolor{BrickRed}{{\bf #1} {\small \em (#2)}}}
+\newcommand\nobugnum[2]{\textcolor{Blue}{{\em #1} {\small \em (#2)}}}
 
 \begin{figure*}[t!]
-	\begin{tabular}{|l|l||c|c|c|c||c|}
+	\begin{center}
+	\begin{tabular}{|l||c|c|c|c||c|}
 		\hline
-		\multirow{2}{*}{\bf Kernel and test case} & \multirow{2}{*}{\bf Bug description} & \multicolumn{4}{c||}{\bf Custom decision points} & \multirow{2}{*}{\bf Stress test} \\
-		\cline{3-6}
-		& & \bf default & \bf lock & \bf unlock & \bf both & \\
+		\multirow{2}{*}{\bf Kernel and test case} & \multicolumn{4}{c||}{\bf Custom decision points} & \multirow{2}{*}{\bf Stress test} \\
+		\cline{2-5}
+		& \bf default & \bf lock & \bf unlock & \bf both & \\
 		\hline\hline
-		POBBLES vanish/vanish (a) & Deadlock & & & & & \\
+		POBBLES vanish/vanish (a) & \nobugnum{31.8}{0.6} & \bugnum{57.1}{1.7} & & & \\
 		\hline
-		POBBLES vanish/vanish (b) & Data race (panic) & & & & & \\
+		POBBLES vanish/vanish (b) & \nobugnum{32}{0.4} & \bugnum{51.5}{2.1} & & & \\
 		\hline
-		POBBLES wait/wait & Data structure bug (panic) & & 38.6s & & & \\
+		POBBLES wait/wait & \bugnum{23.3}{0.7} & \bugnum{27.9}{0.8} & \bugnum{27.9}{2.1} & \bugnum{41.6}{1.4} & \\
 		\hline
-		POBBLES thread\_fork/vanish & Use-after-free & & & & & \\
+		POBBLES thread\_fork/vanish & \bugnum{22}{0.6} & \bugnum{37.4}{1.1} & \bugnum{27.6}{0.5} & \bugnum{72}{2.6} & \\
 		\hline
-		LudicrOS vanish/vanish & Data race (infinite loop) & & & & & \\
+		LudicrOS vanish/vanish & \nobugnum{13.2}{0.2} & \bugnum{13.7}{0.7} & \bugnum{34.6}{1.1} & \bugnum{17.1}{0.3} & \\
 		\hline
-		LudicrOS yield/vanish & Use-after-free & & & & & \\
+		LudicrOS yield/vanish & \nobugnum{12.3}{0.3} & \bugnum{11.4}{0.4} & \nobugnum{27.4}{0.8} & \bugnum{11.7}{0.4} & \\
 		\hline
 	\end{tabular}
-	\caption{Comparison of time taken to find bugs using Landslide and using conventional stress testing.
-	Landslide's times are given for several different sets of decision points: the default set, consisting only of voluntary reschedules (Section~\ref{sec:components-arbiter}); and using custom decision points in addition to the default set: calls to \texttt{mutex\_lock}, calls to \texttt{mutex\_unlock}, and both.}
+	\end{center}
+	\caption{Comparison of time taken (in seconds) to find bugs using Landslide and using conventional stress testing.
+	Landslide's times are given for several different sets of decision points: the default set, consisting only of voluntary reschedules (Section~\ref{sec:components-arbiter}); and using custom decision points in addition to the default set: calls to \texttt{mutex\_lock}, calls to \texttt{mutex\_unlock}, and both.
+	All numbers represent the average elapsed time in seconds from 5 trials, and the standard deviation is shown in parentheses. ``\nobugnum{$X$}{$s$}'' indicates the bug was not found with a given test setup (and instead, Landslide took $X$ time to explore the entire decision tree). ``$\infty$'' indicates the bug was not found with stress testing. % TODO: after how long? what timeout?
+	}
 	\label{fig:numbers}
 \end{figure*}
 
-All Landslide trials were run with ``backwards exploration'' enabled (Section~\ref{sec:using-search}).
-All trials were also run with Landslide configured to pay attention to only the relevant system calls (using \texttt{within\_function}; Section~\ref{sec:using-decision}).
+% TODO: have a graph
 
-We believe it is reasonable to test for these bugs in this way - using the minimal set of system calls to be paid attention to as necessary to find the bug - because it follows the recommended workflow of using Landslide, which is to start with what the user judges to be the ``smallest relevant set'' of decision points. The configuration using \texttt{within\_function} was as follows.
+Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using Landslide, configured with several different sets of decision points, and using conventional stress testing. The experimental set-up is as follows:
 
 \begin{itemize}
-	\item POBBLES vanish/vanish(a): \texttt{within\_function vanish}.
-	\item POBBLES vanish/vanish(b): \texttt{within\_function vanish}.
-	\item POBBLES wait/wait: \texttt{within\_function wait}.
-	\item POBBLES thread\_fork/vanish: none was needed, but \texttt{within\_function thread\_fork} and \texttt{within\_function vanish} both were used for the sake of demonstration.
-	\item LudicrOS vanish/vanish: \texttt{within\_function vanish}.
-	\item LudicrOS yield/vanish: \texttt{within\_function yield}.
+	\item All Landslide trial times include the Simics start-up and kernel boot-up time (time between issuing the command and the test case beginning to run), roughly 15 seconds for POBBLES and 10 seconds for LudicrOS.
+	\item All Landslide trials were run on the Gates-Hillman cluster machines (2.6 GHz Xeon).
+	% TODO: say specs of crash machine
+	\item All Landslide trials were run with ``backwards exploration'' enabled (Section~\ref{sec:using-search}).
+	\item All trials were also run with Landslide configured to pay attention to only the relevant system calls (using \texttt{within\_function}; Section~\ref{sec:using-decision}).
+
+	We believe it is reasonable to test for these bugs in this way - using the minimal set of system calls to be paid attention to as necessary to find the bug - because it follows the recommended workflow of using Landslide, which is to start with what the user judges to be the ``smallest relevant set'' of decision points. The configuration using \texttt{within\_function} was as follows.
+	\begin{itemize}
+		\item POBBLES vanish/vanish(a): \texttt{within\_function vanish}
+		\item POBBLES vanish/vanish(b): \texttt{within\_function vanish}
+		\item POBBLES wait/wait: \texttt{within\_function wait}
+		\item POBBLES thread\_fork/vanish: \texttt{within\_function thread\_fork} and \texttt{within\_function vanish}
+		\item LudicrOS vanish/vanish: \texttt{within\_function vanish}
+		\item LudicrOS yield/vanish: \texttt{within\_function yield} and \texttt{within\_function vanish}
+	\end{itemize}
 \end{itemize}
 
 %%%%
 
-Table~\ref{fig:trees} presents more detailed information about the decision trees that Landslide explored when finding these bugs
-For each set of decision points on each bug, we give the total number of decision points in the tree, the total number of backtracks (i.e. branches explored before the bug was found), the average branch depth (i.e. number of decision points in each branch), and the average time taken to explore each branch (i.e. the total test time divided by the backtrack count)\footnote{
-It is not clear how meaningful the average time per branch is, considering the Simics and kernel startup time are included in the test time, and Landslide is not exploring then.}.
-
-\newcommand\nobug[1]{N/A {\em \small (#1)}}
+\newcommand\bugtree[1]{\textcolor{BrickRed}{\bf #1}}
+\newcommand\nobugtree[1]{\textcolor{Blue}{\em #1}}
 \begin{figure*}[t!]
+	\begin{center}
 	\begin{tabular}{|l|l||c|c|c|c|}
 		\hline
 		\multirow{2}{*}{\bf Kernel and test case} & \multirow{2}{*}{\bf Property of tree} & \multicolumn{4}{|c|}{\bf Custom decision points} \\
 		\cline{3-6}
 		& & \bf default & \bf lock & \bf unlock & \bf both \\
 		\hline\hline
-		\multirow{4}{*}{POBBLES vanish/vanish (a)} & Decision points & \nobug{56} & 1296 & & \\
-		& Backtracks   & \nobug{16} & 376 & & \\
-		& Branch depth & \nobug{5} & 19 & & \\
-		& Time/branch  & & & & \\
+		\multirow{4}{*}{POBBLES vanish/vanish (a)} & Decision points & \nobugtree{56} & \bugtree{1296} & & \\
+		& Total backtracks   & \nobugtree{16} & \bugtree{376} & & \\
+		& Average branch depth & \nobugtree{5} & \bugtree{19} & & \\
 		\hline
-		\multirow{4}{*}{POBBLES vanish/vanish (b)} & Decision points & & & & \\
-		& Backtracks   & & & & \\
-		& Branch depth & & & & \\
-		& Time/branch  & & & & \\
+		\multirow{4}{*}{POBBLES vanish/vanish (b)} & Decision points & \nobugtree{56} & \bugtree{1295} & \nobugtree{382071} & \\
+		& Total backtracks   & \nobugtree{16} & \bugtree{376} & \nobugtree{112706} & \\
+		& Average branch depth & \nobugtree{5} & \bugtree{17} & \nobugtree{16} & \\
 		\hline
-		\multirow{4}{*}{POBBLES wait/wait} & Decision points & 23 & 102 & 74 & 378 \\
-		& Backtracks   & 4 & 17 & 12 & 56 \\
-		& Branch depth & 6 & 10 & 9 & 14 \\
-		& Time/branch  & & & & \\
+		\multirow{4}{*}{POBBLES wait/wait} & Decision points & \bugtree{23} & \bugtree{102} & \bugtree{74} & \bugtree{378} \\
+		& Total backtracks   & \bugtree{4} & \bugtree{17} & \bugtree{12} & \bugtree{56} \\
+		& Average branch depth & \bugtree{6} & \bugtree{10} & \bugtree{9} & \bugtree{14} \\
 		\hline
-		\multirow{4}{*}{POBBLES thread\_fork/vanish} & Decision points & 24 & 394 & 273 & 2269 \\
-		& Backtracks   & 5 & 70 & 56 & 410 \\
-		& Branch depth & 5 & 16 & 14 & 23 \\
-		& Time/branch  & & & & \\
+		\multirow{4}{*}{POBBLES thread\_fork/vanish} & Decision points & \bugtree{24} & \bugtree{394} & \bugtree{273} & \bugtree{2269} \\
+		& Total backtracks   & \bugtree{5} & \bugtree{70} & \bugtree{56} & \bugtree{410} \\
+		& Average branch depth & \bugtree{5} & \bugtree{16} & \bugtree{14} & \bugtree{23} \\
 		\hline
-		\multirow{4}{*}{LudicrOS vanish/vanish} & Decision points & & & & \\
-		& Backtracks   & & & & \\
-		& Branch depth & & & & \\
-		& Time/branch  & & & & \\
+		\multirow{4}{*}{LudicrOS vanish/vanish} & Decision points & \nobugtree{10} & \bugtree{16} & \bugtree{141} & \bugtree{42} \\
+		& Total backtracks   & \nobugtree{2} & \bugtree{3} & \bugtree{48} & \bugtree{10} \\
+		& Average branch depth & \nobugtree{2} & \bugtree{7} & \bugtree{9} & \bugtree{14} \\
 		\hline
-		\multirow{4}{*}{LudicrOS yield/vanish} & Decision points & & & & \\
-		& Backtracks   & & & & \\
-		& Branch depth & & & & \\
-		& Time/branch  & & & & \\
+		\multirow{4}{*}{LudicrOS yield/vanish} & Decision points & \nobugtree{8} & \bugtree{5} & \nobugtree{149} & \bugtree{7} \\
+		& Total backtracks   & \nobugtree{1} & \bugtree{0} & \nobugtree{43} & \bugtree{0} \\
+		& Average branch depth & \nobugtree{2} & \bugtree{0} & \nobugtree{9} & \bugtree{0} \\
 		\hline
 	\end{tabular}
-	\caption{Information about the decision trees explored when finding bugs. As in the previous table, each test case was run with the four different sets of decision points. ``\nobug{X}'' means the tree was completely explored because Landslide did not find a bug in that configuration.}
+	\end{center}
+	\caption{Information about the decision trees explored when finding bugs. As in the previous table, each test case was run with the four different sets of decision points. ``\nobugtree{X}'' means the tree was completely explored because Landslide did not find a bug in that configuration. ``\bugtree{X}'' reflects the portion of the tree that was explored before a bug was found.}
 	\label{fig:trees}
 \end{figure*}
 
+Table~\ref{fig:trees} presents more detailed information about the decision trees that Landslide explored when finding these bugs.
+For each set of decision points on each bug, we give the total number of decision points in the tree, the total number of backtracks (i.e. branches explored before the bug was found), and the average branch depth (i.e. number of decision points in each branch).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Summary of Bugs Found}
+
+% TODO
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Discussion}
+
+\subsubsection{Invariants}
+
+While evaluating Landslide on these bugs, we determined two invariants that should hold for multiple explorations on the same test case.
+
+\begin{enumerate}
+	\item {\bf Ordering invariant}: For a given set of decision points, exploring the tree in multiple different orders (``forwards''/``backwards'') should produce the same result in terms of whether a bug was found or not. The bugs found may be different, and the number of branches explored may be different, but it should never be that one ordering finds a bug while another ordering of the same tree finds no bug.
+	\item {\bf Superset invariant}: For a given set of decision points, if an exploration of the resulting tree finds a bug, using a superset of that set of decision points should also find a bug. This is because the first tree will be a sub-tree of the second, as shown by never preempting at a decision point that appears in the second set but not the first.
+\end{enumerate}
+
+In short, even though Landslide may give false negatives from using imperfect sets of decision points, the exploration itself must be sound (i.e. not missing any bugs that exist in the resulting tree).\footnote{
+When running LudicrOS yield/vanish with decision points on \texttt{mutex\_unlock} but not on \texttt{mutex\_lock}, we found that the ordering invariant failed - ``backwards'' exploration found no bug, while ``forwards'' exploration did. We attribute this to a bug in Landslide itself, and present the results for the backwards exploration as usual, in which Landslide found no bug.}
+
+\subsubsection{Recommended Testing Strategies}
+
+% TODO
 
 % vim: ft=tex
