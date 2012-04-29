@@ -85,10 +85,10 @@ One alternative simpler method would be, when triggering a timer interrupt, to t
 		\State bool in\_timer\_handler, in\_context\_switch;
 		\State int current\_tid;
 		\\
-		\Function{scheduler\_update}{int eip}
+		\Function{scheduler\_update}{int pc}
 			\If{schedule\_in\_flight}
 				\State {\sc assert}(in\_timer\_handler || in\_context\_switch);
-				\If { {\sc kernel\_exiting\_timer}(eip) || (!handling\_timer \&\& {\sc kernel\_exiting\_context\_switch}(eip))}
+				\If { {\sc kernel\_exiting\_timer}(pc) || (!handling\_timer \&\& {\sc kernel\_exiting\_context\_switch}(pc))}
 					\State {\em The kernel has just finished rescheduling and is about to resume normal thread execution.}
 					\If {current\_tid != target\_tid}
 						\State {\em The kernel switched to an undesirable thread. Keep the schedule operation ``in-flight''.}
@@ -105,7 +105,7 @@ One alternative simpler method would be, when triggering a timer interrupt, to t
 			\EndIf
 		\EndFunction
 	\end{algorithmic}
-	\caption{The scheduling algorithm. This procedure for updating the scheduler's state is executed once per instruction, with a corresponding value for \texttt{eip} each time. The predicates on \texttt{eip} are part of the kernel instrumentation (Section~\ref{sec:components-kern}).}
+	\caption{The scheduling algorithm. This procedure for updating the scheduler's state is executed once per instruction, with a corresponding value for \texttt{pc} (the program counter) each time. The predicates on \texttt{pc} are part of the kernel instrumentation (Section~\ref{sec:components-kern}).}
 \end{algorithm*}
 
 \subsubsection{Identifying Bugs}
