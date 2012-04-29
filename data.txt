@@ -106,6 +106,94 @@ pobbles thread_fork
 
 pobbles vanish_vanish data race
 ----> default:
+[LANDSLIDE]     Total choice points 56, total backtracks 16
+[LANDSLIDE]     Average instrs/choice 24944, average branch depth 5
+0m31.303s
+0m32.292s
+0m32.200s
+0m32.008s
+0m32.069s
 ----> lock:
+[BUG!]          Total choice points 1295, total backtracks 376
+[BUG!]          Average instrs/choice 1892, average branch depth 17
+0m48.856s
+0m49.864s
+0m51.819s
+0m52.229s
+0m54.957s
+
 ----> unlock:
 ----> both:
+
+---
+ludicros yield/vanish
+
+----> default:
+[LANDSLIDE]     Total choice points 8, total backtracks 1
+[LANDSLIDE]     Average instrs/choice 25024, average branch depth 2
+0m12.589s
+0m12.382s
+0m11.912s
+0m12.650s
+0m12.079s
+----> lock:
+[BUG!]          Total choice points 5, total backtracks 0
+[BUG!]          Average instrs/choice 25310, average branch depth 0
+0m11.117s
+0m12.183s
+0m11.012s
+0m11.210s
+0m11.631s
+----> unlock:
+[LANDSLIDE]     Total choice points 149, total backtracks 43
+[LANDSLIDE]     Average instrs/choice 11037, average branch depth 9
+0m27.113s
+0m28.862s
+0m26.925s
+0m26.760s
+0m27.455s
+----> both:
+[BUG!]          Total choice points 7, total backtracks 0
+[BUG!]          Average instrs/choice 19108, average branch depth 0
+0m11.807s
+0m12.344s
+0m11.872s
+0m10.981s
+0m11.581s
+
+---
+
+ludicros vanish/vanish
+
+----> default:
+[LANDSLIDE]     Total choice points 10, total backtracks 2
+[LANDSLIDE]     Average instrs/choice 33430, average branch depth 2
+0m13.237s
+0m13.355s
+0m13.464s
+0m12.780s
+0m13.186s
+----> lock:
+[BUG!]          Total choice points 16, total backtracks 3
+[BUG!]          Average instrs/choice 21694, average branch depth 7
+0m13.227s
+0m14.992s
+0m13.604s
+0m13.189s
+0m13.585s
+----> unlock:
+[BUG!]          Total choice points 141, total backtracks 48
+[BUG!]          Average instrs/choice 15826, average branch depth 9
+0m33.893s
+0m34.414s
+0m36.564s
+0m33.484s
+0m34.421s
+----> both:
+[BUG!]          Total choice points 42, total backtracks 10
+[BUG!]          Average instrs/choice 15940, average branch depth 14
+0m17.721s
+0m17.171s
+0m16.892s
+0m16.885s
+0m16.867s
