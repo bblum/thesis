@@ -18,12 +18,14 @@
 % TODO: intro text goes here
 
 \subsubsection{Numbers}
+\label{sec:eval-numbers}
 
-\newcommand\bugnum[2]{\textcolor{BrickRed}{{\bf #1} {\small \em (#2)}}}
-\newcommand\nobugnum[2]{\textcolor{Blue}{{\em #1} {\small \em (#2)}}}
+\newcommand\bugnum[2]{\textcolor{BrickRed}{{\bf #1} {\scriptsize \em (#2)}}}
+\newcommand\nobugnum[2]{\textcolor{Blue}{{\em #1} {\scriptsize \em (#2)}}}
 
 \begin{figure*}[t!]
 	\begin{center}
+	\small
 	\begin{tabular}{|l||c|c|c|c||c|}
 		\hline
 		\multirow{2}{*}{\bf Kernel and test case} & \multicolumn{4}{c||}{\bf Decision points used} & \multirow{2}{*}{\bf Stress test} \\
@@ -42,11 +44,12 @@
 		\hline
 		LudicrOS yield/vanish & \nobugnum{12.3}{0.3} & \bugnum{11.4}{0.4} & \nobugnum{27.4}{0.8} & \bugnum{11.7}{0.4} & \\
 		\hline
+		\multicolumn{6}{c}{Key: \bugnum{seconds}{stddev} indicates bug found; \nobugnum{seconds}{stddev} indicates whole tree explored with no bug.} \\
 	\end{tabular}
 	\end{center}
 	\caption{Comparison of time taken (in seconds) to find bugs using Landslide and using conventional stress testing.
 	Landslide's times are given for several different sets of decision points: the default set, consisting only of voluntary reschedules (Section~\ref{sec:components-arbiter}); and using custom decision points in addition to the default set: calls to \texttt{mutex\_lock}, calls to \texttt{mutex\_unlock}, and both.
-	All numbers represent the average from 5 trials, with the standard deviation shown in parentheses. ``\nobugnum{$X$}{$s$}'' indicates the bug was not found with a given test setup (and instead, Landslide took $X$ time to explore the entire decision tree). ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: after how long? what timeout?
+	All numbers represent the average from 5 trials, with the standard deviation given in parentheses. ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: after how long? what timeout?
 	}
 	\label{fig:numbers}
 \end{figure*}
@@ -79,6 +82,7 @@ Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using
 \newcommand\nobugtree[1]{\textcolor{Blue}{\em #1}}
 \begin{figure*}[t!]
 	\begin{center}
+	\small
 	\begin{tabular}{|l|l||c|c|c|c|}
 		\hline
 		\multirow{2}{*}{\bf Kernel and test case} & \multirow{2}{*}{\bf Property of tree} & \multicolumn{4}{|c|}{\bf Decision points used} \\
@@ -141,6 +145,32 @@ When running LudicrOS yield/vanish with decision points on \texttt{mutex\_unlock
 \subsubsection{Recommended Testing Strategies}
 \label{sec:discussion-strategies}
 
-% TODO
+We make several observations about the experimental results from Section~\ref{sec:eval-numbers}.
+
+\begin{enumerate}
+	\item {\bf Fewer is faster.} While it is theoretically possible that a tree built of finer-grained interleavings might encounter a bug after fewer overall backtracks, we found that this did not happen in practice.\footnote{
+		The one suspicious case is the LudicrOS vanish/vanish bug - exploring the ``both'' tree found the bug faster than exploring the ``unlock'' tree, despite the latter's decision points being a subset of the former's. However, we see that exploring the ``lock'' tree found the bug faster than either, so overall the ``both'' tree did not outperform the fastest of the smaller trees.}
+		In general, for two sets of decision points that both find the same bug, the one that results in shorter {\em branches} will result in fewer {\em backtracks} needed to expose the bug, and hence less overall time.
+	\item {\bf Different decision points are differently likely to expose different bugs.} We see that even though the ``lock'' and ``unlock'' trees tended to be about the same size, they were each sometimes better than the other at finding bugs. The ``lock'' tree did better on the vanish/vanish bugs and the yield/vanish bug, while the ``unlock'' tree did better on the wait/wait bug and the thread\_fork/vanish bug.\footnote{
+	The latter two bugs needed no more than the default set to uncover at all, but we claim this still demonstrates the principle in general.}
+	\item {\bf Finding a bug is fast, if it exists.} As especially exhibited in the POBBLES vanish/vanish (b) case, if two sets of decision points generate trees of approximately equal size, but one tree contains a bug and the other doesn't, searching the bugful tree will terminate much more quickly. Of course, it is always possible that a bug may only exist in the very last branch of a tree, but we found that in general bugs show up early during exploration.
+\end{enumerate}
+
+% TODO: Investigate the tree size that bugs did exist in. Investigate how many buggy branches there were.
+
+In light of these, we recommend several principles to govern an overall strategy to automatically iterate through different sets of decision points in search of a bug.\footnote{
+We now say ``Landslide'' here to refer to a hypothetical test framework to embody these strategies, although of course it would not have to be named that.}
+
+\begin{enumerate}
+	\item {\bf Iterate exploring, starting with smaller decision sets.} To properly test for a bug in a particular test case, Landslide should try as many different decision sets as possible.
+	The first exploration should always be just the default decision set, because that tends to complete quickly, and can help identify new decision points (Section~\ref{sec:future-analysis}).
+	When Landslide has multiple decision sets as candidates for the next exploration, it should prefer to explore ones that result in shorter average branch depth.
+	In this way, Landslide will tend to find bugs with the minimal decision set needed to expose them, in accordance with observation 1 above.
+	\item {\bf Run multiple explorations at once.}
+	As per observation 2, if Landslide has two decision sets that result in roughly equal average branch depth, it cannot know in advance whether either one will find a bug and/or finish significantly faster than the other. As such, it should try to run both explorations in parallel, wait for either one to finish, and continue iterating as appropriate even if the other one has not finished.
+	\item {\bf De-prioritise longer-lasting test configurations.}
+	With finite resources for parallelisation, Landslide should attempt to load-balance whatever searches are running in parallel according to each one's likelihood of finding a bug.
+	In light of observation 3, if a particular search is running abnormally long for its average branch depth (the POBBLES vanish/vanish (b) bug with the ``unlock'' tree is a prime example), Landslide could judge that it is less likely to end soon with a positive result, and prioritise searches with other decision sets.
+\end{enumerate}
 
 % vim: ft=tex
