@@ -125,10 +125,11 @@ pobbles vanish_vanish data race
 ----> unlock:
 [LANDSLIDE]     Total choice points 382071, total backtracks 112706
 [LANDSLIDE]     Average instrs/choice 1524, average branch depth 16
-133m0.115
-141m24.126
-133m11.187
-133m50.825s
+7980.115
+8664.126
+7991.187
+8030.825
+7623.473
 ----> both:
 
 ---

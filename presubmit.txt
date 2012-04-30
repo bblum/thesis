@@ -1,3 +1,6 @@
 Pre-submit checks:
-	Ensure sane placement of alg:inflight
-convert most bullet points to paragraphs with bold lead sentences
+	Ensure sane placement of alg:inflight and other figures
+	convert most bullet points to paragraphs with bold lead sentences
+	ensure sane text wrapping everywhere; respect of margins.
+	comb through for erroneous use of "choice" (as in "choice point") and other inconsistent terminology
+	check for inconsistent spelling (-ize vs -ise)
