@@ -34,11 +34,11 @@
 		\hline\hline
 		POBBLES vanish/vanish (a) & \nobugnum{31.8}{0.6} & \bugnum{57.1}{1.7} & $\infty$ & $\infty$ & \\
 		\hline
-		POBBLES vanish/vanish (b) & \nobugnum{32}{0.4} & \bugnum{51.5}{2.1} & \nobugnum{8057.9}{336.9} & $\infty$ & \\
+		POBBLES vanish/vanish (b) & \nobugnum{32.0}{0.4} & \bugnum{51.5}{2.1} & \nobugnum{8057.9}{336.9} & $\infty$ & \\
 		\hline
 		POBBLES wait/wait & \bugnum{23.3}{0.7} & \bugnum{27.9}{0.8} & \bugnum{27.9}{2.1} & \bugnum{41.6}{1.4} & \\
 		\hline
-		POBBLES thread\_fork/vanish & \bugnum{22}{0.6} & \bugnum{37.4}{1.1} & \bugnum{27.6}{0.5} & \bugnum{72}{2.6} & \\
+		POBBLES thread\_fork/vanish & \bugnum{22.0}{0.6} & \bugnum{37.4}{1.1} & \bugnum{27.6}{0.5} & \bugnum{72.0}{2.6} & \\
 		\hline
 		LudicrOS vanish/vanish & \nobugnum{13.2}{0.2} & \bugnum{13.7}{0.7} & \bugnum{34.6}{1.1} & \bugnum{17.1}{0.3} & \\
 		\hline
@@ -66,6 +66,7 @@ Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using
 	\item All trials were also run with Landslide configured to pay attention to only the relevant system calls (using \texttt{within\_function}; Section~\ref{sec:using-decision}).
 
 	We believe it is reasonable to test for these bugs in this way - using the minimal set of system calls to be paid attention to as necessary to find the bug - because it follows the recommended workflow of using Landslide, which is to start with what the user judges to be the ``smallest relevant set'' of decision points. The configuration using \texttt{within\_function} was as follows.
+	{\small
 	\begin{itemize}
 		\item POBBLES vanish/vanish(a): \texttt{within\_function vanish}
 		\item POBBLES vanish/vanish(b): \texttt{within\_function vanish}
@@ -74,6 +75,7 @@ Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using
 		\item LudicrOS vanish/vanish: \texttt{within\_function vanish}
 		\item LudicrOS yield/vanish: \texttt{within\_function yield} and \texttt{within\_function vanish}
 	\end{itemize}
+	}
 \end{itemize}
 
 %%%%
