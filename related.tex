@@ -12,7 +12,7 @@ Landslide distinguishes itself from related systematic testing tools in its fiel
 
 \subsection{Systematic Exploration}
 
-Dynamic Partial Order Reduction (DPOR) \cite{dpor,sdpor,dbug-retreat,distributed-dpor} is an algorithm for reducing the state space of ``all possible thread interleavings'' by identifying independent thread transitions and pruning the redundant state spaces that result from interleaving those transitions. Landslide makes generous use of the DPOR algorithm.
+Dynamic Partial Order Reduction (DPOR)\hspace{0in}\cite{dpor,sdpor,dbug-retreat,distributed-dpor} is an algorithm for reducing the state space of ``all possible thread interleavings'' by identifying independent thread transitions and pruning the redundant state spaces that result from interleaving those transitions. Landslide makes generous use of the DPOR algorithm.
 
 dBug\cite{dbug-ssv} is a systematic testing tool which makes use of DPOR. It focuses on multithreaded userspace applications, identifying when to preempt by interposing on \texttt{libc} library calls. It uses a message-passing model for inter-thread communication and for establishing a happens-before relationship between transitions. The dBug project heavily inspired the development of Landslide.
 
@@ -37,7 +37,7 @@ In Section~\ref{sec:future-linux} we discuss the potential applicability of syst
 
 \subsubsection{New Kernel Architectures}
 
-On the far end of the ``formality and correctness'' spectrum for kernel verification lies seL4\cite{sel4}, a microkernel fully designed and specified in Haskell and translated directly into C. Because Haskell is type-safe (strict constraints on legal program behaviour that make it easier to reason about) and pure (most code cannot have stateful side-effects), the developers of seL4 were able to formally prove the specification's correctness and the implementation's adherence to the spec.
+On the far end of the ``formality and correctness'' spectrum for kernel verification lies seL4\hspace{0in}\cite{sel4}, a microkernel fully designed and specified in Haskell and translated directly into C. Because Haskell is type-safe (strict constraints on legal program behaviour that make it easier to reason about) and pure (most code cannot have stateful side-effects), the developers of seL4 were able to formally prove the specification's correctness and the implementation's adherence to the spec.
 Developing kernel code in languages and environments that enable formal complete verification, even in small components of a larger codebase, represents an admirable step towards writing correct code to begin with and avoiding many classes of bugs entirely.
 
 Barrelfish\cite{barrelfish} is another novel kernel architecture designed with concurrency in mind. The barrelfish kernel relies exclusively on message-passing for inter-thread communication, for increased performance on massively multi-core systems. While not a verification project, the strict limitation of inter-thread communication makes the concurrent properties of the system easy to reason about in ways that modern production kernels do not provide.
@@ -53,7 +53,7 @@ Symbolic execution\cite{symbolic,symbolic-disks} is a technique for testing prog
 Tools such as KLEE\cite{klee} and projects such as Automated Exploit Generation\cite{aeg} demonstrate the effectiveness of symbolic execution in dynamic verification.
 We discuss the possibility of integrating symbolic execution into a testing framework such as Landslide in Section~\ref{sec:future-new}.
 
-Deterministic multithreading is a different technique for dealing with concurrency bugs which focuses on avoiding them when running production code rather than trying to expose them during testing. Deterministic multithreading tools, such as Kendo\cite{kendo}, Peregrine\cite{peregrine}, and DThreads\cite{dthreads}, analyse the execution of a concurrent system and compute particular scheduling patterns which will not produce buggy behaviours, and force the system to follow those schedules while maintaining good parallel performance.
+Deterministic multithreading is a different technique for dealing with concurrency bugs which focuses on avoiding them when running production code rather than trying to expose them during testing. Deterministic multithreading tools, such as Kendo\cite{kendo}, Peregrine\hspace{0in}\cite{peregrine}, and DThreads\cite{dthreads}, analyse the execution of a concurrent system and compute particular scheduling patterns which will not produce buggy behaviours, and force the system to follow those schedules while maintaining good parallel performance.
 Deterministic multithreading serves a different purpose than systematic exploration; it aims to ensure that code already running in the real world does not encounter concurrency bugs even though they might exist, while our goals are instead to uncover such bugs and help fix them beforehand.
 
 % vim: ft=tex

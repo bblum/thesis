@@ -24,7 +24,7 @@ In this work, we focus specifically on nondeterministic scheduling driven by tim
 
 \subsection{Ad-hoc Thread Communication}
 
-Inter-thread communication can be much more ad-hoc in kernel-space than in user-space\cite{datacollider}, and a systematic testing framework needs to be aware of all the kernel's synchronisation idioms.
+Inter-thread communication can be much more ad-hoc in kernel-space than in user-space\hspace{0in}\cite{datacollider}, and a systematic testing framework needs to be aware of all the kernel's synchronisation idioms.
 
 \begin{itemize}
 	\item {\bf Avoiding reliance on message-passing.} Some systems for user-space systematic testing require that threads communicate only by message-passing, to better track the concurrency relationships between thread transitions\cite{dbug-ssv}. With few exceptions\cite{barrelfish}, kernels do not rely on message-passing as a primary communication mechanism, and to be compatible with the kernels of today, a testing framework must allow for less idealised state-sharing (Section~\ref{sec:components-memory}).
