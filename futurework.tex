@@ -23,6 +23,13 @@ Landslide is also missing functionality to automatically identify decision point
 % 410 stuff
 % TODO
 
+\begin{figure*}[h]
+	\begin{center}
+	\includegraphics[width=0.75\textwidth]{wont-modify-vail.jpg}
+	\end{center}
+	\caption{Ex-members of 15-410 course staff lament the difficulty involved in teaching students concurrency debugging skills.}
+\end{figure*}
+
 15-410 currently teaches students concurrency debugging skills ``the hard way'': by immersing them in environments where races will arise, and letting them find debugging tactics to use in conjunction with conventional stress testing on their own.
 
 \subsection{New Techniques}
@@ -52,7 +59,7 @@ Next is the question of when during the testing process these decision points sh
 	\item Another possibility would be to identify decision points along the way, analysing each branch of the tree after executing it, to generate the decision points for that very branch, and thence use them to find which branch to explore next.
 \end{itemize}
 
-With either method, in order to mitigate exponential explosion of tree size, it would probably be best to only allow the decision point set size to increase by one each iteration. An iteration framework could explore using different combinations/subsets of such, using a workqueue model, and using heuristics to identify which decision points are most useful and should be used first.
+In Section~\ref{sec:discussion-strategies}, we recommend a strategy for an iteration framework to effectively explore trees with multiple different sets of decision points, while not knowing ahead of time which, if any, may contain a bug.
 
 \subsubsection{Parallelism}
 
