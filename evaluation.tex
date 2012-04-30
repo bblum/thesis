@@ -49,7 +49,7 @@
 	\end{center}
 	\caption{Comparison of time taken (in seconds) to find bugs using Landslide and using conventional stress testing.
 	Landslide's times are given for several different sets of decision points: the default set, consisting only of voluntary reschedules (Section~\ref{sec:components-arbiter}); and using custom decision points in addition to the default set: calls to \texttt{mutex\_lock}, calls to \texttt{mutex\_unlock}, and both.
-	All numbers represent the average from 5 trials, with the standard deviation given in parentheses. ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: after how long? what timeout?
+	All numbers represent the average from 5 trials, with the standard deviations given in parentheses. ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: after how long? what timeout?
 	}
 	\label{fig:numbers}
 \end{figure*}
@@ -155,7 +155,8 @@ We make several observations about the experimental results from Section~\ref{se
 		In general, for two sets of decision points that both find the same bug, the one that results in shorter {\em branches} will result in fewer {\em backtracks} needed to expose the bug, and hence less overall time.
 	\item {\bf Different decision points are differently likely to expose different bugs.} We see that even though the ``lock'' and ``unlock'' trees tended to be about the same size, they were each sometimes better than the other at finding bugs. The ``lock'' tree did better on the vanish/vanish bugs and the yield/vanish bug, while the ``unlock'' tree did better on the wait/wait bug and the thread\_fork/vanish bug.\footnote{
 	The latter two bugs needed no more than the default set to uncover at all, but we claim this still demonstrates the principle in general.}
-	\item {\bf Finding a bug is fast, if it exists.} As especially exhibited in the POBBLES vanish/vanish (b) case, if two sets of decision points generate trees of approximately equal size, but one tree contains a bug and the other doesn't, searching the bugful tree will terminate much more quickly. Of course, it is always possible that a bug may only exist in the very last branch of a tree, but we found that in general bugs show up early during exploration.
+	\item {\bf Finding a bug is fast, if it exists.} As especially exhibited in the POBBLES vanish/vanish (b) case, if two sets of decision points generate trees of approximately equal size, but one tree contains a bug and the other doesn't, then searching the bugful tree will likely terminate much more quickly.
+	Of course, it is always possible that a bug may only exist in the very last branch of a tree, but we found that in general bugs show up early during exploration.
 \end{enumerate}
 
 % TODO: Investigate the tree size that bugs did exist in. Investigate how many buggy branches there were.
