@@ -35,7 +35,7 @@ In Section~\ref{sec:future-new} we discuss how systematic execution might be enh
 Carburizer\cite{carburizer} is an effort to make imperfect kernel-level drivers work more reliably in the presence of faulty peripheral devices. They use static analysis to identify variables ``tainted'' by device input and unsafe uses thereof. Carburizer is able to transform such badly-written code to be more robust.
 Kernel device drivers are a ripe breeding ground for bugs, because it is frequently written by less careful developers, and the sheer volume of code makes it difficult to rigorously review.
 Due to the interrupt-driven nature of many drivers, they are also prone to concurrency bugs, which Carburizer does not address.
-In Section~\ref{sec:future-linux} we discuss the potential applicability of systematic exploration to concurrency bugs in kernel device drivers.
+In Section~\ref{sec:future-drivers} we discuss the potential applicability of systematic exploration to concurrency bugs in kernel device drivers.
 
 \subsection{New Kernel Architectures}
 
@@ -48,6 +48,7 @@ We believe Barrelfish, like seL4, is a step in the right direction for bringing 
 However, in both cases, such steps have little bearing on code that exists in the world today, and it is also important to find ways to verify such sloppily-written code that already has bugs, which is the focus of our work.
 
 \section{Orthogonal Testing Techniques}
+\label{sec:related-orthogonal}
 
 Research in dynamic verification has also seen other techniques apart from systematic exploration.
 

@@ -5,6 +5,7 @@
 
 As Landslide is an experimental foray into the world of systematic exploration in kernel-space, and a detailed study of systematic exploration in general, it has opened up many avenues for potential future improvements.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Interface Improvements}
 \label{sec:future-interface}
 
@@ -13,15 +14,18 @@ Landslide is also missing functionality to automatically identify decision point
 
 \begin{itemize}
 	\item Landslide currently does not support ability to replay a particular choice sequence. If the user finds a bug, and wants to re-execute the interleaving that led to it, they have no choice but to re-explore the tree.
-	\item Landslide currently does not support being interrupted, so the user can use the Simics debug prompt arbitrarily and resume Landslide when ready. This is because the current implementation uses a wrapper script around the Simics prompt which Landslide communicates with to perform backtracking; it would be difficult to redesign, but could also be worked around.
+	\item Although Simics can pause execution and give the user a debug prompt, Landslide currently does not support being interrupted during exploration.
+		This is because the current implementation uses a wrapper script around the Simics prompt which Landslide communicates with to perform backtracking.
+		Though it would be difficult to redesign, it would be good to work around, to enable the user to interrupt, use the Simics debug prompt arbitrarily, and resume Landslide when ready.
 	\item Landslide could print its decision traces in a better format. The current format is basically a ``raw data dump''. Raw text is probably the wrong interface; a graphical/tabular format with distinct columns for the execution of each different thread would be easier to understand.
+	\item Landslide could attempt to detect when something has gone wrong that is not its fault (such as incorrect instrumentation, or the kernel violating some of its requirements), and print a useful error message rather than behaving mysteriously.
 \end{itemize}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Education}
 \label{sec:future-education}
-% teaching tool, study thinking patterns
-% 410 stuff
-% TODO
+
+\subsection{Landslide as a Teaching Tool}
 
 \begin{figure*}[h]
 	\begin{center}
@@ -30,8 +34,17 @@ Landslide is also missing functionality to automatically identify decision point
 	\caption{Ex-members of Operating Systems course staff lament the difficulty involved in teaching students concurrency debugging skills.}
 \end{figure*}
 
-15-410 currently teaches students concurrency debugging skills ``the hard way'': by immersing them in environments where races will arise, and letting them find debugging tactics to use in conjunction with conventional stress testing on their own.
+15-410 currently teaches students concurrency debugging skills ``the hard way'': by immersing them in environments where races will arise, and letting them find debugging tactics on their own to use in conjunction with conventional stress testing.
 
+We believe that a tool such as Landslide could change the way students learn such skills for the better, beyond simply increasing their likelihood of finding bugs during testing. The decision tree is a much more structured way of expressing a test case's concurrent behaviour than the way 15-410 currently teaches, which is ``think hard until you figure out the buggy interleaving''. Having students use Landslide, even to a small extent, might encourage them to think in this more structured way.
+
+\subsection{Landslide as a Grading Tool}
+
+The 15-410 grading infrastructure currently uses a program called Fritz, which is a stress testing wrapper around a suite of test programs. Some of these tests are Landslide-friendly (Section~\ref{sec:using-landslide-friendly-tests}), and some are themselves stress tests. The 15-410 course staff also hand-grade every kernel, in part because Fritz is known for only catching race conditions at random and infrequently.
+
+While far from being able to replace talented humans for grading, we believe that, after some improvement, Landslide could augment or replace Fritz as a tool for automatically finding several common patterns of concurrency errors that students have (especially races involving exiting threads, which we have shown Landslide is effective at finding).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{New Techniques}
 \label{sec:future-new}
 
@@ -56,32 +69,75 @@ Landslide could make use of data race detection techniques\cite{datacollider}, h
 Landslide's tree exploration is implemented sequentially. However, because DPOR's approach of tagging which sibling branches should be explored next generally follows a workqueue-based depth-first-search structure, it should not be too difficult to parallelise. Prior work exists for this technique\cite{distributed-dpor}, so it would not be a research contribution, but would substantially improve Landslide's effectiveness regardless.
 
 \subsection{Symbolic Execution}
-% TODO
-symbolic execution\cite{klee,dawson}
+
+In Section~\ref{sec:related-orthogonal}, we mentioned the technique of symbolic execution for dynamic verification. We believe that symbolic execution could be combined with systematic explorationto help find races in certain obscure code paths that systematic exploration by itself might not even execute.
+
+One interesting phenomenon that would occur from combining symbolic execution and systematic exploration would be a new notion of decision points. Symbolic execution involves its own state space exploration, in which control flow branch points correspond to decision points; hence, to combine it with systematic exploration would create a hybrid state space in which a ``decision point'' could be a place where either different threads could preempt each other or multiple control flow paths could be taken\cite{dawson}.
 
 \subsection{Trace Minimisation}
-% TODO
-% \ref{sec:future-backwards}
+\label{sec:future-trace-minimisation}
 
-\section{Production Kernels}
+Also in Section~\ref{sec:related-orthogonal}, we mentioned related research that attempts to {\em minimise} the set of conditions that are known to be associated with a bug\cite{dag-mining}.
+In the context of Landslide, this corresponds to how easy the decision trace is to understand. Even if Landslide finds a bug and prints the list of thread switches that were made, it may still be very difficult for the user to understand if the list includes many unnecessary switches that were completely unrelated to the bug.
+
+Landslide could continue to be of use even after it has found a bug, by attempting to find a ``minimal decision trace''. It could search different subsets of the known-buggy trace in an attempt to find shorter traces which result in the same bug.
+In this way, it would be able to print decision traces that automatically give the programmer much more insight into the true nature of each race condition.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Linux}
 \label{sec:future-linux}
-% linux, device drivers
-% open-coded sync dances: UGH (ad-hoc yield loops would make landslide get stuck)
-% embedded microcontroller operating systems, simulated
 
+The Linux kernel is a logical next kernel architecture to target with Landslide.
 
+One advantage of targetting Linux is that a testing framework will be able to make assumptions about the scheduler design, in ways that Landslide was not able to (Section~\ref{sec:challenges-design}), because the kernel instrumentation will not need to be repeatedly re-implemented (as it did for each 15-410 student kernel that we tested).
+
+However, Linux is a much more complicated kernel architecture than Pebbles, and we would face several challenges.
+
+\subsection{Multi-Processor Support}
+
+Landslide's way of modelling concurrency as a tree of thread interleavings directly expresses the way concurrency arises on uniprocessor systems. On multiprocessor systems such as Linux, however, there is ``true concurrency'': different threads may be running at the same time on different processors, rather than just interleaved. Hence, race conditions that were previously impossible in a uniprocessor environment may be commonplace in SMP.
+
+In order to support multiprocessor kernels, Landslide would need to refine its representation of the decision tree to express the potential for threads interleaving either on the same processor or on different processors. As a starting point, we note that on SMP, at each decision point, in addition to choosing any of $N$ threads to run, we must choose from among $M$ processors for it to run on.
+
+\subsection{Performance}
+
+Linux is much bigger than a Pebbles kernel (in terms of amount of code that runs during startup, during scheduling, etc), and hence would be much more expensive to test in a simulated environment. We suspect that in order to practically test Linux, we would need to implement systematic exploration in a virtualised environment, which we discuss more in Section~\ref{sec:future-perf}.
+
+\subsection{Complicated Synchronisation Patterns}
+
+Many components of Linux contain ad-hoc synchronisation which would be difficult to reason about. One common pattern is attempting some operation, checking later if it got interfered with, and rewinding and trying again if so. A straightforward approach to building a decision tree representing this might result in an infinitely deep branch: if the thread that gets interfered with keeps getting selected for scheduling, it would never make any progress. The testing tool would need to recognise these cases, and understand the invisible dependency on ``somebody else'' running first.
+
+\subsection{Device Drivers}
+\label{sec:future-drivers}
+
+There is much more device driver code in Linux than there is for its core components, and the device driver code also does not undergo as rigorous code review. Because of this, device drivers are much more prone to concurrency errors than the core components, and hence a systematic exploration framework for Linux should focus on testing them.
+
+However, the concurrency model of device drivers is much more complicated than the simple timer-based scheduling model we used in this work. In addition to timer-driven preemptions, code may also be interleaved as caused by device interrupts and input. Like support for SMP, being able to systematically test for device driver races will also require a more sophisticated representation of the decision tree.
+
+In addition to controlling timer interrupts, a systematic testing tool would also need to control device interrupts and device input, both of which are also nondeterministic inputs to the kernel. Furthermore, it would need to recognise common components of device drivers to properly cause relevant scheduling patterns, such as the ``top half'' and ``bottom half'' of interrupt handlers and dedicated device driver threads.
+
+These components would all be candidates for being scheduled at a decision point, although it more complicated still than simply choosing from among several threads to run. For example, the bottom half of an interrupt handler would depend on a top half having already executed, and interrupt handlers would run on the same stack as other thread rather than on their own stack.
+
+% FIXME
+%\subsection{Other Kernel Environments}
+
+%Some other production kernels would also make good targets for systematic exploration.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Performance}
 \label{sec:future-perf}
+% TODO
 % VM instead of simics
 % - how to interpose? single-step, or unmap heap, and/or annotate (for hooks) with hypercalls
 % - how to time travel? instead of time travel, snapshot once and replay
 
-\section{Long-Running Testing Approaches}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Long-Running Test Shaping}
 \label{sec:future-shaping}
-% TODO more
-\footnote{Garth coined the name ``shaping'' to refer to this testing approach.}
-\subsection{Iterating Decision Sets}
 
+Another area to investigate is that of systems which could be tested continuously. Instead of the goal of finishing exploring a test case without finding a bug, a long-running testing approach would focus on ``shaping'' the test configuration to more and more refined configurations in hopes of finding a bug eventually.
+
+%\subsection{Iterating Decision Sets}
 In Section~\ref{sec:discussion-strategies}, we recommend an iteration strategy to effectively explore trees with multiple different sets of decision points, while not knowing ahead of time which, if any, may contain a bug.
 This strategy would give rise to a test framework which could explore multiple different types and granularities of interleavings at once, heuristically judge which are more likely to uncover bugs, and prioritise resource allocation and search direction accordingly.
 
@@ -90,15 +146,22 @@ One possibility would be to begin exploration with a small set of decision point
 Another possibility would be to identify decision points along the way, analysing each branch of the tree after executing it, to generate the decision points for that very branch, and thence use them to find which branch to explore next.
 It remains to be seen which approach would be more effective.
 
+% FIXME
+%In Section~\ref{Sec:future-nadim}, we discuss an interesting property of certain decision trees, and suggest a heuristic
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Theoretical Oddities}
 \label{sec:future-theory}
-% theory things to study:
+
+During our in-depth case studies, we noticed two interesting properties about certain decision trees. We believe these warrant further theoretical study, to better understand the nature of these decision trees. This may in turn give rise to heuristics for making systematic testing more effective.
 
 % TODO: make visualisations for both of these
 \subsection{``Backwards'' Exploration}
 \label{sec:future-backwards}
 % - study the implications of backwards vs forward exploration
+% \ref{sec:future-trace-minimisation}
 % - ICB as in chess
 
 \subsection{Exploration Tree Structure}
+\label{sec:future-nadim}
 % - nadim's backtrack depth
