@@ -1,0 +1,56 @@
+intro
+design
+	components
+		kernel instrumentation
+		scheduling
+		test lifecycle
+		stack tracing
+	por
+		happens-before
+		memory independence
+			always-accessed locations
+		coarse granularity
+using landslide
+	(all)
+eval
+	user study
+		time breakdown
+		landslide victories
+	case study
+		stress tests
+		backwards explorations
+	summary of bugs found
+future work
+	interface improvements
+	education
+	new techniques
+		symbolic execution
+		trace minimisation
+	production
+	performance
+	shaping
+	oddities
+conclusion
+acknowledgements
+
+diagrams
+	terminology
+		sys ex terms
+			- case study bug
+			- picture of decision tree; corresponding concurrency table
+	design
+		components
+			- anatomy diagram
+		debugging feedback
+			- picture of choice trace
+			- corresponding concurrency table
+	eval
+		user study
+			- pie chart of time spent?
+		case study
+			- perf
+			- tree anatomy charts
+			- backwards vs forwards perf
+	future work
+		theoretical oddities
+			- picture of shapes of trees
