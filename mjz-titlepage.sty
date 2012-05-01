@@ -1,0 +1,184 @@
+%% titlepage parameters
+%%   required: title, author, date, Year, trnumber, committee
+%%   optional: permission, support, disclaimer, keywords
+
+\def\title#1{\gdef\@title{#1}}
+\def\author#1{\gdef\@author{#1}}
+\def\date#1{\gdef\@date{#1}}
+\def\Year#1{\gdef\@Year{#1}}
+\def\trnumber#1{\gdef\@trnumber{#1}}
+\def\committee#1{\gdef\@committee{#1}}
+\def\permission#1{\gdef\@permission{#1}}
+\def\support#1{\gdef\@support{#1}}
+\def\disclaimer#1{\gdef\@disclaimer{#1}}
+\def\keywords#1{\gdef\@keywords{#1}}
+
+\newsavebox{\@copyrightbox}
+%\def\@copyrightnotice#1{{\small\sbox{\@copyrightbox}{#1}\ifthenelse{\lengthtest{\wd\@copyrightbox > \linewidth}}{\noindent #1 \par}{\begin{center} #1 \end{center}}}}
+\def\@copyrightnotice#1{{\small\sbox{\@copyrightbox}{#1}\ifdim\wd\@copyrightbox>\linewidth \noindent #1 \par\else\begin{center} #1 \end{center}\fi}}
+
+\def\maketitle{
+\thispagestyle{empty}
+
+% calculate skip needed to ensure that title appears in the cut-out
+\newlength{\@cutoutvskip}
+\setlength{\@cutoutvskip}{2.1875 true in}       % position of cut-out
+\addtolength{\@cutoutvskip}{-1 true in}         % printer margin
+\addtolength{\@cutoutvskip}{-\topmargin}
+\addtolength{\@cutoutvskip}{-\headheight}
+\addtolength{\@cutoutvskip}{-\headsep}
+
+%% Centered things on the title page must be *physically* centered
+%% on the page, so they line up with the cut-out window. So we hardwire
+%% the margins for the title page so that left margin = right margin:
+%%         left margin = (8.5in - textwidth)/2
+\oddsidemargin=8.5in
+\advance\oddsidemargin by -\textwidth
+\oddsidemargin=.5\oddsidemargin
+\advance\oddsidemargin by -1in % TeX sux
+%
+\let\footnoterule\relax
+\vglue\@cutoutvskip
+\begin{center}
+%\begin{minipage}[t]{4.875in}   % must be a minipage due to \thanks
+\begin{minipage}[t]{4.8in}      % hackery
+\vbox to 2in{
+\vfill
+\begin{center}
+{\Large \strut \@title\par}
+\vfill
+{\large \begin{tabular}[t]{c}\@author\end{tabular}\par}
+\vfill
+{\sc \@trnumber\par}
+\smallskip
+{\large \@date\par}
+\end{center}
+\vfill}
+\end{minipage}
+\end{center}
+
+\vskip 3em
+
+\begin{center}
+    School of Computer Science \\
+    Carnegie Mellon University \\
+    Pittsburgh, PA 15213
+\end{center}
+
+\begin{center}
+    {\bf Thesis Committee:} \\
+    \@committee
+\end{center}
+
+\begin{center}
+    \em
+    Submitted in partial fulfillment of the requirements \\
+    for the degree of Master of Science.
+\end{center}
+
+\vfill
+
+\@ifundefined{@permission}{\@copyrightnotice{Copyright \copyright\ \@Year\ \@author}}{\@copyrightnotice{Copyright \copyright\ \@Year\ \@author. \@permission}}
+
+\@ifundefined{@support}{}{{\medskip\footnotesize\noindent\@support\par}}
+
+\@ifundefined{@disclaimer}{}{{\medskip\footnotesize\noindent\@disclaimer\par}}
+
+% keywords go at bottom of page ii (the rear of the titlepage)
+% if keywords are omitted, this page is blank
+
+\clearpage
+\thispagestyle{empty}
+\@ifundefined{@keywords}{}{\vspace*{\fill} {\bf Keywords:} \@keywords}
+\cleardoublepage
+}
+
+\newenvironment{dedication}
+  {\cleardoublepage \thispagestyle{empty} \vspace*{\stretch{1}} \begin{center} \em}
+  {\end{center} \vspace*{\stretch{3}} \clearpage}
+
+%\newenvironment{psuedochapter}[1]
+%  {\if@openright\cleardoublepage\else\clearpage\fi
+%   \thispagestyle{empty}
+%   \vspace*{\stretch{1}} 
+%   \begin{center} \large {\bf #1} \end{center}
+%   \addcontentsline{toc}{chapter}{\numberline{}#1}
+%   \begin{quotation}}
+%  {\end{quotation} 
+%   \vspace*{\stretch{3}}
+%   \clearpage}
+\newenvironment{psuedochapter}[1]
+  {\cleardoublepage
+   \thispagestyle{empty}
+   \vspace*{\stretch{1}} 
+   \begin{center} \large {\bf #1} \end{center}
+%   \addcontentsline{toc}{chapter}{\numberline{}#1} --not yet mjz 
+   \begin{quotation}}
+  {\end{quotation} 
+   \vspace*{\stretch{3}}
+   \clearpage}
+
+\newenvironment{abstract}
+	{\begin{psuedochapter}{Abstract}}{\end{psuedochapter}}
+
+\newenvironment{acknowledgments}
+	{\begin{psuedochapter}{Acknowledgments}}{\end{psuedochapter}}
+
+
+%%%
+%%%
+%%%
+\endinput
+
+%%%
+%%%
+%%%
+% redefine thebibliography and theindex to add to table of contents
+\renewenvironment{thebibliography}[1]
+       {\chapter*{\bibname
+        \@mkboth{\uppercase{\bibname}}{\uppercase{\bibname}}}%
+\addcontentsline{toc}{chapter}{\numberline{}\bibname}
+      \list{\@biblabel{\arabic{enumiv}}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \if@openbib
+              \advance\leftmargin\bibindent
+              \itemindent -\bibindent
+              \listparindent \itemindent
+              \parsep \z@
+            \fi
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\arabic{enumiv}}}%
+      \if@openbib
+        \renewcommand\newblock{\par}
+      \else
+        \renewcommand\newblock{\hskip .11em \@plus.33em \@minus.07em}%
+      \fi
+      \sloppy\clubpenalty4000\widowpenalty4000%
+      \sfcode`\.=\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+                 
+\renewenvironment{theindex}
+               {\if@twocolumn
+                  \@restonecolfalse
+                \else
+                  \@restonecoltrue
+                \fi
+                \columnseprule \z@
+                \columnsep 35\p@
+                \twocolumn[\@makeschapterhead{\indexname}]%
+                \@mkboth{\uppercase{\indexname}}%
+                        {\uppercase{\indexname}}%
+\addcontentsline{toc}{chapter}{\numberline{}\indexname}
+                \thispagestyle{plain}\parindent\z@
+                \parskip\z@ \@plus .3\p@\relax
+                \let\item\@idxitem}
+               {\if@restonecol\onecolumn\else\clearpage\fi}
+
+
+
+
