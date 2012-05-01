@@ -2,13 +2,6 @@
 \chapter{Challenges of Kernel-space}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{figure*}[h]
-	\begin{center}
-	\includegraphics[width=0.75\textwidth]{vip1066720.jpg}
-	\end{center}
-	\caption{{\em !`Cuidado! !`Las llamas son muy peligrosas!}\cite{de0u}}
-\end{figure*}
-
 \section{Causes of Concurrency}
 
 In user-space, a systematic exploration tool may use the underlying kernel to help control the concurrent behaviour of the system\cite{dbug-ssv}. Simple system call invocations can cause a particular thread to run at a particular time, or to block while another thread runs first.
@@ -21,6 +14,13 @@ In kernel-space, however, the scheduler is part of the system being tested, and 
 \end{itemize}
 
 In this work, we focus specifically on nondeterministic scheduling driven by timer interrupts. In future work (Section~\ref{sec:future-linux}), we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
+
+\begin{figure*}[t]
+	\begin{center}
+	\includegraphics[width=0.75\textwidth]{vip1066720.jpg}
+	\end{center}
+	\caption{{\em !`Cuidado! !`Las llamas son muy peligrosas!}\cite{de0u}}
+\end{figure*}
 
 \section{Ad-hoc Thread Communication}
 
