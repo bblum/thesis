@@ -1,13 +1,91 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 410 - talk about current state/methods (for students and for TAS)
-% test suite presented
-% process of instrumenting
+
+We evaluated Landslide in two ways.
+First, we conducted a user study with present students of 15-410, to understand the eases and difficulties of Landslide's user interface process, to understand how to polish it into a useful debugging tool.
+Second, we did a case study of six bugs in two kernels, investigating them in-depth to understand how systematic testing might best be harnessed to find bugs without in advance knowing the decision set necessary to expose them.
 
 \subsection{User Experience}
 
+To evaluate the experience of non-expert users working with Landslide, we met with 5 groups of students in 15-410 (9 students in total) during the final week of the kernel project, and had them use Landslide with their own kernels.
+
+In order to garner student interest in Landslide, the author gave a lecture in 15-410 on systematic exploration in general and on Landslide specifically during the second-to-last week of the kernel project. The lecture slides are available at \url{http://www.cs.cmu.edu/~410-s12/lectures/L30_Landslide.pdf}.\footnote{
+Also available at \url{http://bblum.net/landslide-lecture.pdf} and at \url{http://www.contrib.andrew.cmu.edu/~bblum/landslide-lecture.pdf}.}
+
+We wished to measure which phases of using Landslide are most time-consuming, so we asked students approximately every half-hour to record the amount of time they had spent doing each phase:
+
+\begin{enumerate}
+	\item Annotating their kernel (Section~\ref{sec:using-annotations}).
+	\item Implementing instrumentation within Landslide (Section~\ref{sec:using-student-c}).
+	\item Fixing problems encountered getting Landslide to run, such as editing their kernel to meet Landslide's requirements and debugging incorrect instrumentation.
+	\item Customising Landslide's search parameters such as decision points (Section~\ref{sec:using-customise}).
+	\item Analysing the output from bugs that Landslide found (Section~\ref{sec:using-interpreting}).
+\end{enumerate}
+
+We also wanted descriptive feedback, to evaluate what specific parts of the process of using Landslide need improved. We asked students to write brief remarks whenever they recorded amounts of time spent, and also after they were finished to answer the following questions.
+
+\begin{itemize}
+	\item Were you able to get Landslide to work with your kernel (i.e., run through a minimal exploration tree completely)? If so, how long did it take, from sitting down to getting it to work? If not, did your kernel do something that was incompatible with Landslide, or were you unable to get the instrumentation right for some other reason?
+	\item Did you find bugs while using Landslide, that you imagine would have been very hard to find otherwise? Did Landslide's output help you understand what caused them?
+	\item Were you able to get Landslide to say ``you survived!'' with custom decision points? Did you think the set of decision points you used for this provide a strong guarantee about the absence of races?
+	\item Describe your experience configuring the set of decision points. What was intuitive, obvious to do? Did you feel stuck at any point, not knowing where to go next?
+	\item Was there anything you wanted to make Landslide do that it didn't support?
+\end{itemize}
+
+Finally, we briefly studied each bug that the students found, which we describe below.
+
+\subsubsection{Time Breakdown}
+
 % TODO
+
+\subsubsection{Descriptive Feedback}
+\label{sec:eval-feedback}
+
+The students provided specific remarks which fell into two categories: issues with Landslide's user interface, and needing to change something in one's kernel to make it work with Landslide.
+
+The following feedback pertains to the user interface.
+For Landslide to be appealing as a debugging tool, we should improve the user interface (or the infrastructure, in some cases) to address these issues.
+
+\begin{itemize}
+	\item {\bf Difficulty of debugging incorrect instrumentation.} When the user-provided annotations/instrumentation are incorrect, Landslide's error messages are difficult to understand, and often don't point to the real problem.
+	\item {\bf Interpreting debugging output.} Some students reported the decision trace representation could be better. One student reported the output was easy to follow by ``tracing the life of the buggy thread'', which is an insight into the learning process we should capitalise on.
+	\item {\bf Ease of configuring decision sets.} Most students seemed to find the process of adding more decision points intuitive. One reported, ``quick and effective at detecting basic bugs/races.''
+	\item {\bf General feature wishlist.} The following features, of varying difficulty to implement, would have improved user experience overall.
+		\begin{itemize}
+			\item Being able to continue exploration after interrupting Simics to work with the debug prompt, instead of having to start over.
+			\item Support for multiprocessor kernels.
+			\item Cutting down overall simulation time.
+		\end{itemize}
+\end{itemize}
+
+Students also described compatibility issues they faced between their kernels and Landslide, which required them to make certain changes to their kernels.
+% FIXME: Say how we will address these issues?
+
+\begin{itemize}
+	\item {\bf Special-case context switch behaviour.} One kernel had a special context-switcher for the case when a thread was vanishing, which had to be special-cased in the instrumentation.
+		Some kernels had different context switch designs for just-forked threads (as discussed in the ``Thread Creation'' bullet in Section~\ref{sec:challenges-design}), and Landslide's code had to be modified during the study to support different designs.
+	\item {\bf Unexpected compiler optimisations.} Listing scheduler functions in \texttt{config.landslide} could be confusing if the compiler inlined them.
+	\item {\bf Driver thread interfering with test lifecycle tracking.} One kernel (Pathos, the 15-410 reference kernel) had to be modified to ensure the keyboard thread ran once before the test started, which was not mandated by the kernel design. (If the thread didn't run, it would conflict with the population-tracking described in Section~\ref{sec:components-test}, and Landslide would not be able to detect when the test was over.)
+	\item {\bf Kernel behaviour requirement violations.}
+		The majority of groups needed to change their scheduling around the idle thread in order to meet the requirement that the kernel never run idle when progress could otherwise be made (Sections~\ref{sec:challenges-design} and \ref{sec:using-requirements-sched}).
+		Also, one kernel had to have its custom memory allocator disabled, because Landslide only supports LMM, the provided allocator.
+\end{itemize}
+
+Additionally, two enterprising users\footnote{The second case here was an ex-TA, not a student.} found ways to avoid implementing the functions in \texttt{student.c} (Section~\ref{sec:using-student-c}). It is worth considering integrating these approaches into the recommended approach to eliminate the need for \texttt{student.c} entirely.
+\begin{itemize}
+	\item One studnt bypassed the \texttt{kern\_ready\_for\_timer\_interrupt} annotation by disabling their scheduler's preemption-disabling mechanism and replacing it with explicit disabling of interrupts, thereby making every timer interrupt cause a context switch.
+	\item One ex-TA was able to avoid the \texttt{kern\_current\_extra\_runnable} annotation by using the \texttt{on\_rq} and \texttt{off\_rq} annotations (Section~\ref{sec:using-annotations}) to express the ``abstract set of runnable threads'' (which included the currently-running thread, even though the runqueue didn't) instead of the literal runqueue itself.
+\end{itemize}
+
+\subsubsection{Landslide Victories}
+% TODO
+% nadim - wait bug (claimed easy to spot with code review)
+% margaret/echo - ds assertion bug
+% margaret/echo - vanish c_s return idle bug; helped find when idle was running when shouldn't be
+% tpassaro found double free, but deterministic
+% apodolsk found no bugs because no hello world
+% pjumde's group found no bugs..?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Bug Case Studies}
@@ -15,7 +93,11 @@
 
 \subsubsection{Bug Descriptions}
 
-% TODO: intro text goes here
+While building Landslide, we worked primarily with two kernels: one, the kernel the author wrote as a student in 15-410 (Fall 2008), and another, a kernel the author graded as a TA for 15-410 (Fall 2011). We refer to the first kernel as ``POBBLES'' and the second as ``LudicrOS''.
+
+With Landslide, we found 4 bugs in POBBLES and 2 bugs in LudicrOS, and investigated them more deeply.
+
+% TODO
 
 \subsubsection{Numbers}
 \label{sec:eval-numbers}
@@ -49,14 +131,16 @@
 	\end{center}
 	\caption{Comparison of time taken (in seconds) to find bugs using Landslide and using conventional stress testing.
 	Landslide's times are given for several different sets of decision points: the default set, consisting only of voluntary reschedules (Section~\ref{sec:components-arbiter}); and using custom decision points in addition to the default set: calls to \texttt{mutex\_lock}, calls to \texttt{mutex\_unlock}, and both.
-	All numbers represent the average from 5 trials, with the standard deviations given in parentheses. ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: after how long? what timeout?
+	All numbers represent the average from 5 trials, with the standard deviations given in parentheses. ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: what timeout for stress testing?
 	}
 	\label{fig:numbers}
 \end{figure*}
 
 % TODO: have a graph
 
-Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using Landslide, configured with several different sets of decision points, and using conventional stress testing. The experimental set-up is as follows:
+Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using Landslide, configured with several different sets of decision points, and using conventional stress testing.
+
+The Landslide experimental set-up is as follows:
 
 \begin{itemize}
 	\item All Landslide trial times include the Simics start-up and kernel boot-up time (time between issuing the command and the test case beginning to run), roughly 15 seconds for POBBLES and 10 seconds for LudicrOS.
@@ -77,6 +161,14 @@ Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using
 	\end{itemize}
 	}
 \end{itemize}
+
+%The stress test experimental set-up is as follows:
+%
+%\begin{itemize}
+%	\item A wrapper program runs 1024 simultaneous copies of the same test program that Landslide uses. Whenever one of them exits, the wrapper starts a new one.
+%	\item All stress test trials are on on the ``412 lab crashbox'' (3.2 GHz Pentium D).
+%	\item The kernel and test case are configured to not print any messages during the test
+%\end{itemize}
 
 %%%%
 
