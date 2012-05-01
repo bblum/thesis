@@ -34,6 +34,7 @@ Inter-thread communication can be much more ad-hoc in kernel-space than in user-
 \end{itemize}
 
 \subsection{Kernel Design}
+\label{sec:challenges-design}
 
 One challenge particular to the context of 15-410 is that the kernels Landslide must be able to test may all use slightly different implementations to achieve the same goals. For Landslide to be generally applicable to (almost) any kernel that students may submit, it must make some abstract assumptions about the kernel design which are compatible with many different implementations.
 

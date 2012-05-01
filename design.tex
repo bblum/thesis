@@ -59,6 +59,9 @@ At each decision point, Landslide creates a new node in the decision tree. It st
 % Talk about the population tricks.
 % Talk about how we want idle/shell's wait() to be part of the test.
 
+\subsubsection{Stack Tracing}
+% talk about special stack tracer; perhaps put algorithm in appendix
+
 \subsection{On Simics}
 
 Landslide is implemented as a module for Simics\cite{simics}. When running the kernel, Simics calls into Landslide once every time the kernel executes an instruction or performs a memory read or write. Landslide uses this information, in conjunction with the user-provided instrumentation, to maintain its internal representations of the state of the guest kernel.

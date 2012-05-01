@@ -4,3 +4,4 @@ Pre-submit checks:
 	ensure sane text wrapping everywhere; respect of margins.
 	comb through for erroneous use of "choice" (as in "choice point") and other inconsistent terminology
 	check for inconsistent spelling (-ize vs -ise)
+	acknowledge student names from "landslide acknowledgements" email thread
