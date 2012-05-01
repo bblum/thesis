@@ -1,4 +1,4 @@
-\documentclass[12pt]{article}
+\documentclass[12pt]{book}
 %\usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,subfig,wrapfig,appendix,hyperref,mdwlist,wasysym}
 \usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,appendix,hyperref,mdwlist,wasysym}
 \usepackage{upgreek}
@@ -12,14 +12,14 @@
 \usepackage[usenames,dvipsnames]{xcolor}
 %\usepackage{epsfig}
 \usepackage[bottom]{footmisc}
+\usepackage{mjz-titlepage}
 \usepackage{setspace}
 \setstretch{1.05}
 
 \begin{document}
 %\captionsetup{width=.75\textwidth,font=small,labelfont=bf}
-\title{\bf Landslide: \\ Systematic Dynamic Race Detection in Kernel-space}
-\author{Benjamin Blum\thanks{Carnegie Mellon University; MS student; \texttt{bblum@andrew.cmu.edu}.} \and Garth Gibson \thanks{Carnegie Mellon University; Professor; \texttt{garth@cs.cmu.edu}.}}
-\maketitle
+
+\input{titlepage}
 
 \newcommand\true{\;\textit{true}}
 \newcommand\false{\;\textit{false}}
@@ -46,8 +46,10 @@ We discuss the techniques Landslide uses to address the general challenges of ke
 We show that our techniques make systematic testing in kernel-space feasible, and that Landslide is a useful tool for doing so in the context of 15-410.
 \end{abstract}
 
+\input{acknowledgements}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Introduction}
+\chapter{Introduction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Race conditions are notoriously difficult to debug.
@@ -93,26 +95,10 @@ We show that Landslide is an effective tool for both purposes.
 \input{evaluation}
 \input{futurework}
 \input{conclusion}
-\input{acknowledgements}
 
 % TODO: read presubmit.txt and check everything off
 
 \bibliography{citations}{}
 \bibliographystyle{alpha}
-
-\appendix
-\section{Note}
-
-There is a wondrous fractal nature to all aspects of the universe.
-
-At the time of writing this document, my life is focused on this one project. There is a vast amount of thought in this thesis, and many more rich worlds lie hidden in each of the open avenues for future work.
-
-Yet it pales in comparison to the scope of a Ph.D. thesis, and even more so next to all the details of a person's entire life.
-After I finish this project, it will become but a fond memory, a mere building block in a city of even grander things.
-
-Human nature is beautiful in its ability to exist at any level of perspective, to hold in awareness a story of any size, and to zoom in and out at will to see how multiple parts fit together.
-Tearing ourselves up over minutiae is part of the fun, and contemplating overarching directions beyond our ability to change is also part of the fun.
-
-Our true home, though, lies somewhere in between; a place of potential, and of peace. May we always remember to return to it.
 
 \end{document}

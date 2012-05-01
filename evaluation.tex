@@ -1,12 +1,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Evaluation}
+\chapter{Evaluation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 We evaluated Landslide in two ways.
 First, we conducted a user study with present students of 15-410, to understand the eases and difficulties of Landslide's user interface process, to understand how to polish it into a useful debugging tool.
 Second, we did a case study of six bugs in two kernels, investigating them in-depth to understand how systematic testing might best be harnessed to find bugs without in advance knowing the decision set necessary to expose them.
 
-\subsection{User Experience}
+\section{User Experience}
 
 To evaluate the experience of non-expert users working with Landslide, we met with 5 groups of students in 15-410 (9 students in total) during the final week of the kernel project, and had them use Landslide with their own kernels.
 In order to garner student interest in Landslide, the author gave a lecture in 15-410 on systematic exploration in general and on Landslide specifically during the second-to-last week of the kernel project.\footnote{
@@ -34,11 +34,11 @@ We also wanted descriptive feedback, to evaluate what specific parts of the proc
 
 Finally, we briefly studied each bug that the students found, which we describe below.
 
-\subsubsection{Time Breakdown}
+\subsection{Time Breakdown}
 
 % TODO
 
-\subsubsection{Descriptive Feedback}
+\subsection{Descriptive Feedback}
 \label{sec:eval-feedback}
 
 The students provided specific remarks which fell into two categories: issues with Landslide's user interface, and needing to change something in one's kernel to make it work with Landslide.
@@ -77,7 +77,7 @@ Additionally, two enterprising users\footnote{The second case here was an ex-TA,
 	\item One ex-TA was able to avoid the \texttt{kern\_current\_extra\_runnable} annotation by using the \texttt{on\_rq} and \texttt{off\_rq} annotations (Section~\ref{sec:using-annotations}) to express the ``abstract set of runnable threads'' (which included the currently-running thread, even though the runqueue didn't) instead of the literal runqueue itself.
 \end{itemize}
 
-\subsubsection{Landslide Victories}
+\subsection{Landslide Victories}
 % TODO
 % nadim - wait bug (claimed easy to spot with code review)
 % margaret/echo - ds assertion bug
@@ -87,10 +87,10 @@ Additionally, two enterprising users\footnote{The second case here was an ex-TA,
 % pjumde's group found no bugs..?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Bug Case Studies}
+\section{Bug Case Studies}
 \label{sec:eval-casestudy}
 
-\subsubsection{Bug Descriptions}
+\subsection{Bug Descriptions}
 
 While building Landslide, we worked primarily with two kernels: one, the kernel the author wrote as a student in 15-410 (Fall 2008), and another, a kernel the author graded as a TA for 15-410 (Fall 2011). We refer to the first kernel as ``POBBLES'' and the second as ``LudicrOS''.
 
@@ -98,7 +98,7 @@ With Landslide, we found 4 bugs in POBBLES and 2 bugs in LudicrOS, and investiga
 
 % TODO
 
-\subsubsection{Numbers}
+\subsection{Numbers}
 \label{sec:eval-numbers}
 
 \newcommand\bugnum[2]{\textcolor{BrickRed}{{\bf #1} {\scriptsize \em (#2)}}}
@@ -216,14 +216,14 @@ Table~\ref{fig:trees} presents more detailed information about the decision tree
 For each set of decision points on each bug, we give the total number of decision points in the tree, the total number of backtracks (i.e. branches explored before the bug was found), and the average branch depth (i.e. number of decision points in each branch).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Summary of Bugs Found}
+\section{Summary of Bugs Found}
 
 % TODO
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Discussion}
+\section{Discussion}
 
-\subsubsection{Invariants}
+\subsection{Invariants}
 
 While evaluating Landslide on these bugs, we determined two invariants that should hold for multiple explorations on the same test case.
 
@@ -235,7 +235,7 @@ While evaluating Landslide on these bugs, we determined two invariants that shou
 In short, even though Landslide may give false negatives from using imperfect sets of decision points, the exploration itself must be sound (i.e. not missing any bugs that exist in the resulting tree).\footnote{
 When running LudicrOS yield/vanish with decision points on \texttt{mutex\_unlock} but not on \texttt{mutex\_lock}, we found that the ordering invariant failed - ``backwards'' exploration found no bug, while ``forwards'' exploration did. We attribute this to a bug in Landslide itself, and present the results for the backwards exploration as usual, in which Landslide found no bug.}
 
-\subsubsection{Recommended Testing Strategies}
+\subsection{Recommended Testing Strategies}
 \label{sec:discussion-strategies}
 
 We make several observations about the experimental results from Section~\ref{sec:eval-numbers}.

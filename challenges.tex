@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Challenges of Kernel-space}
+\chapter{Challenges of Kernel-space}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{figure*}[h]
@@ -9,7 +9,7 @@
 	\caption{{\em !`Cuidado! !`Las llamas son muy peligrosas!}\cite{de0u}}
 \end{figure*}
 
-\subsection{Causes of Concurrency}
+\section{Causes of Concurrency}
 
 In user-space, a systematic exploration tool may use the underlying kernel to help control the concurrent behaviour of the system\cite{dbug-ssv}. Simple system call invocations can cause a particular thread to run at a particular time, or to block while another thread runs first.
 
@@ -22,7 +22,7 @@ In kernel-space, however, the scheduler is part of the system being tested, and 
 
 In this work, we focus specifically on nondeterministic scheduling driven by timer interrupts. In future work (Section~\ref{sec:future-linux}), we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
 
-\subsection{Ad-hoc Thread Communication}
+\section{Ad-hoc Thread Communication}
 
 Inter-thread communication can be much more ad-hoc in kernel-space than in user-space\hspace{0in}\cite{datacollider}, and a systematic testing framework needs to be aware of all the kernel's synchronisation idioms.
 
@@ -33,7 +33,7 @@ Inter-thread communication can be much more ad-hoc in kernel-space than in user-
 	\item {\bf Use of virtual memory.} The kernel's complete control over the machine's virtual memory system means a system for tracking memory accesses must be aware of changing virtual memory mappings (Section~\ref{sec:using-requirements}).
 \end{itemize}
 
-\subsection{Kernel Design}
+\section{Kernel Design}
 \label{sec:challenges-design}
 
 One challenge particular to the context of 15-410 is that the kernels Landslide must be able to test may all use slightly different implementations to achieve the same goals. For Landslide to be generally applicable to (almost) any kernel that students may submit, it must make some abstract assumptions about the kernel design which are compatible with many different implementations.

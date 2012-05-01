@@ -1,20 +1,20 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Design and Implementation}
+\chapter{Design and Implementation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Components of Landslide}
+\section{Components of Landslide}
 
 Here we briefly describe each major component of Landslide. % TODO: provide a figure landslide.png
 
-\subsubsection{Kernel Instrumentation}
+\subsection{Kernel Instrumentation}
 \label{sec:components-kern}
 % TODO
 
-\subsubsection{Scheduling}
+\subsection{Scheduling}
 \label{sec:components-sched}
 
 % TODO
 
-\subsubsection{Memory Tracking}
+\subsection{Memory Tracking}
 \label{sec:components-memory}
 
 Landslide maintains a mirror image of the guest kernel's dynamic allocation heap, so it can know at any point what memory ranges are allocated and what ranges used to be allocated but now are freed. This set is updated each time the guest kernel calls \texttt{malloc} or \texttt{free}.
@@ -25,7 +25,7 @@ Landslide ignores shared memory accesses from the kernel's dynamic allocator its
 
 When Landslide reaches a decision point, this accumulated set is copied in the decision tree (Section~\ref{sec:components-explore}), and reset to empty before continuing execution.
 
-\subsubsection{The Arbiter}
+\subsection{The Arbiter}
 \label{sec:components-arbiter}
 
 The arbiter identifies points during execution should count as decision points. The selection is mainly controlled by the user, during the annotation and configuration process, but it also automatically identifies {\em voluntary reschedules}, which comprise the ``minimal necessary set'' of decision points.
@@ -46,29 +46,29 @@ It is always necessary to identify a decision point during a voluntary reschedul
 
 In future work (Section~\ref{sec:future-new}), the arbiter may also automatically identify extra decision points, such as on conflicting shared memory accesses.
 
-\subsubsection{The Explorer}
+\subsection{The Explorer}
 \label{sec:components-explore}
 
 The explorer maintains a representation of the current branch of the decision tree. It is responsible for checkpointing at each decision point, deciding at the end of the test which branch of the tree to execute next (i.e., selecting which decision point should have been decided differently), and backtracking to appropriate points in the test's execution.
 
 At each decision point, Landslide creates a new node in the decision tree. It stores the TID of the thread that was chosen, the state of the scheduler (what threads are on the runqueue), the state of the heap and the accumulated set of shared memory accesses, and a stack trace of the thread that was running.
 
-\subsubsection{Test Lifecycle}
+\subsection{Test Lifecycle}
 \label{sec:components-test}
 % Talk about the test lifecycle - pre-readline; pre-test-start; etc.
 % Talk about the population tricks.
 % Talk about how we want idle/shell's wait() to be part of the test.
 
-\subsubsection{Stack Tracing}
+\subsection{Stack Tracing}
 % talk about special stack tracer; perhaps put algorithm in appendix
 
-\subsection{On Simics}
+\section{On Simics}
 
 Landslide is implemented as a module for Simics\cite{simics}. When running the kernel, Simics calls into Landslide once every time the kernel executes an instruction or performs a memory read or write. Landslide uses this information, in conjunction with the user-provided instrumentation, to maintain its internal representations of the state of the guest kernel.
 
 Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the execution state at decision points during the test.
 
-\subsection{Thread Scheduling}
+\section{Thread Scheduling}
 
 \begin{algorithm*}[t!]
 	\footnotesize
@@ -111,7 +111,7 @@ Landslide's scheduling technique, called the {\em schedule in-flight}, involves 
 
 One alternative simpler method would be, when triggering a timer interrupt, to tell the guest kernel explicitly which thread should be run next. This would require the kernel programmer to write extra code in their timer handler and/or context switcher. We chose the ``in-flight'' approach instead, because it does not require additional kernel modifications.
 
-\subsection{Identifying Bugs}
+\section{Identifying Bugs}
 \label{sec:techniques-bugs}
 
 % A healthy dose of snark.
@@ -120,7 +120,7 @@ In order to identify when the guest kernel has done something incorrect, Landsli
 
 Landslide's bug reporting is false-negative oriented, meaning that it does not check for suspicious behaviours that might indicate underlying bugs, so it may report that it found no bugs even if some existed. If Landslide does report a bug, though, it is almost certainly correct (except in cases as listed below).
 
-\subsubsection{Accurate Bug-Detection Conditions}
+\subsection{Accurate Bug-Detection Conditions}
 
 \begin{enumerate}
 	\item {\bf Kernel panic bugs.} If the kernel invoked \texttt{panic}, it detected its own bug, and Landslide need do nothing but report it.
@@ -128,7 +128,7 @@ Landslide's bug reporting is false-negative oriented, meaning that it does not c
 	\item {\bf Deadlock bugs.} If Landslide finds no runnable threads on the runqueue\footnote{Except for idle, if it exists.}, or if it detects a cycle of threads blocked on each other, it declares that the kernel has deadlocked.
 \suspend{enumerate}
 
-\subsubsection{Uncertain Bug-Detection Conditions}
+\subsection{Uncertain Bug-Detection Conditions}
 
 \resume{enumerate}
 	\item {\bf Memory leak bugs.} Landslide records the state of the heap before the test case begins, and compares it to the state of the heap after the test case ends. If memory allocated during the test was not freed, Landslide assumes that it was leaked.
@@ -140,15 +140,15 @@ Landslide's bug reporting is false-negative oriented, meaning that it does not c
 	\end{itemize}
 \end{enumerate}
 
-\subsection{Partial-Order Reduction}
+\section{Partial-Order Reduction}
 \label{sec:techniques-por}
 
 We make use of Dynamic Partial-Order Reduction, the state-space pruning algorithm presented in \cite{dpor}. Here we discuss the specifics of implementing DPOR in our environment.
 
-\subsubsection{Happens-Before Relation}
+\subsection{Happens-Before Relation}
 % TODO
 
-\subsubsection{Memory Independence Relation}
+\subsection{Memory Independence Relation}
 \label{sec:por-independence}
 The independence relation expresses which transitions do not read-and-write or write-and-write to the same shared memory addresses.
 
@@ -160,10 +160,10 @@ The independence relation expresses which transitions do not read-and-write or w
 		Hence, even if the second thread that freed the block never accesses the particular address that the first thread used, the second thread's \texttt{free} still logically conflicts with the first thread's access. Landslide addresses this by treating every call to \texttt{free} as a {\em write} access to every address within the freed block when computing shared memory conflicts.
 \end{itemize}
 
-\subsubsection{Coarse Granularity}
+\subsection{Coarse Granularity}
 % talk about the all-ancestors vs induction thing TODO
 
-\subsection{Debugging Feedback}
+\section{Debugging Feedback}
 
 % TODO: provide a figure
 

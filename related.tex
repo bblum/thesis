@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Related Work}
+\chapter{Related Work}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % FIXME: Give another pass for dad's feedback - another sentence about each thing saying what landslide does better
@@ -12,7 +12,7 @@ Here we discuss related work in all three categories.
 
 Landslide distinguishes itself from related systematic testing tools in its field as more of an exploratory work, presenting techniques to make systematic testing compatible with kernel-level code; less so as a development on the core testing approach itself.
 
-\subsection{Systematic Exploration}
+\section{Systematic Exploration}
 
 Dynamic Partial Order Reduction (DPOR)\hspace{0in}\cite{dpor,sdpor,dbug-retreat,distributed-dpor} is an algorithm for reducing the state space of ``all possible thread interleavings'' by identifying independent thread transitions and pruning the redundant state spaces that result from interleaving those transitions. Landslide makes generous use of the DPOR algorithm.
 
@@ -26,7 +26,7 @@ RacePRO\cite{racepro} is a tool based in kernel-space which uncovers ``process r
 
 Finally, DeMeter\cite{demeter} is a more recent tool for systematic exploration that introduces Dynamic Interface Reduction as a strategy for constraining the size of the state space, which means targetting the testing technique on only one component of the program at a time. Landslide makes use of the same general concept in its user interface (Section~\ref{sec:using}) - it provides the user with options to constrain decision point identification to certain subsets of the kernel.
 
-\subsection{Kernel-level Verification}
+\section{Kernel-level Verification}
 
 DataCollider\cite{datacollider} is a tool for detecting data races, a special kind of concurrency bug which involve concurrent unprotected accesses to memory that can interleave unsafely on a fine-grained level.
 DataCollider uses memory access sampling, and remains largely agnostic of synchronisation operations, to find data races in the Windows 7 kernel.
@@ -37,7 +37,7 @@ Kernel device drivers are a ripe breeding ground for bugs, because it is frequen
 Due to the interrupt-driven nature of many drivers, they are also prone to concurrency bugs, which Carburizer does not address.
 In Section~\ref{sec:future-linux} we discuss the potential applicability of systematic exploration to concurrency bugs in kernel device drivers.
 
-\subsubsection{New Kernel Architectures}
+\subsection{New Kernel Architectures}
 
 On the far end of the ``formality and correctness'' spectrum for kernel verification lies seL4\hspace{0in}\cite{sel4}, a microkernel fully designed and specified in Haskell and translated directly into C. Because Haskell is type-safe (strict constraints on legal program behaviour that make it easier to reason about) and pure (most code cannot have stateful side-effects), the developers of seL4 were able to formally prove the specification's correctness and the implementation's adherence to the spec.
 Developing kernel code in languages and environments that enable formal complete verification, even in small components of a larger codebase, represents an admirable step towards writing correct code to begin with and avoiding many classes of bugs entirely.
@@ -47,7 +47,7 @@ We believe Barrelfish, like seL4, is a step in the right direction for bringing 
 
 However, in both cases, such steps have little bearing on code that exists in the world today, and it is also important to find ways to verify such sloppily-written code that already has bugs, which is the focus of our work.
 
-\subsection{Orthogonal Testing Techniques}
+\section{Orthogonal Testing Techniques}
 
 Research in dynamic verification has also seen other techniques apart from systematic exploration.
 
