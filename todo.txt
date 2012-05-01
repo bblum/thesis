@@ -21,14 +21,7 @@ eval
 		backwards explorations
 	summary of bugs found
 future work
-	interface improvements
-	education
-	new techniques
-		symbolic execution
-		trace minimisation
-	production
 	performance
-	shaping
 	oddities
 conclusion
 acknowledgements
