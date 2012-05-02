@@ -3,13 +3,7 @@ design
 	components
 		kernel instrumentation
 		scheduling
-		test lifecycle
-		stack tracing
-	por
-		happens-before
-		memory independence
-			always-accessed locations
-		coarse granularity
+		stack tracing?
 using landslide
 	(all)
 eval

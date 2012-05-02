@@ -1,9 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Design and Implementation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Components of Landslide}
 
-Here we briefly describe each major component of Landslide. % TODO: provide a figure landslide.png
+In this section we briefly describe each major component of Landslide. % TODO: provide a figure landslide.png
 
 \subsection{Kernel Instrumentation}
 \label{sec:components-kern}
@@ -55,12 +56,41 @@ At each decision point, Landslide creates a new node in the decision tree. It st
 
 \subsection{Test Lifecycle}
 \label{sec:components-test}
-% Talk about the test lifecycle - pre-readline; pre-test-start; etc.
-% Talk about the population tricks.
-% Talk about how we want idle/shell's wait() to be part of the test.
+
+\begin{figure}[t]
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{teststate.png}
+	\end{center}
+	\caption{The test lifecycle state machine.}
+	\label{fig:teststate}
+\end{figure}
+Landslide knows the state of the test case through a simple state machine, which is updated with information about the number of threads currently on the system, the number of threads on the runqueue, the state of the idle thread (if it exists), and whether or not the shell is waiting for keyboard input.
+
+The state machine relies on certain information provided by the scheduler (Section~\ref{sec:components-sched}).
+
+\begin{itemize}
+	\item {\bf Is the shell waiting for keyboard input?} In general, the shell only waits for keyboard input when the kernel is ready for the user (or Landslide) to cause a test to run, or after the test has finished and a new one could be run.
+		However, the shell may sometimes be waiting for keyboard input while other threads have some work to do (for example, the init process could have yet to reap a reparented child process), and this work may be affected by race conditions during the test, so we need to include it in the test as well. For these cases an additional check is needed.
+	\item {\bf Is the kernel idling?} This indicates whether any work is left to be done during bootup or during teardown.\footnote{
+		If the kernel is idling and the shell is not waiting for keyboard input, it is likely that the test case has deadlocked.}
+	\item {\bf How many threads currently exist on the system?} This indicates whether the test has begun running.
+\end{itemize}
+
+The states in the test lifecycle, and the rules for transitioning between them are as follows.
+
+\begin{enumerate}
+	\item {\bf Bootup.} Initial state. When the kernel is idling and the shell is waiting for keyboard input, advance state.
+	\item {\bf Keyboard input.} Record the current thread count (the ``start population''). Generate keystrokes to cause the desired test case to run.
+		When the current thread count is greater than the start population, advance state.
+	\item {\bf Test running.} Begin constructing the decision tree here (since it is pointless to backtrack to before the test begins). When the current thread count equals the start population, advance state.
+	\item {\bf Test cleanup.} The test processes have exited, but some housekeeping may yet remain. When the the kernel is idling and the shell is waiting for keyboard input, advance state.
+	\item {\bf Test ended.} Invoke the explorer (Section~\ref{sec:components-explore}) to decide whom to rewind, and backtrack.
+\end{enumerate}
+
+Figure~\ref{fig:teststate} depicts the states and transitions visually.
 
 \subsection{Stack Tracing}
-% talk about special stack tracer; perhaps put algorithm in appendix
+% TODO: decide whether to do this or not
 
 \section{On Simics}
 
@@ -70,9 +100,8 @@ Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the e
 
 \section{Thread Scheduling}
 
-\begin{algorithm*}[t!]
+\begin{algorithm}[t]
 	\footnotesize
-	\label{alg:inflight}
 	\begin{algorithmic}
 		\State {\em Global scheduler state.}
 		\State bool schedule\_in\_flight;
@@ -103,7 +132,8 @@ Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the e
 		\EndFunction
 	\end{algorithmic}
 	\caption{The scheduling algorithm. This procedure for updating the scheduler's state is executed once per instruction, with a corresponding value for \texttt{pc} (the program counter) each time. The predicates on \texttt{pc} are part of the kernel instrumentation (Section~\ref{sec:components-kern}).}
-\end{algorithm*}
+	\label{alg:inflight}
+\end{algorithm}
 
 In Landslide's view of the world, timer interrupts are the only source of nondeterminism for the guest kernel, and controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. However, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
 
@@ -143,17 +173,31 @@ Landslide's bug reporting is false-negative oriented, meaning that it does not c
 \section{Partial-Order Reduction}
 \label{sec:techniques-por}
 
-We make use of Dynamic Partial-Order Reduction, the state-space pruning algorithm presented in \cite{dpor}. Here we discuss the specifics of implementing DPOR in our environment.
+We make use of Dynamic Partial-Order Reduction (DPOR), the state-space pruning algorithm presented in \cite{dpor}. DPOR requires two sets to be computed that describe the concurrency relationship between transitions: the happens-before relation, and the memory independence relation. Here we discuss the specifics of implementing these in our environment.
 
 \subsection{Happens-Before Relation}
-% TODO
+
+In order to establish a happens-before relation between transitions, Landslide uses the state of the scheduler runqueues (Section~\ref{sec:components-sched}), which are snapshotted at every decision point.
+
+Unfortunately, a thread's presence or absence on the scheduler runqueue does not necessarily correspond to whether it is {\em runnable} at any point. We identify three exceptions, as foreshadowed in Section~\ref{sec:challenges-design}:
+
+\begin{itemize}
+	\item {\bf Current thread not on runqueue.} If the currently-running thread is not stored on the runqueue, we identify it as runnable anyway (except in the special case of idle, as described below).
+	\item {\bf Idle thread.} Some kernels may have an explicit idle thread and store it on the runqueue, with explicit code to skip over it if other threads are runnable. Hence, if the idle thread is on the runqueue (and/or the current thread), it is only runnable if no other threads are runnable.
+	\item {\bf Yielding mutexes.} In kernels whose mutexes (or other synchronisation idioms) leave threads on the runqueue when they are notionally blocked, such threads are not runnable.
+\end{itemize}
+
+Using this notion of runnability, the happens-before relation is established as follows. Let $X$ be a transition and $Y$ be a subsequent transition in a branch that was just explored, and $T_Y$ be the thread associated with $Y$. We say that $X$ {\em enables} $Y$ if $T_Y$ was not runnable immediately before $X$, but was runnable immediately after. Then, a transition $A$ happens-before a transition $B$ if $A$ is the same thread as $B$, if $A$ enables $B$, or if $A$ happens-before some transition $C$ that enables $B$.
 
 \subsection{Memory Independence Relation}
 \label{sec:por-independence}
-The independence relation expresses which transitions do not read-and-write or write-and-write to the same shared memory addresses.
+The independence relation expresses which transitions do not read-and-write or write-and-write to the same shared memory addresses. Landslide computes this relation using the set of shared memory accesses described in Section~\ref{sec:components-memory}. We encountered two challenges pertaining to memory independence:
 
 \begin{itemize}
-	\item {\bf Always-accessed memory locations.} % talk about ignoring runqueue accesses, etc TODO
+	\item {\bf Always-accessed memory locations.}
+		In kernel-space, every thread switch goes through common scheduler and context-switcher routines. These routines inevitably access scheduler data structures, such as the runqueue.\footnote{
+		Another example is the timer tick counter: this global variable is not necessarily accessed every transition, because voluntary reschedules do not involve timer interrupts, but every involuntary preemption will cause a write to this counter.}
+		If we include such memory accesses in the independence relation, it will result that all transitions conflict, and DPOR won't be able to achieve any reduction. To allow for state space reduction, we sacrifice our ability to find races involving these particular accesses by ignoring them. Currently we require the user to identify these locations as part of the instrumentation process, as described in Section~\ref{sec:using-config-landslide}.
 	\item {\bf Freed memory poisoning.}
 		A use-after-free bug happens whenever one thread accesses an address within an allocated block that another thread previously freed. Even if no other code makes a conflicting access to the same address after the \texttt{free}, the C idiom says that accessing dynamically-allocated memory after it has been freed is illegal no matter what.
 
@@ -161,14 +205,72 @@ The independence relation expresses which transitions do not read-and-write or w
 \end{itemize}
 
 \subsection{Coarse Granularity}
-% talk about the all-ancestors vs induction thing TODO
+
+In \cite{dpor}, the ``Avoiding Stack Traversals'' section discusses a potential optimisation in which only the first ``evil ancestor'' (defined in \cite{dbug-retreat}) of each transition need be considered when identifying which alternate interleavings need to be explored.
+
+\begin{figure}[h]
+	\centering
+	\begin{tabular}{cc}
+	\subfloat[Race-free interleaving.]{
+		\footnotesize
+		\begin{tabular}{l|c|c|c|}
+			\cline{2-4}
+			& {\bf Thread 1} & {\bf Thread 2} & {\bf Thread 3} \\
+			\cline{2-4}
+			$C$ & & & \texttt{x = 42;} \\
+			$B$ & & \texttt{y = 7;} & \\
+			\multirow{2}{*}{$A_1$} & \texttt{if (y == 7)} & & \\
+			& \texttt{assert(x == 42);} & & \\
+			\cline{2-4}
+		\end{tabular}
+	} &
+	\subfloat[Alternate interleaving explored with DPOR.]{
+		\footnotesize
+		\begin{tabular}{l|c|c|c|}
+			\cline{2-4}
+			& {\bf Thread 1} & {\bf Thread 2} & {\bf Thread 3} \\
+			\cline{2-4}
+			$C$ & & & \texttt{x = 42;} \\
+			$A_2$ & \texttt{if (y == 7)} & & \\
+			$B$ & & \texttt{y = 7;} & \\
+			\cline{2-4}
+		\end{tabular}
+	} \\
+	\multicolumn{2}{c}{
+	\subfloat[Buggy interleaving.]{
+		\footnotesize
+		\begin{tabular}{l|c|c|c|}
+			\cline{2-4}
+			& {\bf Thread 1} & {\bf Thread 2} & {\bf Thread 3} \\
+			\cline{2-4}
+			$B$ & & \texttt{y = 7;} & \\
+			\multirow{2}{*}{$A_3$} & \texttt{if (y == 7)} & & \\
+			& \texttt{assert(x == 42);} & & \\
+			$C$ & & & \texttt{x = 42;} \\
+			\cline{2-4}
+		\end{tabular}
+	}}
+	\end{tabular}
+	\caption{This sample code defeats the ``Avoiding Stack Traversals'' optimisation if a decision point is not defined between the two lines of thread 1's code. The first interleaving is explored first; DPOR identifies transition $B$ as the first evil ancestor of $A_1$, and runs the second interleaving next. In the second interleaving, $C$ is no longer a second evil ancestor of $A_2$, so the third interleaving is never explored, and the assertion failure is missed.}
+	\label{fig:evil-ancestors}
+\end{figure}
+
+We found that this optimisation was not sound in our setup, because it relies on the invariant that each transition contains only one inter-thread communication event (in kernel-space, this means a shared memory access). Because Landslide builds its decision trees with coarser granularity, i.e. multiple different shared memory conflicts may happen in each transition, Landslide must consider every evil ancestor of each transition when performing DPOR.
+
+Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of this optimisation if transitions are allowed to have multiple different memory conflicts.
 
 \section{Debugging Feedback}
 
-% TODO: provide a figure
+\begin{figure}[t]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{found_a_bug.png}
+	\end{center}
+	\caption{A sample decision trace (with extraneous text trimmed) that Landslide generated using the \texttt{double\_thread\_fork} test case (Section~\ref{sec:using-tests}).}
+	\label{fig:found_a_bug}
+\end{figure}
 
 In its unique position of control over when the kernel gets preempted and which thread gets scheduled at each context-switch, Landslide has the capability to provide the user with detailed information about a test case's execution.
-When Landslide determines that a bug was found, it immediately aborts exploration of the decision tree, and prints a {\em decision trace} - a comprehensive report of the particular interleaving of thread transitions that caused the bug to appear.
+When Landslide determines that a bug was found, it immediately aborts exploration of the decision tree, and prints a {\em decision trace} - a comprehensive report of the particular interleaving of thread transitions that caused the bug to appear. Figure~\ref{fig:found_a_bug} depicts a simple decision trace for a use-after-free bug.
 
 The decision trace explains each preemption or voluntary reschedule in the interleaving: which thread used to be running, which thread was chosen to run instead, and the stack trace of the former thread at the point from which it was switched away.
 
