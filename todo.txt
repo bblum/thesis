@@ -1,9 +1,8 @@
 intro
 design
 	components
-		kernel instrumentation
-		scheduling
 		stack tracing?
+		fix the evil ancestor section
 using landslide
 	(all)
 eval

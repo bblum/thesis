@@ -4,11 +4,24 @@
 
 \section{Components of Landslide}
 
-In this section we briefly describe each major component of Landslide. % TODO: provide a figure landslide.png
+In this section we briefly describe each major component of Landslide.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.75\textwidth]{landslide.png}
+	\caption{A simple visualisation of Landslide and its components, and how they interact with the guest kernel.}
+	\label{fig:landslide}
+\end{figure}
 
 \subsection{Kernel Instrumentation}
 \label{sec:components-kern}
-% TODO
+
+The kernel instrumentation serves as the glue between what the guest kernel is doing and Landslide's understanding of the guest kernel's state.
+
+\begin{itemize}
+	\item {\bf User-provided instrumentation.} Some parts of the kernel may be written in any number of ways, and hence require the user's assistance for Landslide to understand. The user-provided instrumentation, described in detail in Section~\ref{sec:using-instrumenting}, informs Landslide about thread-related lifecycle and scheduling events and the anatomy of the kernel's scheduler.
+	\item {\bf Automatic instrumentation.} All Pebbles kernels have some things in common, and Landslide's build system is able to automatically instrument certain parts of the kernel. This instrumentation informs Landslide about the dynamic memory allocator, common library functions such as \texttt{panic}, and certain aspects of the kernel's executable format.
+\end{itemize}
 
 \subsection{Scheduling}
 \label{sec:components-sched}
