@@ -13,7 +13,104 @@ In this section we briefly describe each major component of Landslide. % TODO: p
 \subsection{Scheduling}
 \label{sec:components-sched}
 
-% TODO
+The scheduler is responsible for keeping track of which threads exist in the guest kernel: which are runnable at any given time, and when they are created and destroyed.
+
+It maintains a ``mirror image'' of the guest kernel's scheduler state in the form of three queues, a pointer to the currently-running thread, and a pointer to the previously-running thread. The queues are the {\em runqueue}, containing the runnable threads, the {\em sleep queue}, containing threads which become runnable after a certain number of timer ticks\footnote{
+Landslide treats the sleep queue no differently from the runqueue when deciding which threads are runnable. The guest kernel will treat it differently, but since sleeping for a predetermined amount of time is never an appropriate way to solve race conditions, Landslide treats sleeping threads as notionally runnable. This fits directly into its model that runnable threads are ones that can be caused to run with a finite number of timer ticks in succession.},
+and the {\em deschedule queue}, which might not correspond to one data structure in the guest kernel, but contains all other threads that exist on the system, which are not runnable for whatever reason.
+
+The scheduler also tracks which important actions each thread is performing. These actions are {\em forking}, {\em vanishing}, and {\em sleeping}, which are described in the next section, and also {\em in\_timer\_handler} and {\em in\_context\_switch}, which express what type of context switch a given thread may be performing, and are useful for both thread scheduling (Section~\ref{sec:components-inflight}) and detecting voluntary reschedules (Section~\ref{sec:components-arbiter}).\footnote{
+There are also other minor actions: {\em readlining}, used to track test lifecycle (Section~\ref{sec:components-test}), {\em just\_forked}, used for special-case context switch behaviour (Section~\ref{sec:components-arbiter}), and also several flags for tracking mutex lock/unlock events.}
+
+\subsubsection{Thread Lifecycle Tracking}
+
+\begin{algorithm}[t]
+	\footnotesize
+	\begin{algorithmic}
+		\State {\em Per-thread state.}
+		\State bool forking, sleeping, vanishing, in\_timer\_handler;
+		\State int current\_tid;
+		\\
+		\Function{handle\_tell\_landslide\_forking}{}
+			\State forking $\gets$ true;
+		\EndFunction
+		\\
+		\Function{handle\_tell\_landslide\_sleeping}{}
+			\State sleeping $\gets$ true;
+		\EndFunction
+		\\
+		\Function{handle\_tell\_landslide\_vanishing}{}
+			\State vanishing $\gets$ true;
+		\EndFunction
+		\\
+		\Function{handle\_tell\_landslide\_thread\_switch}{int new\_tid}
+			\If {!in\_timer\_handler}
+				\If{sleeping}
+					\State {\sc add\_to\_sleep\_queue}(current\_thread);
+					\State sleeping $\gets$ false;
+				\ElsIf{vanishing}
+					\State {\sc destroy\_thread}(current\_tid);
+					\State vanishing $\gets$ false;
+				\ElsIf{forking}
+					\State {\sc create\_thread}(new\_tid);
+					\State forking $\gets$ false;
+				\EndIf
+			\EndIf
+			\State {\sc update\_current\_thread}(new\_tid);
+		\EndFunction
+	\end{algorithmic}
+	\caption{The scheduler's routines for tracking thread lifecycles. These routines are invoked each time the guest kernel calls one of the \texttt{tell\_landslide} annotations.}
+	\label{alg:tell-landslide}
+\end{algorithm}
+
+The scheduler relies on the guest kernel informing it about certain important events in the thread lifecycle. The guest kernel does this by means of annotations (which are described in Section~\ref{sec:using-annotations}). Algorithm~\ref{alg:tell-landslide} shows how landslide handles these annotations internally.\footnote{
+There are also cases for \texttt{tell\_landslide\_on\_rq} and \texttt{tell\_landslide\_off\_rq}, which we omit for brevity. One important note is that the routine for \texttt{tell\_landslide\_on\_rq} must also check the ``forking'' flag, in case the kernel's \texttt{fork} implementation does not immediately switch to the new thread but instead adds it to the runqueue for later.}
+
+\subsubsection{Thread Scheduling}
+\label{sec:components-inflight}
+
+Finally, the scheduler is responsible for managing involuntary preemptions, causing arbitrary threads to begin running in place of the (as chosen at decision points and the ends of branches by the explorer, Section~\ref{sec:components-explore}).
+
+\begin{algorithm}[t]
+	\footnotesize
+	\begin{algorithmic}
+		\State {\em Global scheduler state.}
+		\State bool schedule\_in\_flight;
+		\State int target\_tid;
+		\\
+		\State {\em Per-thread state. (Updated elsewhere.)}
+		\State bool in\_timer\_handler, in\_context\_switch;
+		\State int current\_tid;
+		\\
+		\Function{scheduler\_update}{int pc}
+			\If{schedule\_in\_flight}
+				\State {\sc assert}(in\_timer\_handler || in\_context\_switch);
+				\If { {\sc kernel\_exiting\_timer}(pc) || (!handling\_timer \&\& {\sc kernel\_exiting\_context\_switch}(pc))}
+					\State {\em The kernel has just finished rescheduling and is about to resume normal thread execution.}
+					\If {current\_tid != target\_tid}
+						\State {\em The kernel switched to an undesirable thread. Keep the schedule operation ``in-flight''.}
+						\State {\sc cause\_timer\_interrupt}();
+					\Else
+						\State {\em The in-flight schedule is ``landing''.}
+						\State schedule\_in\_flight $\gets$ false;
+					\EndIf
+				\EndIf
+			\ElsIf{{\sc need\_to\_preempt}()}
+				\State target\_tid $\gets$ {\sc choose\_new\_thread}();
+				\State schedule\_in\_flight $\gets$ true;
+				\State {\sc cause\_timer\_interrupt}();
+			\EndIf
+		\EndFunction
+	\end{algorithmic}
+	\caption{The scheduling algorithm. This procedure for updating the scheduler's state is executed once per instruction, with a corresponding value for \texttt{pc} (the program counter) each time. The predicates on \texttt{pc} are part of the kernel instrumentation (Section~\ref{sec:components-kern}).}
+	\label{alg:inflight}
+\end{algorithm}
+
+In Landslide's view of the world, timer interrupts are the only source of nondeterminism for the guest kernel, and controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. However, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
+
+Landslide's scheduling technique, called the {\em schedule in-flight}, involves successive triggering of timer interrupts to trigger context switches until the desired thread begins to run. Algorithm~\ref{alg:inflight} shows how Landslide makes this happen.
+
+One alternative simpler method would be, when triggering a timer interrupt, to tell the guest kernel explicitly which thread should be run next. This would require the kernel programmer to write extra code in their timer handler and/or context switcher. We chose the ``in-flight'' approach instead, because it does not require additional kernel modifications.
 
 \subsection{Memory Tracking}
 \label{sec:components-memory}
@@ -98,49 +195,6 @@ Landslide is implemented as a module for Simics\cite{simics}. When running the k
 
 Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the execution state at decision points during the test.
 
-\section{Thread Scheduling}
-
-\begin{algorithm}[t]
-	\footnotesize
-	\begin{algorithmic}
-		\State {\em Global scheduler state.}
-		\State bool schedule\_in\_flight;
-		\State int target\_tid;
-		\\
-		\State {\em Per-thread state. (Updated elsewhere.)}
-		\State bool in\_timer\_handler, in\_context\_switch;
-		\State int current\_tid;
-		\\
-		\Function{scheduler\_update}{int pc}
-			\If{schedule\_in\_flight}
-				\State {\sc assert}(in\_timer\_handler || in\_context\_switch);
-				\If { {\sc kernel\_exiting\_timer}(pc) || (!handling\_timer \&\& {\sc kernel\_exiting\_context\_switch}(pc))}
-					\State {\em The kernel has just finished rescheduling and is about to resume normal thread execution.}
-					\If {current\_tid != target\_tid}
-						\State {\em The kernel switched to an undesirable thread. Keep the schedule operation ``in-flight''.}
-						\State {\sc cause\_timer\_interrupt}();
-					\Else
-						\State {\em The in-flight schedule is ``landing''.}
-						\State schedule\_in\_flight $\gets$ false;
-					\EndIf
-				\EndIf
-			\ElsIf{{\sc need\_to\_preempt}()}
-				\State target\_tid $\gets$ {\sc choose\_new\_thread}();
-				\State schedule\_in\_flight $\gets$ true;
-				\State {\sc cause\_timer\_interrupt}();
-			\EndIf
-		\EndFunction
-	\end{algorithmic}
-	\caption{The scheduling algorithm. This procedure for updating the scheduler's state is executed once per instruction, with a corresponding value for \texttt{pc} (the program counter) each time. The predicates on \texttt{pc} are part of the kernel instrumentation (Section~\ref{sec:components-kern}).}
-	\label{alg:inflight}
-\end{algorithm}
-
-In Landslide's view of the world, timer interrupts are the only source of nondeterminism for the guest kernel, and controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. However, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
-
-Landslide's scheduling technique, called the {\em schedule in-flight}, involves successive triggering of timer interrupts to trigger context switches until the desired thread begins to run. Algorithm~\ref{alg:inflight} shows how Landslide makes this happen.
-
-One alternative simpler method would be, when triggering a timer interrupt, to tell the guest kernel explicitly which thread should be run next. This would require the kernel programmer to write extra code in their timer handler and/or context switcher. We chose the ``in-flight'' approach instead, because it does not require additional kernel modifications.
-
 \section{Identifying Bugs}
 \label{sec:techniques-bugs}
 
@@ -206,6 +260,7 @@ The independence relation expresses which transitions do not read-and-write or w
 
 \subsection{Coarse Granularity}
 
+% TODO: fix this
 In \cite{dpor}, the ``Avoiding Stack Traversals'' section discusses a potential optimisation in which only the first ``evil ancestor'' (defined in \cite{dbug-retreat}) of each transition need be considered when identifying which alternate interleavings need to be explored.
 
 \begin{figure}[h]
