@@ -3,8 +3,6 @@ design
 	components
 		stack tracing?
 		fix the evil ancestor section
-using landslide
-	(all)
 eval
 	user study
 		time breakdown

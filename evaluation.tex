@@ -7,6 +7,7 @@ First, we conducted a user study with present students of 15-410, to understand 
 Second, we did a case study of six bugs in two kernels, investigating them in-depth to understand how systematic testing might best be harnessed to find bugs without in advance knowing the decision set necessary to expose them.
 
 \section{User Experience}
+\label{sec:eval-studence}
 
 To evaluate the experience of non-expert users working with Landslide, we met with 5 groups of students in 15-410 (9 students in total) during the final week of the kernel project, and had them use Landslide with their own kernels.
 In order to garner student interest in Landslide, the author gave a lecture in 15-410 on systematic exploration in general and on Landslide specifically during the second-to-last week of the kernel project.\footnote{
@@ -19,7 +20,7 @@ We wished to measure which phases of using Landslide are most time-consuming, so
 	\item Implementing instrumentation within Landslide (Section~\ref{sec:using-student-c}).
 	\item Fixing problems encountered getting Landslide to run, such as editing their kernel to meet Landslide's requirements and debugging incorrect instrumentation.
 	\item Customising Landslide's search parameters such as decision points (Section~\ref{sec:using-customise}).
-	\item Analysing the output from bugs that Landslide found (Section~\ref{sec:using-interpreting}).
+	\item Analysing the output from bugs that Landslide found.
 \end{enumerate}
 
 We also wanted descriptive feedback, to evaluate what specific parts of the process of using Landslide need improved. We asked students to write brief remarks whenever they recorded amounts of time spent, and also after they were finished to answer the following questions.
