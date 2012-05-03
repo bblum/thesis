@@ -83,6 +83,8 @@ In the context of Landslide, this corresponds to how easy the decision trace is 
 Landslide could continue to be of use even after it has found a bug, by attempting to find a ``minimal decision trace''. It could search different subsets of the known-buggy trace in an attempt to find shorter traces which result in the same bug.
 In this way, it would be able to print decision traces that automatically give the programmer much more insight into the true nature of each race condition.
 
+While studying various bugs found by Landslide, we found that in general, when there were frivolous thread switches in the decision trace, users most benefitted from starting to read the trace at the end; i.e., considering the most recent transition made by each thread. Hence, when building a search algorithm for trace minimisation, it would be good to more heavily prioritise decisions that occurred later in a buggy branch.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Linux}
 \label{sec:future-linux}
