@@ -1,0 +1,73 @@
+\chapter{Code for Provided Test Cases}
+\label{sec:test-code}
+
+The test cases that use the \texttt{thread\_fork} system call are written in assembly, because thread creation can only safely be done from C using a userspace thread library. However, using a userspace thread library for thread creation might forcibly serialise certain operations that would expose kernel bugs only if concurrent, and also necessitates many more system calls, which dramatically increases the size of the decision tree.
+
+\section{\texttt{vanish\_vanish.c}}
+%\lstinputlisting[language=C]{vanish_vanish.c}
+{\small
+\begin{verbatim}
+#include <syscall.h>
+
+void main()
+{
+    fork();
+    vanish(); /* parent and child process exit simultaneously */
+}
+\end{verbatim}
+}
+\section{\texttt{double\_wait.S}}
+%\lstinputlisting[language={[x86masm]Assembler}]{double_wait.S}
+{\small
+\begin{verbatim}
+#include <syscall_int.h>
+
+.global main
+main:
+    int $FORK_INT
+    cmp $0x0,%eax
+    jne parent
+    int $VANISH_INT
+parent:
+    int $THREAD_FORK_INT
+    mov $0x0,%esi
+    int $WAIT_INT        # two parent threads do wait(NULL);
+    int $VANISH_INT
+\end{verbatim}
+}
+\section{\texttt{yield\_vanish.S}}
+%\lstinputlisting[language={[x86masm]Assembler}]{yield_vanish.S}
+{\small
+\begin{verbatim}
+#include <syscall_int.h>
+
+.global main
+main:
+    int $THREAD_FORK_INT
+    cmp $0x0,%eax
+    jne parent
+    int $VANISH_INT
+parent:
+    mov %eax,%esi
+    int $YIELD_INT       # yield(child_tid);
+    int $VANISH_INT
+\end{verbatim}
+}
+\section{\texttt{double\_thread\_fork.S}}
+%\lstinputlisting[language={[x86masm]Assembler}]{double_thread_fork.S}
+{\small
+\begin{verbatim}
+#include <syscall_int.h>
+
+.global main
+main:
+    int $THREAD_FORK_INT # fork 1st thread
+    cmp $0x0,%eax
+    je first_child
+parent:
+    int $VANISH_INT
+first_child:
+    int $THREAD_FORK_INT # fork 2nd thread
+    int $VANISH_INT      # both threads vanish
+\end{verbatim}
+}
