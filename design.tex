@@ -76,7 +76,7 @@ There are also other minor actions: {\em readlining}, used to track test lifecyc
 	\label{alg:tell-landslide}
 \end{algorithm}
 
-The scheduler relies on the guest kernel informing it about certain important events in the thread lifecycle. The guest kernel does this by means of annotations (which are described in Section~\ref{sec:using-annotations}). Algorithm~\ref{alg:tell-landslide} shows how landslide handles these annotations internally.\footnote{
+The scheduler relies on the guest kernel informing it about certain important events in the thread lifecycle. The guest kernel does this by means of annotations (which are described in Section~\ref{sec:using-annotations}). Algorithm~\ref{alg:tell-landslide} shows how Landslide handles these annotations internally.\footnote{
 There are also cases for \texttt{tell\_landslide\_on\_rq} and \texttt{tell\_landslide\_off\_rq}, which we omit for brevity. One important note is that the routine for \texttt{tell\_landslide\_on\_rq} must also check the ``forking'' flag, in case the kernel's \texttt{fork} implementation does not immediately switch to the new thread but instead adds it to the runqueue for later.}
 
 \subsubsection{Thread Scheduling}
@@ -167,7 +167,7 @@ At each decision point, Landslide creates a new node in the decision tree. It st
 \subsection{Test Lifecycle}
 \label{sec:components-test}
 
-\begin{figure}[t]
+\begin{figure}[h]
 	\begin{center}
 		\includegraphics[width=0.8\textwidth]{teststate.png}
 	\end{center}
@@ -199,8 +199,8 @@ The states in the test lifecycle, and the rules for transitioning between them a
 
 Figure~\ref{fig:teststate} depicts the states and transitions visually.
 
-\subsection{Stack Tracing}
-% TODO: decide whether to do this or not
+%\subsection{Stack Tracing}
+% FIXME
 
 \section{On Simics}
 
@@ -273,8 +273,7 @@ The independence relation expresses which transitions do not read-and-write or w
 
 \subsection{Coarse Granularity}
 
-% TODO: fix this
-In \cite{dpor}, the ``Avoiding Stack Traversals'' section discusses a potential optimisation in which only the first ``evil ancestor'' (defined in \cite{dbug-retreat}) of each transition need be considered when identifying which alternate interleavings need to be explored.
+\cite{dpor} and \cite{dbug-retreat} present a partial order reduction algorithm in which only the first ``evil ancestor'' (term defined in \cite{dbug-retreat}) of each transition need be considered when identifying which alternate interleavings need to be explored.
 
 \begin{figure}[h]
 	\centering
@@ -319,13 +318,15 @@ In \cite{dpor}, the ``Avoiding Stack Traversals'' section discusses a potential 
 		\end{tabular}
 	}}
 	\end{tabular}
-	\caption{This sample code defeats the ``Avoiding Stack Traversals'' optimisation if a decision point is not defined between the two lines of thread 1's code. The first interleaving is explored first; DPOR identifies transition $B$ as the first evil ancestor of $A_1$, and runs the second interleaving next. In the second interleaving, $C$ is no longer a second evil ancestor of $A_2$, so the third interleaving is never explored, and the assertion failure is missed.}
+	\caption{This sample code defeats a DPOR implementation that only uses the first evil ancestor if a decision point is not defined between the two lines of thread 1's code. The first interleaving is explored first; DPOR identifies transition $B$ as the first evil ancestor of $A_1$, and runs the second interleaving next. In the second interleaving, $C$ is no longer a second evil ancestor of $A_2$, so the third interleaving is never explored, and the assertion failure is missed.}
 	\label{fig:evil-ancestors}
 \end{figure}
 
-We found that this optimisation was not sound in our setup, because it relies on the invariant that each transition contains only one inter-thread communication event (in kernel-space, this means a shared memory access). Because Landslide builds its decision trees with coarser granularity, i.e. multiple different shared memory conflicts may happen in each transition, Landslide must consider every evil ancestor of each transition when performing DPOR.
+We found that implementing DPOR in this way was not sound in our setup, because it relies on the invariant that each transition contains only one inter-thread communication event (in kernel-space, this means a shared memory access). Because Landslide builds its decision trees with coarser granularity, i.e. multiple different shared memory conflicts may happen in each transition, Landslide must consider every evil ancestor of each transition when performing DPOR.
 
 Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of this optimisation if transitions are allowed to have multiple different memory conflicts.
+
+While DPOR is a proved-sound algorithm in environments that do have this memory access property, even with this every-ancestor change we are not certain if it is sound in our environment. We justify the use of DPOR anyway because Landslide is already prone to false negatives because of coarse interleaving granularity, and leave proving soundness to future work (and to the theoreticians).
 
 \section{Debugging Feedback}
 
