@@ -111,11 +111,12 @@ Two groups found race conditions using Landslide. We describe them here.
 	\item {\bf Accidental return to a vanished thread.} Group 2 had a problem with the scheduler running idle when it was not supposed to; when they fixed it, however, their implementation would return to a thread that had already vanished in the case when no thread was left to run. It is unclear if this race would have been exposed without Landslide. Fixing it required adding an extra condition to the code that checked whether the kernel should idle.
 \end{itemize}
 
-% TODO confirm this
-% We also note that though group 2 stopped using Landslide after getting it to explore the minimal decision tree, if they had configured decision points around \texttt{mutex\_lock} (which was the recommended next step in the process), they would have found a  [...]
-% This bug is similar to the LudicrOS vanish/vanish bug studied in Section~\ref{sec:eval-casestudy}, and would have required a complicated redesign of the \texttt{vanish} implementation.
+We also note that though group 2 stopped using Landslide after getting it to explore the minimal decision tree, if they had configured decision points around \texttt{mutex\_lock} (which was the recommended next step in the process), they would have found a subtle race in the reparenting section of their \texttt{vanish} code using the \texttt{vanish\_vanish} test.\footnote{
+We have not confirmed this with Landslide. We will before submitting this thesis. % TODO
+}
+This bug is similar to the LudicrOS vanish/vanish bug studied in Section~\ref{sec:eval-casestudy}, and would have required a complicated redesign of the \texttt{vanish} implementation.
 
-% We consider this a mixed blessing: Landslide was capable of finding a deep concurrency bug in a student kernel, but the instrumentation process was expensive enough that they were not motivated to continue working. We believe that improving Landslide's interface (Section~\ref{sec:future-interface}) will improve the success rate in such cases.
+We consider this a mixed blessing: Landslide was capable of finding a deep concurrency bug in a student kernel, but the instrumentation process was expensive enough that they were not motivated to continue working. We believe that improving Landslide's interface (Section~\ref{sec:future-interface}) will improve the success rate in such cases.
 
 \subsubsection{Deterministic Bugs Found}
 
