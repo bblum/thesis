@@ -5,13 +5,12 @@ design
 eval
 	user study
 		time breakdown
-		landslide victories last check
 	case study
 		stress tests
 		backwards explorations
 	summary of bugs found
 future work
-	oddities
+	backwards numbers
 conclusion
 acknowledgements
 
