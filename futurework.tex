@@ -101,7 +101,7 @@ In order to support multiprocessor kernels, Landslide would need to refine its r
 
 \subsection{Performance}
 
-Linux is much bigger than a Pebbles kernel (in terms of amount of code that runs during startup, during scheduling, etc), and hence would be much more expensive to test in a simulated environment. We suspect that in order to practically test Linux, we would need to implement systematic exploration in a virtualised environment, which we discuss more in Section~\ref{sec:future-perf}.
+Linux is much bigger than a Pebbles kernel (in terms of amount of code that runs during startup, during scheduling, etc), and hence would be much more expensive to test in a simulated environment. We suspect that in order to practically test Linux, we would need to implement systematic exploration in a virtualised environment, which we discuss more in Section~\ref{sec:future-virt}.
 
 \subsection{Complicated Synchronisation Patterns}
 
@@ -124,12 +124,38 @@ These components would all be candidates for being scheduled at a decision point
 %Some other production kernels would also make good targets for systematic exploration.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Performance}
-\label{sec:future-perf}
-% TODO
-% VM instead of simics
-% - how to interpose? single-step, or unmap heap, and/or annotate (for hooks) with hypercalls
-% - how to time travel? instead of time travel, snapshot once and replay
+\section{Virtualisation}
+\label{sec:future-virt}
+
+Compared to executing the code being tested on real hardware (which tools such as \cite{dbug-ssv} are able to do for user-space programs), Simics is {\em slow}, and even slower with Landslide hooked up to it.
+
+Major benefit could be achieved by redesigning Landslide to work in a virtualised environment instead of a simulated one. This would pose several challenges, because Landslide would no longer be running in ``god mode'', having immediate access to every single instruction and memory access executed. It would, however, still be able to modify the kernel's memory and address space, which would be important to harness for increased control over the kernel's execution.
+
+We speculate on some challenges and potential solutions that virtualised execution might have to offer. We assume that our users will be talented kernel developers rather than undergraduate students, and hence allow for more complicated interface requirements.
+
+\subsection{Interposition}
+
+\subsubsection{Event Tracking}
+
+The event-based nature of the \texttt{tell\_landslide} annotations can still be harnessed in a virtualised environment - they would need to be converted into hypercalls, which would briefly transfer control to Landslide at key execution points to enable it to update its state machine and potentially influence the kernel's execution.
+
+We would add additional \texttt{tells\_landslide} for the kernel components which are presently automatically instrumented, such as the dynamic memory allocator and the \texttt{panic} routines, and also for certain components that are currently instrumented with \texttt{config.landslide}, such as identifying when the context switcher returns or when the timer interrupt handler is invoked.
+
+Rather than using the schedule-in-flight algorithm, Landslide could simplify its job by asking the kernel to run a particular thread directly, as described in Section~\ref{sec:components-inflight}.
+
+\subsubsection{Memory Tracking}
+
+More challenging than tracking important kernel events will be tracking all accesses to shared memory. We could exploit the virtualised virtual memory system, and write-protect (possibly also read-protect, i.e., unmap) all pages that contain shared data, such as the global data section and the dynamic allocation heap. All accesses would then page-fault, transferring control to Landslide.
+
+\subsection{Backtracking}
+
+Simics's convenient bookmarking mechanism will be no more in virtual-machine-land. One possibility for backtracking would be to record-and-replay the events of each branch (up to the point at which Landslide chooses to have decided differently), restarting the system's execution from the beginning each time. Another option might be to snapshot the state of the kernel at each decision point, and use those to resume without re-executing everything from the beginning (kernel boot-up and initialisation is much more expensive than individual system calls, after all).
+
+\subsection{Control over Non-Determinism}
+
+Finally, Landslide will need to find new ways to control non-deterministic events in the system. Since virtualised kernels use the same timer interrupt as the host they run on, Landslide is unlikely to be able to intercept it. Instead, we may replace a guest kernel's timer-driven context switcher with a ``Landslide-driven'' context switcher, leaving the timer handler only to do other work.
+
+Likewise, Landslide will need to control other non-deterministic inputs to the kernel, including device interrupts/input and even the system clock.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Long-Running Test Shaping}
