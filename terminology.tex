@@ -29,7 +29,14 @@ In this chapter we define certain terms that have specific meanings in the conte
 
 \section{Systematic Exploration Terms}
 
-% TODO: have a diagram of the decision tree
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.75\textwidth]{threadfork.png}
+	% TODO: make some other subfigs
+	\caption{A simple decision tree, showing possible interleavings of a buggy \texttt{thread\_fork} implementation. (This describes a bug studied in Section~\ref{sec:eval-thread-fork}.)}
+	\label{fig:threadfork}
+\end{figure}
+
 \resume{enumerate}
 	\item {\bf Decision point}:
 		A point during execution (between two consecutive instructions, precisely) which is deemed ``interesting'' in terms of the likelihood that thread switches at that point will cause concurrency bugs to arise. All thread switches occur at a decision point; some are voluntary reschedules caused by the kernel and others are involuntary preemptions caused by Landslide.

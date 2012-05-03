@@ -49,7 +49,14 @@ Here we describe the interface by which Landslide understands the execution of t
 \subsection{In-Kernel Annotations}
 \label{sec:using-annotations}
 
-We provide a set of functions that the kernel needs to call at certain points during its execution to communicate what interesting events are happening.
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{tell_landslide.png}
+	\caption{Example annotated code. In theory, the use of \texttt{tell\_landslide\_decide()} in the place where a preemption needs to occur is not necessary for Landslide to know to preempt then; it is shown for the sake of demonstration.}
+	\label{fig:tell-landslide}
+\end{figure}
+
+We provide a set of functions that the kernel needs to call at certain points during its execution to communicate what interesting events are happening. Figure~\ref{fig:tell-landslide} shows some example code annotated for Landslide.
 
 \subsubsection{Important Note about Runqueues}
 \label{sec:using-runqueue}

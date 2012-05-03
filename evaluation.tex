@@ -37,6 +37,7 @@ Finally, we briefly studied each bug that the students found, which we describe 
 
 \subsection{Time Breakdown}
 
+This section will be written after the draft is submitted. Hang on tight, my friends.
 % TODO
 
 \subsection{Descriptive Feedback}
@@ -82,28 +83,121 @@ Additionally, two enterprising users\footnote{The second case here was an ex-TA,
 \end{itemize}
 
 \subsection{Landslide Victories}
-% TODO
-% nadim - wait bug (claimed easy to spot with code review)
-% margaret/echo - ds assertion bug
-% margaret/echo - vanish c_s return idle bug; helped find when idle was running when shouldn't be
-% tpassaro found double free, but deterministic
-% apodolsk found no bugs because no hello world
-% pjumde's group found no bugs..?
+
+Of five student groups that we worked with during the user study, four groups completed the instrumentation process and got Landslide to explore at least a minimal decision tree. Of those groups, two found race conditions in their kernel. Additionally, Landslide helped all four groups find deterministic bugs - three groups had previously unknown problems with running the idle thread inappropriately, and the other group had a simple use-after-free.
+
+We list how much progress each group made, and whether or not they found any bugs.
+
+\begin{enumerate}
+	\item % ntaha/jmchow
+		Group 1 got Landslide to explore a minimal decision tree, and also explored \texttt{double\_wait} and \texttt{vanish\_vanish} with several combinations of different decision points around \texttt{mutex\_lock} and \texttt{mutex\_unlock}. They found one race and a problem with idle.
+		After fixing this bug, they were able to completely explore both test cases with decision points on both \texttt{mutex\_lock} and \texttt{mutex\_unlock}, which we consider a strong negative result (i.e., no bug found with fine-grained interleavings).
+	\item % margaret/echo
+		Group 2 got Landslide to explore a minimal decision tree. They did not configure any extra decision points. They found a problem with idle, and after fixing it, found a vanish-related race condition in the fix. They also found a bug in an assertion which they added during the process, but that bug was deterministic, so we consider this part of the ``fixing incorrect instrumentation'' process.
+	\item % tpassaro/?
+		Group 3 got Landslide to explore a minimal decision tree, and also configured extra decision points for \texttt{vanish\_vanish}. They found only a deterministic use-after-free bug.
+	\item % pjumde/?
+		Group 4 got Landslide to explore a minimal decision tree. They found only a problem with idle.
+	\item % apodolsk
+		Group 5 did not get Landslide to explore a minimal decision tree.
+\end{enumerate}
+
+\subsubsection{Race Conditions Found}
+
+Two groups found race conditions using Landslide. We describe them here.
+
+\begin{itemize}
+	\item {\bf Too many waiters allowed.} Using the \texttt{double\_wait} test case, group 1 found a bug in which more threads invoking \texttt{wait} would be allowed to block than the number of child processes that could ever be reaped, and some of the waiters would end up blocking forever. The fix for this was two lines of code, and it could have been found with an in-depth code review.
+	\item {\bf Accidental return to a vanished thread.} Group 2 had a problem with the scheduler running idle when it was not supposed to; when they fixed it, however, their implementation would return to a thread that had already vanished in the case when no thread was left to run. It is unclear if this race would have been exposed without Landslide. Fixing it required adding an extra condition to the code that checked whether the kernel should idle.
+\end{itemize}
+
+% TODO confirm this
+% We also note that though group 2 stopped using Landslide after getting it to explore the minimal decision tree, if they had configured decision points around \texttt{mutex\_lock} (which was the recommended next step in the process), they would have found a  [...]
+% This bug is similar to the LudicrOS vanish/vanish bug studied in Section~\ref{sec:eval-casestudy}, and would have required a complicated redesign of the \texttt{vanish} implementation.
+
+% We consider this a mixed blessing: Landslide was capable of finding a deep concurrency bug in a student kernel, but the instrumentation process was expensive enough that they were not motivated to continue working. We believe that improving Landslide's interface (Section~\ref{sec:future-interface}) will improve the success rate in such cases.
+
+\subsubsection{Deterministic Bugs Found}
+
+We also claim that Landslide is useful in its ability to find certain types of non-concurrency-related bugs. Though its primary purpose is to find race conditions, we found that it caught two main types of bugs that the students were previously unaware their kernels had.
+
+\begin{itemize}
+	\item {\bf Inappropriate idling.} Two groups had errors in their keyboard handling code, where when a newline was received when the kernel was idle, a thread blocked on \texttt{readline} would be added to the runqueue and but not switched directly to, so the kernel would continue idling even if there was useful work to do. Another group left idle on the scheduler runqueue, and had no special-case code to skip over it, so would interleave idle arbitrarily with other threads. We consider both of these performance problems.
+	\item {\bf Deterministic use-after-free.} One group had a deterministic use-after-free bug in their \texttt{wait} implementation, in which they freed something and immediately dereferenced it. This hadn't presented a problem because the block was never reallocated during the critical window, which would have taken a complicated and fine-grained interleaving, but Landslide detected the use-after-free immediately, without the need for any interleaving.
+\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Bug Case Studies}
 \label{sec:eval-casestudy}
 
-\subsection{Bug Descriptions}
-
 While building Landslide, we worked primarily with two kernels: one, the kernel the author wrote as a student in 15-410 (Fall 2008), and another, a kernel the author graded as a TA for 15-410 (Fall 2011). We refer to the first kernel as ``POBBLES'' and the second as ``LudicrOS''.
 
-With Landslide, we found 4 bugs in POBBLES and 2 bugs in LudicrOS, and investigated them more deeply.
+With Landslide, we found four bugs in POBBLES and two bugs in LudicrOS, and investigated them more deeply.
 
-% TODO
+\subsection{Bug Descriptions}
 
-\subsection{Numbers}
+Here we describe each of the six bugs that we used as case studies. We rate their complexity and the estimated ease of fixing them.
+
+\subsubsection{POBBLES vanish/vanish (a)}
+
+We introduced this bug into POBBLES's vanish implementation. When a parent and child invoke vanish concurrently, the parent needs to modify the child's parent pointer to reparent it to the init process, and the child needs to read its parent pointer to signal to its parent that it can be reaped.
+
+In version (a) of this bug, we introduce a mutex for each process's parent pointer. When reparenting, the parent takes its own process control block (PCB) lock, iterates over its child-list, and takes its children's parent pointer locks. When signalling, the child takes its parent pointer lock, then takes the parent's PCB lock to ensure safe wake-up of waiters. This results in deadlock.
+
+This bug is exposed with the \texttt{vanish\_vanish} test case. It requires a very specific interleaving sequence to uncover.
+The fix is nontrivial, because the circular data structure access still needs to happen, but be protected in a way that doesn't involve circular wait.
+Vanish races are notorious among 15-410 course staff as being difficult to find with the naked eye, and also difficult to figure out how to fix.
+
+\subsubsection{POBBLES vanish/vanish (b)}
+
+We also introduced this bug into POBBLES's vanish. Version (b) is similar to version (a), except we removed the parent pointer mutex entirely. This results in a data race around the parent pointer, in which the child can end up accessing the wrong parent either before or after it is actually moved to init's child-list.
+
+This bug is exposed with the \texttt{vanish\_vanish} test case. The complexity and difficulty of fixing are the same as in version (a).
+
+\subsubsection{POBBLES wait/wait}
+
+Finding this bug was somewhat of a surprise. When two threads in the same process wait for a child to exit, they both block on the same condition variable, and one of them has a pointer to the other in its \texttt{cond\_queue\_next} pointer. However, when woken, the condition variable code did not clear the value of this pointer. Fortunately, an assert statement in the thread destruction code caught that the pointer was non-\texttt{NULL} when it should have been, and the kernel panicked.\footnote{
+If not for this assert, extremely mysterious behaviour could have arisen - if the woken thread had gone to sleep on another condition variable, its \texttt{cond\_queue\_next} pointer could point to a thread asleep on a different condition variable, in which case a broadcast on the new condition variable cause a spurious wakeup of the second thread. Worse yet, if the second thread had also been awoken, and thence exited, a broadcast would result in a use-after-free.}
+
+This bug is exposed with the \texttt{double\_wait} test case.
+The complexity of this bug is moderate, since it requires both waiting threads to block before the child process exits.
+The fix is simple; in two places in the condition variable code a pointer needed to be set to \texttt{NULL}.
+
+We note that the author never knew of its existence between submitting the kernel as a student three years ago and uncovering it before the user study three weeks ago, and it was not spotted by the TA who graded it.\footnote{
+We would also note that this bug was never uncovered by any stress test, but the \texttt{double\_wait} test case was not distributed as part of the 15-410 test suite, and it was necessary to generate the right sequence of system calls.}
+
+\subsubsection{POBBLES thread\_fork/wait}
+\label{sec:eval-thread-fork}
+
+This bug was presented in the lecture, and exhibited as a decision tree in Figure~\ref{fig:threadfork} and as a trace in Figure~\ref{fig:found_a_bug} and as source code in Figure~\ref{fig:tell-landslide}. When a new thread is forked and made runnable, and the forking thread subsequently dereferences its TID to use as a return value, it's possible for the dereference to be a use-after-free. This could result in a garbage value being returned.
+
+This bug is exposed with the \texttt{double\_thread\_fork} test case. The complexity is relatively simple\footnote{
+Although many userspace thread libraries forcibly serialise invocations of \texttt{thread\_fork} and \texttt{vanish} with their own synchronisation barriers, so the bug may never be noticed when using such libraries. (This caused the author some trouble.)},
+and the fix is only two lines long; the dereference should simply occur before making the child thread runnable.
+
+Nevertheless, this bug was present in the author's student kernel and was not noticed by the TA who graded it.
+
+\subsubsection{LudicrOS vanish/vanish}
+\label{sec:eval-ludicros-vanish}
+
+This bug was found by the author when grading this kernel. It took roughly an hour of manual inspection and hard thinking to ascertain the bug's nature, from the time when the author first suspected a bug might be present.
+
+The parent pointer problem is the same as in the POBBLES vanish/vanish bugs, except the locking pattern is slightly different. When the parent reparents children, it drops its own mutex while it changes the parent pointer using the child's parent pointer mutex, which happens before the parent moves the child to init's child-list.
+
+Many problems can arise from this error. The one Landslide discovered was as follows: During this gap, the child can take its own parent pointer mutex (after the pointer was changed to init), and attempt to move itself from init's ``live child-list'' to the ``dead child-list'' before the parent moved the child to init's child-list at all. This results in the child instead moving the {\em shell process} off of init's ``live child-list''. Init gets signalled, reaps the reparented child, does \texttt{wait} again (expecting the shell to be alive), which fails. This results in init infinitely looping around failing calls to \texttt{wait}. To catch this bug, we added an assert statement in the \texttt{wait} failure case that the current thread was not init (because init should always have children to reap or wait for), which Landslide then caused to trip.
+
+This was the most complicated bug we studied. The fix would be nontrivial, like in POBBLES vanish/vanish.
+
+\subsubsection{LudicrOS yield/vanish}
+
+This bug was also found during grading, and took substantially less time to verify by hand than the previous bug. When a thread does \texttt{yield} to a specific other TID, the other thread's thread control block (TCB)is not protected between lookup-by-TID and yield-to. If that thread exits during that time, a use-after-free (and worse, a completely invalid schedule to a nonexistent thread) results.
+
+This bug is moderately complicated, requiring a preemption during that specific window of the first thread's execution during which the second thread must exit entirely and have its TCB freed. The fix is moderately complicated - some protection mechanism must be designed so that threads cannot exit after being looked-up by TID.
+
+\subsection{Performance}
 \label{sec:eval-numbers}
+
+Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using Landslide, configured with several different sets of decision points, and using conventional stress testing.
 
 \newcommand\bugnum[2]{\textcolor{BrickRed}{{\bf #1} {\scriptsize \em (#2)}}}
 \newcommand\nobugnum[2]{\textcolor{Blue}{{\em #1} {\scriptsize \em (#2)}}}
@@ -141,14 +235,11 @@ With Landslide, we found 4 bugs in POBBLES and 2 bugs in LudicrOS, and investiga
 
 % TODO: have a graph
 
-Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using Landslide, configured with several different sets of decision points, and using conventional stress testing.
-
 The Landslide experimental set-up is as follows:
 
 \begin{itemize}
 	\item All Landslide trial times include the Simics start-up and kernel boot-up time (time between issuing the command and the test case beginning to run), roughly 15 seconds for POBBLES and 10 seconds for LudicrOS.
 	\item All Landslide trials were run on the Gates-Hillman cluster machines (2.6 GHz Xeon).
-	% TODO: say specs of crash machine
 	\item All Landslide trials were run with ``backwards exploration'' enabled (Section~\ref{sec:using-search}).
 	\item All trials were also run with Landslide configured to pay attention to only the relevant system calls (using \texttt{within\_function}; Section~\ref{sec:using-decision}).
 
@@ -172,6 +263,7 @@ The Landslide experimental set-up is as follows:
 %	\item All stress test trials are on on the ``412 lab crashbox'' (3.2 GHz Pentium D).
 %	\item The kernel and test case are configured to not print any messages during the test
 %\end{itemize}
+% TODO: say specs of crash machine
 
 %%%%
 
@@ -220,9 +312,9 @@ Table~\ref{fig:trees} presents more detailed information about the decision tree
 For each set of decision points on each bug, we give the total number of decision points in the tree, the total number of backtracks (i.e. branches explored before the bug was found), and the average branch depth (i.e. number of decision points in each branch).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Summary of Bugs Found}
+%\section{Summary of Bugs Found}
 
-% TODO
+% FIXME
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Discussion}

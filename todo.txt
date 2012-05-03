@@ -6,7 +6,7 @@ design
 eval
 	user study
 		time breakdown
-		landslide victories
+		landslide victories last check
 	case study
 		stress tests
 		backwards explorations
@@ -22,12 +22,6 @@ diagrams
 		sys ex terms
 			- case study bug
 			- picture of decision tree; corresponding concurrency table
-	design
-		components
-			- anatomy diagram
-		debugging feedback
-			- picture of choice trace
-			- corresponding concurrency table
 	eval
 		user study
 			- pie chart of time spent?
