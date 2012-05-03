@@ -127,7 +127,7 @@ Getting a good set of decision points is important to being able both to explore
         \item Use \texttt{tell\_landslide\_decide()} to indicate decision points.\footnote{
 	We recommend at the start of \texttt{mutex\_lock} and at the end of \texttt{mutex\_unlock}, though it is also important to use one's own intuition, depending on what system call(s) are being tested.}
         \item Use \texttt{sched\_func} and \texttt{ignore\_sym} to make Landslide ignore global memory accesses, to enable better pruning.
-        \item Use \texttt{DECISION\_INFO\_ONLY} to examine the set of choice points, and figure out which ones are irrelevant.
+        \item Use \texttt{DECISION\_INFO\_ONLY} to examine the set of decision points, and figure out which ones are irrelevant.
         \item Use \texttt{within\_func} and \texttt{without\_func} to make Landslide only use relevant decision points.
 \end{itemize}
 

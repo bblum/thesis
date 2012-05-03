@@ -42,7 +42,7 @@ In this chapter we define certain terms that have specific meanings in the conte
 		A point during execution (between two consecutive instructions, precisely) which is deemed ``interesting'' in terms of the likelihood that thread switches at that point will cause concurrency bugs to arise. All thread switches occur at a decision point; some are voluntary reschedules caused by the kernel and others are involuntary preemptions caused by Landslide.
 	\item {\bf Transition}:
 		A sequence of instructions executed by a single thread between two decision points. At a given decision point, Landslide chooses which thread will run (and causes it to do so), and that thread executes a transition, after which point Landslide will have identified a subsequent decision point
-	\item {\bf Decision point set} (or {\bf Decision set}):
+	\item {\bf Decision set} (or {\bf Set of decision points}):
 		One or more predicates on the execution state of the guest kernel which identify whether any current state should be a decision point. (For example, when we say ``the decision set including all calls to \texttt{mutex\_lock}'', the corresponding predicate is simply ``did the kernel just invoke \texttt{mutex\_lock}?''.)
 	\item {\bf Decision tree} (or {\bf Execution tree}):
 		The tree defined by the possibility at each decision point of causing any runnable thread to execute its own transition. Abstractly, this tree comprises all possible states reachable by any interleaving of threads.

@@ -284,10 +284,10 @@ The independence relation expresses which transitions do not read-and-write or w
 			\cline{2-4}
 			& {\bf Thread 1} & {\bf Thread 2} & {\bf Thread 3} \\
 			\cline{2-4}
-			$C$ & & & \texttt{x = 42;} \\
-			$B$ & & \texttt{y = 7;} & \\
-			\multirow{2}{*}{$A_1$} & \texttt{if (y == 7)} & & \\
-			& \texttt{assert(x == 42);} & & \\
+			$C$ & & & \texttt{x=42;} \\
+			$B$ & & \texttt{y=31337;} & \\
+			\multirow{2}{*}{$A_1$} & \texttt{if (y==31337)} & & \\
+			& \texttt{assert(x==42);} & & \\
 			\cline{2-4}
 		\end{tabular}
 	} &
@@ -297,9 +297,9 @@ The independence relation expresses which transitions do not read-and-write or w
 			\cline{2-4}
 			& {\bf Thread 1} & {\bf Thread 2} & {\bf Thread 3} \\
 			\cline{2-4}
-			$C$ & & & \texttt{x = 42;} \\
-			$A_2$ & \texttt{if (y == 7)} & & \\
-			$B$ & & \texttt{y = 7;} & \\
+			$C$ & & & \texttt{x=42;} \\
+			$A_2$ & \texttt{if (y==31337)} & & \\
+			$B$ & & \texttt{y=31337;} & \\
 			\cline{2-4}
 		\end{tabular}
 	} \\
@@ -310,10 +310,10 @@ The independence relation expresses which transitions do not read-and-write or w
 			\cline{2-4}
 			& {\bf Thread 1} & {\bf Thread 2} & {\bf Thread 3} \\
 			\cline{2-4}
-			$B$ & & \texttt{y = 7;} & \\
-			\multirow{2}{*}{$A_3$} & \texttt{if (y == 7)} & & \\
-			& \texttt{assert(x == 42);} & & \\
-			$C$ & & & \texttt{x = 42;} \\
+			$B$ & & \texttt{y=31337;} & \\
+			\multirow{2}{*}{$A_3$} & \texttt{if (y==31337)} & & \\
+			& \texttt{assert(x==42);} & & \\
+			$C$ & & & \texttt{x=42;} \\
 			\cline{2-4}
 		\end{tabular}
 	}}
@@ -324,7 +324,7 @@ The independence relation expresses which transitions do not read-and-write or w
 
 We found that implementing DPOR in this way was not sound in our setup, because it relies on the invariant that each transition contains only one inter-thread communication event (in kernel-space, this means a shared memory access). Because Landslide builds its decision trees with coarser granularity, i.e. multiple different shared memory conflicts may happen in each transition, Landslide must consider every evil ancestor of each transition when performing DPOR.
 
-Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of this optimisation if transitions are allowed to have multiple different memory conflicts.
+Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of only identifying one evil ancestor per transition given that transitions are allowed to have multiple different memory conflicts.
 
 While DPOR is a proved-sound algorithm in environments that do have this memory access property, even with this every-ancestor change we are not certain if it is sound in our environment. We justify the use of DPOR anyway because Landslide is already prone to false negatives because of coarse interleaving granularity, and leave proving soundness to future work (and to the theoreticians).
 

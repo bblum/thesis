@@ -115,7 +115,7 @@ We also note that though group 2 stopped using Landslide after getting it to exp
 
 This bug is similar to the LudicrOS vanish/vanish bug studied in Section~\ref{sec:eval-casestudy}, and would have required a complicated redesign of the \texttt{vanish} implementation to fix.
 
-We consider this a mixed blessing: Landslide was capable of finding a deep concurrency bug in a student kernel, but the instrumentation process was expensive enough that they were not motivated to continue working. We believe that improving Landslide's interface (Section~\ref{sec:future-interface}) will improve the success rate in such cases.
+We consider this a mixed blessing: Landslide was capable of finding a deep concurrency bug in a student kernel, but the instrumentation process was expensive enough that they were not motivated to continue working, and stopped just short. We believe that improving Landslide's interface (Section~\ref{sec:future-interface}) will improve the success rate in such cases.
 
 \subsubsection{Deterministic Bugs Found}
 
@@ -157,7 +157,7 @@ This bug is exposed with the \texttt{vanish\_vanish} test case. The complexity a
 \subsubsection{POBBLES wait/wait}
 
 Finding this bug was somewhat of a surprise. When two threads in the same process wait for a child to exit, they both block on the same condition variable, and one of them has a pointer to the other in its \texttt{cond\_queue\_next} pointer. However, when woken, the condition variable code did not clear the value of this pointer. Fortunately, an assert statement in the thread destruction code caught that the pointer was non-\texttt{NULL} when it should have been, and the kernel panicked.\footnote{
-If not for this assert, extremely mysterious behaviour could have arisen - if the woken thread had gone to sleep on another condition variable, its \texttt{cond\_queue\_next} pointer could point to a thread asleep on a different condition variable, in which case a broadcast on the new condition variable cause a spurious wakeup of the second thread. Worse yet, if the second thread had also been awoken, and thence exited, a broadcast would result in a use-after-free.}
+Even with this assert, extremely mysterious behaviour could have arisen in other use cases, such as during stress testing - if the woken thread had gone to sleep on another condition variable, its \texttt{cond\_queue\_next} pointer could point to a thread asleep on a different condition variable, in which case a broadcast on the new condition variable cause a spurious wakeup of the second thread. Worse yet, if the second thread had also been awoken, and thence exited, a broadcast would result in a use-after-free.}
 
 This bug is exposed with the \texttt{double\_wait} test case.
 The complexity of this bug is moderate, since it requires both waiting threads to block before the child process exits.
