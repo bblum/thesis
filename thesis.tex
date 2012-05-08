@@ -79,7 +79,6 @@ Many techniques exist for dynamic testing of concurrent systems for race conditi
 Systematic exploration, the strategy that Landslide uses, involves modelling a concurrent test case as a series of {\em transitions} by each of a set of {\em agents}
 \footnote{In this work, we equate agents with a kernel's scheduler threads.}
 between {\em decision points} (i.e., actions which the tool and/or the user determine to be relevant to the concurrent behaviour of the test), and attempting to exercise all possible orderings of the transitions in hopes that one or more ordering will expose a bug.
-Within this strategy
 
 In this work, we present Landslide as a tool and framework for finding race conditions in kernels using systematic exploration, implemented as a module for the Simics simulator and geared towards Pebbles, the specification implemented by students in 15-410 at CMU.
 We study the challenges inherent in applying systematic testing techniques in kernel-space, in contrast with user-space applications, and present techniques (some sound, and some heuristic) for addressing them.
