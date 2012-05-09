@@ -60,9 +60,8 @@
 
 \newcommand\linegap{\vspace{0.2in}}
 \newcommand\breakslide[1]{\begin{frame}{} \begin{center} #1 \end{center} \end{frame}}
-\newcommand\related[1]{\textsuperscript{\em #1}}
+\newcommand\related[1]{\textsuperscript{\em [#1]}}
 
-% slide: outline
 \begin{frame}{Outline}
 	\textbf{Motivation: Concurrency debugging}
 	\begin{itemize}
@@ -73,7 +72,7 @@
 
 	{\bf Tool: Landslide}
 	\begin{itemize}
-		\item Design and interface 
+		\item Design and interface
 		\item Addressing challenges
 	\end{itemize}
 	\linegap
@@ -126,7 +125,7 @@
 	\end{itemize}
 	\linegap
 
-	{\bf Systematic Exploration} % \related{Flanagan '05}
+	{\bf Systematic Exploration} \related{Simsa '10}
 	\begin{itemize}
 		\item Make educated guesses about when to preempt
 		\item Run {\em every single} interleaving
@@ -214,8 +213,31 @@
 \section{Landslide}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% slide: outline
+\newcommand\done[1]{\textcolor{gray}{\em \small #1}}
+
 \begin{frame}{Outline}
+	\done{Motivation: Concurrency debugging}
+	\begin{itemize}
+		\item \done{Systematic exploration versus stress testing}
+		\item \done{Challenges of kernel-space}
+	\end{itemize}
+	\linegap
+
+	{\bf Tool: Landslide}
+	\begin{itemize}
+		\item {\bf Design and interface}
+		\item {\bf Addressing challenges}
+	\end{itemize}
+	\linegap
+
+	Evaluation: Finding Races
+	\begin{itemize}
+		\item Student user study
+		\item Case study
+	\end{itemize}
+	\linegap
+
+	Future Work and Conclusion
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -235,6 +257,8 @@
 	\end{center}
 	% Remember to talk about solving the thread scheduling challenge
 \end{frame}
+
+\subsection{Interface}
 
 \begin{frame}{Using Landslide}
 	\begin{center}
@@ -260,6 +284,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Addressing Challenges} % rename
 
+\begin{frame}{State Space Reduction}
+	State spaces grow exponentially.
+	\begin{itemize}
+		\item Fortunately, some sequences result in identical states.
+		\item Dynamic Partial Order Reduction\related{Flanagan '05}
+		\begin{itemize}
+			\item Requires ``memory independence relation'' between transitions.
+		\end{itemize}
+	\end{itemize}
+\end{frame}
 \begin{frame}{State Space Reduction}
 	\begin{center}
 	\includegraphics[width=\textwidth]{undiamond1.png}
@@ -295,6 +329,7 @@
 		\begin{itemize}
 			\item Sacrifice ability to test these to efficiently test everything else.
 		\end{itemize}
+		\item User must specify what to ignore.
 	\end{itemize}
 \end{frame}
 
@@ -329,8 +364,29 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}
 
-% slide: outline
 \begin{frame}{Outline}
+	\done{Motivation: Concurrency debugging}
+	\begin{itemize}
+		\item \done{Systematic exploration versus stress testing}
+		\item \done{Challenges of kernel-space}
+	\end{itemize}
+	\linegap
+
+	\done{Tool: Landslide}
+	\begin{itemize}
+		\item \done{Design and interface}
+		\item \done{Addressing challenges}
+	\end{itemize}
+	\linegap
+
+	{\bf Evaluation: Finding Races}
+	\begin{itemize}
+		\item {\bf Student user study}
+		\item {\bf Case study}
+	\end{itemize}
+	\linegap
+
+	Future Work and Conclusion
 \end{frame}
 
 \subsection{User Study}
@@ -363,6 +419,8 @@
 		\item Accidental return to an exited thread
 		% Also talk about their vanish/vanish bug
 	\end{itemize}
+	\linegap
+
 	Deterministic bugs
 	\begin{itemize}
 		\item Inappropriate idling
@@ -386,8 +444,11 @@
 	% Heh, if it were really smarter than me, I wouldn't have had to debug it.
 	\begin{itemize}
 		\item \texttt{double\_wait} - two parent threads \texttt{wait()} on one exiting child
-		\item Expected: One thread reaps child, the other returns failure
-		\item Got: \texttt{failed assertion `nobe->cond\_queue\_next == NULL'}
+		\begin{itemize}
+			\item Expected: One thread reaps child, the other returns failure
+			\item Got: \texttt{failed assertion `nobe->cond\_queue\_next == NULL'}
+		\end{itemize}
+		\item Previously unknown, not found by stress testing or by TA
 	\end{itemize}
 \end{frame}
 
@@ -400,6 +461,28 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{frame}{Outline}
+	\done{Motivation: Concurrency debugging}
+	\begin{itemize}
+		\item \done{Systematic exploration versus stress testing}
+		\item \done{Challenges of kernel-space}
+	\end{itemize}
+	\linegap
+
+	\done{Tool: Landslide}
+	\begin{itemize}
+		\item \done{Design and interface}
+		\item \done{Addressing challenges}
+	\end{itemize}
+	\linegap
+
+	\done{Evaluation: Finding Races}
+	\begin{itemize}
+		\item \done{Student user study}
+		\item \done{Case study}
+	\end{itemize}
+	\linegap
+
+	{\bf Future Work and Conclusion}
 \end{frame}
 
 %\subsection{Future Work}
@@ -522,7 +605,7 @@
 	\end{center}
 \end{frame}
 
-\begin{frame}{Decision Points} % TODO: duplicate slide with later
+\begin{frame}{Decision Points} % : duplicate slide with later
 	A {\bf decision point} is\ldots
 
 	\linegap
