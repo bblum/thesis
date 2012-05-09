@@ -141,10 +141,10 @@
 \end{frame}
 
 \begin{frame}{Finding Races in Kernel-Space} % slide: 15-410 6-week project why we need it in kernels
-	15-410: Operating System Design and Implementation
+	\textbf{15-410:} Operating System Design and Implementation
 	\begin{itemize}
-		\item Project 3: students write a kernel in 6 weeks
-		\item ``Pebbles'': UNIX-like, fully preemptible
+		\item Project 3: students write a kernel in 6 weeks.
+		\item ``Pebbles'' is a UNIX-like, preemptible kernel specification.
 	\end{itemize}
 	\linegap
 
@@ -164,9 +164,9 @@
 	\textbf{Kernels contain their own concurrency implementation.}
 
 	\linegap
-	Context switcher
+	Context switching
 	\begin{itemize}
-		\item Interleaving threads is no longer ``instantaneous''.
+		\item Non-deterministic timer-driven thread scheduling
 	\end{itemize}
 	Runqueue tracking
 	\begin{itemize}
@@ -215,12 +215,19 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % slide: outline
+\begin{frame}{Outline}
+\end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Design}
 
 % slide: pebbles, 15-410, simics
 \begin{frame}{Environment}
+	\textbf{Simics:} a full-system x86 simulator
+	\begin{itemize}
+		\item Students in 15-410 use Simics to test their kernels.
+		\item Landslide is a transparently-embedded Simics module.
+	\end{itemize}
 \end{frame}
 
 % slide: visualisation (here address challenge #1)
@@ -232,17 +239,33 @@
 
 % slide: using -- annotations & in-landslide instrumentation
 \begin{frame}{Using Landslide}
+	\begin{center}
+	\includegraphics[width=0.9\textwidth]{tell_landslide.png}
+	\end{center}
+	User must tell Landslide when certain kernel events happen:
+	\begin{itemize}
+		\item When do threads become runnable / descheduled?
+		\item When does the scheduler switch threads?
+	\end{itemize}
+	\linegap
+	Some complicated conditions require in-Landslide instrumentation.
+	\begin{itemize}
+		\item Scheduler design details
+	\end{itemize}
 \end{frame}
 
-% slide: POR -- mostly invisible, but (transition)
+\begin{frame}{Decision Trace}
+	\includegraphics[width=\textwidth]{found_a_bug.png}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Addressing Challenges} % rename
+
 \begin{frame}{State Space Reduction}
 	\begin{center}
 	\includegraphics[width=\textwidth]{undiamond1.png}
 	\end{center}
 \end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Addressing Challenges} % rename
 
 \begin{frame}{Shared Memory Conflicts} % slide: ignoring shared memory accesses - venn diagram
 	\begin{center}
@@ -262,12 +285,12 @@
 \begin{frame}{Shared Memory Conflicts}
 	\textbf{Problem:} Many conflicts we don't care about
 	\begin{itemize}
-		\item Every transition accesses scheduler state
-		\item Many transitions access ``unrelated'' global objects
+		\item Every transition accesses scheduler state.
+		\item Many transitions access ``unrelated'' global objects.
 	\end{itemize}
 	\linegap
 
-	{\bf Solution:} Only consider ``relevant'' memory conflicts
+	{\bf Solution:} Only consider ``relevant'' memory conflicts.
 	\begin{itemize}
 		\item Ignore scheduler, global objects ``known to be correct''
 		\begin{itemize}
@@ -278,6 +301,23 @@
 % slide: identifying bugs
 \begin{frame}{Identifying Bugs}
 	\textbf{How do we know we've found a bug?}
+	\linegap
+
+	% TODO: does this slide want to be multicolumn, with an infinite loop diagram?
+	Accurate conditions
+	\begin{itemize}
+		\item Kernel panic
+		\item Use-after-free
+		\item Deadlock
+	\end{itemize}
+	Uncertain conditions
+	\begin{itemize}
+		\item Memory leak
+		\item Infinite loop
+		\begin{itemize}
+			\item Use structure of execution tree to judge stuckness.
+		\end{itemize}
+	\end{itemize}
 \end{frame}
 % slide: other_prob: decide on mutex_lock as opposed to everywhere, but...
 % slide: manual shaping - have *user* specify what to focus on (automating intuition)
@@ -291,6 +331,8 @@
 \section{Evaluation}
 
 % slide: outline
+\begin{frame}{Outline}
+\end{frame}
 
 \subsection{User Study}
 
@@ -356,12 +398,16 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Future Work}
+\begin{frame}{Outline}
+\end{frame}
+
+%\subsection{Future Work}
 \begin{frame}{Promising Directions}
-	Top 15-410 students, effectively supervised, can find hard bugs faster
+	Top 15-410 students, effectively supervised, can find hard bugs faster.
 	\begin{itemize}
-		\item Use as a debugging tool may help students learn more
+		\item Use as a debugging tool may help students learn more.
 	\end{itemize}
 	\linegap
 
@@ -382,18 +428,18 @@
 	\linegap
 \end{frame}
 
-\subsection{Summary}
+%\subsection{Summary}
 \begin{frame}{Summary}
 	\textbf{Systematic exploration in kernel-space}
 	\begin{itemize}
-		\item Use internal kernel abstractions to understand concurrency behaviour
-		\item Relying on user's knowledge makes testing easier
+		\item Use internal kernel abstractions to understand concurrency behaviour.
+		\item Relying on user's knowledge makes testing easier.
 	\end{itemize}
 	\linegap
 	\textbf{Landslide}
 	\begin{itemize}
-		\item After polishing, a useful tool for 15-410
-		\item A first step towards sophisticated kernel debugging techniques
+		\item After polishing, a useful tool for 15-410.
+		\item A first step towards sophisticated kernel debugging techniques.
 	\end{itemize}
 
 	\linegap
