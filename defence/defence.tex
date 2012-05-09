@@ -107,7 +107,7 @@
 	\end{center}
 
 	\begin{itemize}
-		\item On vanish, child's TCB is freed
+		\item On exit, child's TCB is freed
 		\item Forking thread does use-after-free
 		\item Might return garbage instead of TID
 	\end{itemize}
@@ -140,18 +140,18 @@
 \end{frame}
 
 \begin{frame}{Finding Races in Kernel-Space} % slide: 15-410 6-week project why we need it in kernels
+	Previous work in kernel-space has not used systematic exploration.
+	\linegap
+
 	\textbf{15-410:} Operating System Design and Implementation
 	\begin{itemize}
 		\item Project 3: students write a kernel in 6 weeks.
 		\item ``Pebbles'' is a UNIX-like, preemptible kernel specification.
 	\end{itemize}
-	\linegap
-
-	Previous work in kernel-space has not used systematic exploration.
-	\begin{itemize}
-		\item Data race detection\related{Erickson '10}
-		\item Failure resiliency\related{Kadav '09}
-	\end{itemize}
+	%\begin{itemize}
+	%	\item Data race detection\related{Erickson '10}
+	%	\item Failure resiliency\related{Kadav '09}
+	%\end{itemize}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -187,13 +187,15 @@
 %\end{frame}
 
 \begin{frame}{The Kernel as One Program} % slide: the kernel is too big to test all at once
+	\begin{center}
+	\includegraphics[width=\textwidth]{pebbles.png}
+	\end{center}
+\end{frame}
+\begin{frame}{The Kernel as One Program} % slide: the kernel is too big to test all at once
 	\begin{itemize}
 		\item ``Everything interleaves with everything else''?
 		\item What is a ``bug'', anyway?\related{Baumann '09}
 	\end{itemize}
-	\begin{center}
-	\includegraphics[width=\textwidth]{pebbles.png}
-	\end{center}
 	% Say: "we don't want to have to explore every possible interaction between each of these components"
 \end{frame}
 
@@ -215,30 +217,30 @@
 
 \newcommand\done[1]{\textcolor{gray}{\em \small #1}}
 
-\begin{frame}{Outline}
-	\done{Motivation: Concurrency debugging}
-	\begin{itemize}
-		\item \done{Systematic exploration versus stress testing}
-		\item \done{Challenges of kernel-space}
-	\end{itemize}
-	\linegap
-
-	{\bf Tool: Landslide}
-	\begin{itemize}
-		\item {\bf Design and interface}
-		\item {\bf Addressing challenges}
-	\end{itemize}
-	\linegap
-
-	Evaluation: Finding Races
-	\begin{itemize}
-		\item Student user study
-		\item Case study
-	\end{itemize}
-	\linegap
-
-	Future Work and Conclusion
-\end{frame}
+%\begin{frame}{Outline}
+%	\done{Motivation: Concurrency debugging}
+%	\begin{itemize}
+%		\item \done{Systematic exploration versus stress testing}
+%		\item \done{Challenges of kernel-space}
+%	\end{itemize}
+%	\linegap
+%
+%	{\bf Tool: Landslide}
+%	\begin{itemize}
+%		\item {\bf Design and interface}
+%		\item {\bf Addressing challenges}
+%	\end{itemize}
+%	\linegap
+%
+%	Evaluation: Finding Races
+%	\begin{itemize}
+%		\item Student user study
+%		\item Case study
+%	\end{itemize}
+%	\linegap
+%
+%	Future Work and Conclusion
+%\end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Design}
@@ -270,6 +272,7 @@
 		\item When does the scheduler switch threads?
 	\end{itemize}
 	\linegap
+	% TODO
 	Some complicated conditions require in-Landslide instrumentation.
 	\begin{itemize}
 		\item Scheduler design details
@@ -277,13 +280,18 @@
 \end{frame}
 
 \begin{frame}{Decision Trace}
-	% TODO make the stack trace coloured
+	% FIXME make the stack trace coloured
 	\includegraphics[width=\textwidth]{found_a_bug.png}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Addressing Challenges} % rename
 
+\begin{frame}{State Space Reduction}
+	\begin{center}
+	\includegraphics[width=\textwidth]{undiamond1.png}
+	\end{center}
+\end{frame}
 \begin{frame}{State Space Reduction}
 	State spaces grow exponentially.
 	\begin{itemize}
@@ -293,11 +301,6 @@
 			\item Requires ``memory independence relation'' between transitions.
 		\end{itemize}
 	\end{itemize}
-\end{frame}
-\begin{frame}{State Space Reduction}
-	\begin{center}
-	\includegraphics[width=\textwidth]{undiamond1.png}
-	\end{center}
 \end{frame}
 
 \begin{frame}{Shared Memory Conflicts} % slide: ignoring shared memory accesses - venn diagram
@@ -316,16 +319,15 @@
 	\end{center}
 \end{frame}
 \begin{frame}{Shared Memory Conflicts}
-	\textbf{Problem:} Many conflicts we don't care about
+	%\textbf{Problem:} Many conflicts we don't care about
+	%\begin{itemize}
+	%	\item Every transition accesses scheduler state.
+	%	\item Many transitions access ``unrelated'' global objects.
+	%\end{itemize}
+	%\linegap
+	\textbf{Solution:} Only consider ``relevant'' memory conflicts.
 	\begin{itemize}
-		\item Every transition accesses scheduler state.
-		\item Many transitions access ``unrelated'' global objects.
-	\end{itemize}
-	\linegap
-
-	{\bf Solution:} Only consider ``relevant'' memory conflicts.
-	\begin{itemize}
-		\item Ignore scheduler, global objects ``known to be correct''
+		\item Ignore scheduler, global objects assumed to be correct
 		\begin{itemize}
 			\item Sacrifice ability to test these to efficiently test everything else.
 		\end{itemize}
@@ -338,15 +340,14 @@
 	\linegap
 
 	% TODO: does this slide want to be multicolumn, with an infinite loop diagram?
-	Accurate conditions
+	Definite bugs
 	\begin{itemize}
-		\item Kernel panic
+		\item Kernel panics / assertion failures
 		\item Use-after-free
 		\item Deadlock
 	\end{itemize}
-	Uncertain conditions
+	Probable bugs
 	\begin{itemize}
-		\item Memory leak
 		\item Infinite loop
 		\begin{itemize}
 			\item Use structure of execution tree to judge stuckness.
@@ -364,30 +365,30 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}
 
-\begin{frame}{Outline}
-	\done{Motivation: Concurrency debugging}
-	\begin{itemize}
-		\item \done{Systematic exploration versus stress testing}
-		\item \done{Challenges of kernel-space}
-	\end{itemize}
-	\linegap
-
-	\done{Tool: Landslide}
-	\begin{itemize}
-		\item \done{Design and interface}
-		\item \done{Addressing challenges}
-	\end{itemize}
-	\linegap
-
-	{\bf Evaluation: Finding Races}
-	\begin{itemize}
-		\item {\bf Student user study}
-		\item {\bf Case study}
-	\end{itemize}
-	\linegap
-
-	Future Work and Conclusion
-\end{frame}
+%\begin{frame}{Outline}
+%	\done{Motivation: Concurrency debugging}
+%	\begin{itemize}
+%		\item \done{Systematic exploration versus stress testing}
+%		\item \done{Challenges of kernel-space}
+%	\end{itemize}
+%	\linegap
+%
+%	\done{Tool: Landslide}
+%	\begin{itemize}
+%		\item \done{Design and interface}
+%		\item \done{Addressing challenges}
+%	\end{itemize}
+%	\linegap
+%
+%	{\bf Evaluation: Finding Races}
+%	\begin{itemize}
+%		\item {\bf Student user study}
+%		\item {\bf Case study}
+%	\end{itemize}
+%	\linegap
+%
+%	Future Work and Conclusion
+%\end{frame}
 
 \subsection{User Study}
 
@@ -402,7 +403,7 @@
 	Five groups participated; four got it to work.
 	\begin{itemize}
 		\item Average instrumentation time 100 minutes (50 to 150)
-		\item Average customisation time 25 minutes (0 to 60)
+		%\item Average customisation time 25 minutes (0 to 60)
 	\end{itemize}
 \end{frame}
 
@@ -460,30 +461,30 @@
 \section{Conclusion}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{frame}{Outline}
-	\done{Motivation: Concurrency debugging}
-	\begin{itemize}
-		\item \done{Systematic exploration versus stress testing}
-		\item \done{Challenges of kernel-space}
-	\end{itemize}
-	\linegap
-
-	\done{Tool: Landslide}
-	\begin{itemize}
-		\item \done{Design and interface}
-		\item \done{Addressing challenges}
-	\end{itemize}
-	\linegap
-
-	\done{Evaluation: Finding Races}
-	\begin{itemize}
-		\item \done{Student user study}
-		\item \done{Case study}
-	\end{itemize}
-	\linegap
-
-	{\bf Future Work and Conclusion}
-\end{frame}
+%\begin{frame}{Outline}
+%	\done{Motivation: Concurrency debugging}
+%	\begin{itemize}
+%		\item \done{Systematic exploration versus stress testing}
+%		\item \done{Challenges of kernel-space}
+%	\end{itemize}
+%	\linegap
+%
+%	\done{Tool: Landslide}
+%	\begin{itemize}
+%		\item \done{Design and interface}
+%		\item \done{Addressing challenges}
+%	\end{itemize}
+%	\linegap
+%
+%	\done{Evaluation: Finding Races}
+%	\begin{itemize}
+%		\item \done{Student user study}
+%		\item \done{Case study}
+%	\end{itemize}
+%	\linegap
+%
+%	{\bf Future Work and Conclusion}
+%\end{frame}
 
 %\subsection{Future Work}
 \begin{frame}{Promising Directions}
@@ -497,7 +498,7 @@
 	\begin{itemize}
 		\item Potential application to production kernels
 		\begin{itemize}
-			\item General purpose OSes, device drivers, embedded kernels
+			\item General purpose OSes, device drivers
 			% Be ready to field questions about SMP.
 		\end{itemize}
 	\end{itemize}
@@ -520,7 +521,7 @@
 	\linegap
 	\textbf{Landslide}
 	\begin{itemize}
-		\item After polishing, a useful tool for 15-410.
+		\item Has potential to be a useful tool for 15-410.
 		\item A first step towards sophisticated kernel debugging techniques.
 	\end{itemize}
 
