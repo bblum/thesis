@@ -221,7 +221,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Design}
 
-% slide: pebbles, 15-410, simics
 \begin{frame}{Environment}
 	\textbf{Simics:} a full-system x86 simulator
 	\begin{itemize}
@@ -230,14 +229,13 @@
 	\end{itemize}
 \end{frame}
 
-% slide: visualisation (here address challenge #1)
 \begin{frame}{Anatomy of Landslide}
 	\begin{center}
 	\includegraphics[width=0.7\textwidth]{landslide.png}
 	\end{center}
+	% Remember to talk about solving the thread scheduling challenge
 \end{frame}
 
-% slide: using -- annotations & in-landslide instrumentation
 \begin{frame}{Using Landslide}
 	\begin{center}
 	\includegraphics[width=0.9\textwidth]{tell_landslide.png}
@@ -255,6 +253,7 @@
 \end{frame}
 
 \begin{frame}{Decision Trace}
+	% TODO make the stack trace coloured
 	\includegraphics[width=\textwidth]{found_a_bug.png}
 \end{frame}
 
@@ -298,7 +297,7 @@
 		\end{itemize}
 	\end{itemize}
 \end{frame}
-% slide: identifying bugs
+
 \begin{frame}{Identifying Bugs}
 	\textbf{How do we know we've found a bug?}
 	\linegap
@@ -826,7 +825,6 @@
 
 \breakslide{\Large Quick Demo}
 
-% TODO more of these with screenshots
 
 %\begin{frame}{Decision Points (noticing a theme here?)}
 %	Landslide is {\bf false negative}-oriented.
@@ -1051,7 +1049,6 @@
 %	\end{center}
 %\end{frame}
 
-% TODO: run through an example
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
