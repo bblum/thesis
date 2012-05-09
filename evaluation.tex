@@ -76,9 +76,9 @@ Students also described compatibility issues they faced between their kernels an
 		Also, one kernel had to have its custom memory allocator disabled, because Landslide only supports LMM, the provided allocator.
 \end{itemize}
 
-Additionally, two enterprising users\footnote{The second case here was an ex-TA, not a student.} found ways to avoid implementing the functions in \texttt{student.c} (Section~\ref{sec:using-student-c}). It is worth considering integrating these approaches into the recommended approach to eliminate the need for \texttt{student.c} entirely.
+Additionally, two enterprising users found ways to avoid implementing the functions in \texttt{student.c} (Section~\ref{sec:using-student-c}). It is worth considering integrating these approaches into the recommended approach to eliminate the need for \texttt{student.c} entirely.
 \begin{itemize}
-	\item One studnt bypassed the \texttt{kern\_ready\_for\_timer\_interrupt} annotation by disabling their scheduler's preemption-disabling mechanism and replacing it with explicit disabling of interrupts, thereby making every timer interrupt cause a context switch.
+	\item One student bypassed the \texttt{kern\_ready\_for\_timer\_interrupt} annotation by disabling their scheduler's preemption-disabling mechanism and replacing it with explicit disabling of interrupts, thereby making every timer interrupt cause a context switch.
 	\item One ex-TA was able to avoid the \texttt{kern\_current\_extra\_runnable} annotation by using the \texttt{on\_rq} and \texttt{off\_rq} annotations (Section~\ref{sec:using-annotations}) to express the ``abstract set of runnable threads'' (which included the currently-running thread, even though the runqueue didn't) instead of the literal runqueue itself.
 \end{itemize}
 
