@@ -194,11 +194,14 @@
 	% now that we see these internal interfaces, how do we apply systematic testing to it?
 \end{frame}
 \begin{frame}{The Kernel as One Program} % slide: the kernel is too big to test all at once
+	``Everything interleaves with everything else''?
 	\begin{itemize}
-		\item ``Everything interleaves with everything else''?
-		\item What is a ``bug'', anyway?\related{Baumann '09}
+		% Say: "we don't want to have to explore every possible interaction between each of these components"
+		\item Impractical to explore resulting state spaces
 	\end{itemize}
-	% Say: "we don't want to have to explore every possible interaction between each of these components"
+	\linegap
+
+	What is a ``bug'', anyway?\related{Baumann '09}
 \end{frame}
 
 \begin{frame}{Contribution} % slide: summary: "sys ex is a tool \ldots``
@@ -284,6 +287,7 @@
 \begin{frame}{Decision Trace}
 	% FIXME make the stack trace coloured
 	\includegraphics[width=\textwidth]{found_a_bug.png}
+	% Say: So landslide had to explore 5 different interleavings to find the bug. But this was a pretty simple test case, and 
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
