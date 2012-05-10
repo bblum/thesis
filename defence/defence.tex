@@ -390,14 +390,35 @@
 \end{frame}
 % slide: other_prob: decide on mutex_lock as opposed to everywhere, but...
 % slide: manual shaping - have *user* specify what to focus on (automating intuition)
-\begin{frame}{Limiting Decision Points}
+\begin{frame}{Focusing the Search Space}
+	Recommended decision points: \texttt{mutex\_lock()} and \texttt{mutex\_unlock()}
+	\linegap
+
+	{\bf Problem:} Kernel uses mutexes {\em everywhere}.
+	\begin{itemize}
+		\item Good: \texttt{exit()} calls \texttt{mutex\_lock()}
+		\item Bad: \texttt{exit()} calls \texttt{destroy\_address\_space()} calls \texttt{mutex\_lock()}
+	\end{itemize}
+	\linegap
+	{\bf Solution:} User specifies what modules of the kernel to pay attention to.
+	\begin{itemize}
+		\item \texttt{within\_function exit}
+		\item \texttt{without\_function destroy\_address\_space}
+	\end{itemize}
 \end{frame}
 % slide: exciting teaser "i think this is not too far off!"
-\begin{frame}{Teaser}
+\begin{frame}{Teaser: (Semi-)Automated Search Focusing}
+	Searching for bugs given a stack trace
+	\begin{itemize}
+		\item User knows {\em where} the bug is, but not {\em what}.
+		\item Testing framework can use stack trace to conduct a more focused search.
+	\end{itemize}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}
+
+\breakslide{Evaluating Landslide}
 
 %\begin{frame}{Outline}
 %	\done{Motivation: Concurrency debugging}
