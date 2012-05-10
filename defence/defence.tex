@@ -65,7 +65,7 @@
 \begin{frame}{Outline}
 	\textbf{Motivation: Concurrency debugging}
 	\begin{itemize}
-		\item Systematic exploration versus stress testing
+		\item Systematic testing versus stress testing
 		\item Challenges of kernel-space
 	\end{itemize}
 	\linegap
@@ -107,9 +107,9 @@
 	\end{center}
 
 	\begin{itemize}
-		\item On exit, child's TCB is freed
+		\item On exit, child's state is freed
 		\item Forking thread does use-after-free
-		\item Might return garbage instead of TID
+		\item Might return garbage instead of thread ID
 	\end{itemize}
 \end{frame}
 
@@ -125,11 +125,11 @@
 	\end{itemize}
 	\linegap
 
-	{\bf Systematic Exploration} \related{Simsa '10}
+	{\bf Systematic Testing} \related{Musuvathi '08}
 	\begin{itemize}
 		\item Make educated guesses about when to preempt
 		\item Run {\em every single} interleaving
-		\item Provide better debugging information
+		\item Provide better debugging information, reproducibility
 	\end{itemize}
 \end{frame}
 
@@ -140,7 +140,7 @@
 \end{frame}
 
 \begin{frame}{Finding Races in Kernel-Space} % slide: 15-410 6-week project why we need it in kernels
-	Previous work in kernel-space has not used systematic exploration.
+	Previous work in kernel-space has not used systematic testing.
 	\linegap
 
 	\textbf{15-410:} Operating System Design and Implementation
@@ -187,9 +187,11 @@
 %\end{frame}
 
 \begin{frame}{The Kernel as One Program} % slide: the kernel is too big to test all at once
+	% say: it's also important to understand the kernel's internals instead of just viewing it as one ``black box''
 	\begin{center}
 	\includegraphics[width=\textwidth]{pebbles.png}
 	\end{center}
+	% now that we see these internal interfaces, how do we apply systematic testing to it?
 \end{frame}
 \begin{frame}{The Kernel as One Program} % slide: the kernel is too big to test all at once
 	\begin{itemize}
@@ -200,10 +202,10 @@
 \end{frame}
 
 \begin{frame}{Contribution} % slide: summary: "sys ex is a tool \ldots``
-	Systematic exploration is a {\em tool} for testing concurrent systems.
+	Systematic testing is a {\em tool} for testing concurrent systems.
 	\begin{itemize}
 		\item How can it be applied in kernel-space?
-		\item What can we ask of the user to make it possible?
+		\item What simple things can we ask of the user to make it possible?
 	\end{itemize}
 	\linegap
 
@@ -272,7 +274,7 @@
 		\item When does the scheduler switch threads?
 	\end{itemize}
 	\linegap
-	% TODO
+	% Make sure to expound on what these are
 	Some complicated conditions require in-Landslide instrumentation.
 	\begin{itemize}
 		\item Scheduler design details
@@ -288,6 +290,7 @@
 \subsection{Addressing Challenges} % rename
 
 \begin{frame}{State Space Reduction}
+	% Say: ``combinatorial explosion''
 	\begin{center}
 	\includegraphics[width=\textwidth]{undiamond1.png}
 	\end{center}
@@ -335,24 +338,51 @@
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{Identifying Bugs}
-	\textbf{How do we know we've found a bug?}
-	\linegap
+\begin{frame}[fragile]{Identifying Bugs}
+	\begin{columns}[l]
+		\column{0.75\textwidth}
+		\textbf{How do we know we've found a bug?}
+		\linegap
 
-	% TODO: does this slide want to be multicolumn, with an infinite loop diagram?
-	Definite bugs
-	\begin{itemize}
-		\item Kernel panics / assertion failures
-		\item Use-after-free
-		\item Deadlock
-	\end{itemize}
-	Probable bugs
-	\begin{itemize}
-		\item Infinite loop
+		Definite bugs
 		\begin{itemize}
-			\item Use structure of execution tree to judge stuckness.
+			\item Kernel panics / assertion failures
+			\item Use-after-free
+			\item Deadlock
 		\end{itemize}
-	\end{itemize}
+		Probable bugs
+		\begin{itemize}
+			\item Infinite loop
+			\begin{itemize}
+				\item Use structure of execution tree to judge progress.
+			\end{itemize}
+		\end{itemize}
+		\column{0.25\textwidth}
+		\includegraphics[width=\textwidth]{blank-livelock.png}
+	\end{columns}
+\end{frame}
+\begin{frame}[fragile]{Identifying Bugs}
+	\begin{columns}[l]
+		\column{0.75\textwidth}
+		\textbf{How do we know we've found a bug?}
+		\linegap
+
+		Definite bugs
+		\begin{itemize}
+			\item Kernel panics / assertion failures
+			\item Use-after-free
+			\item Deadlock
+		\end{itemize}
+		Probable bugs
+		\begin{itemize}
+			\item Infinite loop
+			\begin{itemize}
+				\item Use structure of execution tree to judge progress.
+			\end{itemize}
+		\end{itemize}
+		\column{0.25\textwidth}
+		\includegraphics[width=\textwidth]{livelock.png}
+	\end{columns}
 \end{frame}
 % slide: other_prob: decide on mutex_lock as opposed to everywhere, but...
 % slide: manual shaping - have *user* specify what to focus on (automating intuition)
@@ -453,10 +483,6 @@
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{Studying Bugs In-Depth} % slide: visual explanation of bug
-	% graphic want to be colored TODO
-\end{frame}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -504,8 +530,9 @@
 	\end{itemize}
 	\linegap
 
-	Emphasis on ``steering'' of test parameters by experts
+	Emphasis on users ``steering'' test by changing parameters
 	\begin{itemize}
+		\item Start with coarse granularity, iterate refining decision points
 		\item Perhaps we can automate this steering?
 	\end{itemize}
 	\linegap
@@ -513,7 +540,7 @@
 
 %\subsection{Summary}
 \begin{frame}{Summary}
-	\textbf{Systematic exploration in kernel-space}
+	\textbf{Systematic testing in kernel-space}
 	\begin{itemize}
 		\item Use internal kernel abstractions to understand concurrency behaviour.
 		\item Relying on user's knowledge makes testing easier.
