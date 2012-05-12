@@ -155,14 +155,14 @@ and {\em any one} of the following:
 
 It is always necessary to identify a decision point during a voluntary reschedule, to maintain the invariant that each transition between decision points is comprised of the execution of only one thread.
 
-In future work (Section~\ref{sec:future-new}), the arbiter may also automatically identify extra decision points, such as on conflicting shared memory accesses.
+In future work (Section~\ref{sec:future-new}), the arbiter may also automatically identify extra decision points, such as conflicting shared memory accesses.
 
 \subsection{The Explorer}
 \label{sec:components-explore}
 
 The explorer maintains a representation of the current branch of the decision tree. It is responsible for checkpointing the state of both Landslide and the guest kernel at each decision point, deciding at the end of the test which branch of the tree to execute next (i.e., selecting which decision point should have been decided differently), and backtracking to appropriate points in the test's execution.
 
-At each decision point, Landslide creates a new node in the decision tree. It stores the TID of the thread that was chosen, the state of the scheduler (what threads are on the runqueue), the state of the heap and the accumulated set of shared memory accesses, and a stack trace of the thread that was running.
+At each decision point, Landslide creates a new node in the decision tree. It stores the TID of the thread that was chosen, the state of the scheduler (which threads are on the runqueue), the state of the heap and the accumulated set of shared memory accesses, and a stack trace of the thread that was running.
 
 \subsection{Test Lifecycle}
 \label{sec:components-test}
@@ -180,13 +180,13 @@ The state machine relies on certain information provided by the scheduler (Secti
 
 \begin{itemize}
 	\item {\bf Is the shell waiting for keyboard input?} In general, the shell only waits for keyboard input when the kernel is ready for the user (or Landslide) to cause a test to run, or after the test has finished and a new one could be run.
-		However, the shell may sometimes be waiting for keyboard input while other threads have some work to do (for example, the init process could have yet to reap a reparented child process), and this work may be affected by race conditions during the test, so we need to include it in the test as well. For these cases an additional check is needed.
+		However, the shell may sometimes be waiting for keyboard input while other threads have some work to do (for example, the init process might not yet have reaped a reparented child process), and this work may be affected by race conditions during the test, so we need to include it in the test as well. For these cases an additional check is needed.
 	\item {\bf Is the kernel idling?} This indicates whether any work is left to be done during bootup or during teardown.\footnote{
 		If the kernel is idling and the shell is not waiting for keyboard input, it is likely that the test case has deadlocked.}
 	\item {\bf How many threads currently exist on the system?} This indicates whether the test has begun running.
 \end{itemize}
 
-The states in the test lifecycle, and the rules for transitioning between them are as follows.
+The states in the test lifecycle, and the rules for transitioning between them, are as follows.
 
 \begin{enumerate}
 	\item {\bf Bootup.} Initial state. When the kernel is idling and the shell is waiting for keyboard input, advance state.
@@ -194,7 +194,7 @@ The states in the test lifecycle, and the rules for transitioning between them a
 		When the current thread count is greater than the start population, advance state.
 	\item {\bf Test running.} Begin constructing the decision tree here (since it is pointless to backtrack to before the test begins). When the current thread count equals the start population, advance state.
 	\item {\bf Test cleanup.} The test processes have exited, but some housekeeping may yet remain. When the the kernel is idling and the shell is waiting for keyboard input, advance state.
-	\item {\bf Test ended.} Invoke the explorer (Section~\ref{sec:components-explore}) to decide whom to rewind, and backtrack.
+	\item {\bf Test ended.} Invoke the explorer (Section~\ref{sec:components-explore}) to decide whom to rewind, and backtrack (to step 3).
 \end{enumerate}
 
 Figure~\ref{fig:teststate} depicts the states and transitions visually.
@@ -222,7 +222,7 @@ Landslide's bug reporting is false-negative oriented, meaning that it does not c
 \begin{enumerate}
 	\item {\bf Kernel panic bugs.} If the kernel invoked \texttt{panic}, it detected its own bug, and Landslide need do nothing but report it.
 	\item {\bf Use-after-free bugs.} Whenever the kernel accesses memory in the heap (when not in the dynamic allocator itself), Landslide verifies that the address is within an allocated range. If not, Landslide proclaims the access to be illegal.\footnote{In the same way, Landslide also detects calls to \texttt{free} on blocks that were already freed or never allocated at all.}
-	\item {\bf Deadlock bugs.} If Landslide finds no runnable threads on the runqueue\footnote{Except for idle, if it exists.}, or if it detects a cycle of threads blocked on each other, it declares that the kernel has deadlocked.
+	\item {\bf Deadlock bugs.} If Landslide finds no runnable threads on the runqueue,\footnote{Except for idle, if it exists.} or if it detects a cycle of threads blocked on each other, it declares that the kernel has deadlocked.
 \suspend{enumerate}
 
 \subsection{Uncertain Bug-Detection Conditions}
@@ -251,10 +251,10 @@ Unfortunately, a thread's presence or absence on the scheduler runqueue does not
 \begin{itemize}
 	\item {\bf Current thread not on runqueue.} If the currently-running thread is not stored on the runqueue, we identify it as runnable anyway (except in the special case of idle, as described below).
 	\item {\bf Idle thread.} Some kernels may have an explicit idle thread and store it on the runqueue, with explicit code to skip over it if other threads are runnable. Hence, if the idle thread is on the runqueue (and/or the current thread), it is only runnable if no other threads are runnable.
-	\item {\bf Yielding mutexes.} In kernels whose mutexes (or other synchronisation idioms) leave threads on the runqueue when they are notionally blocked, such threads are not runnable.
+	\item {\bf Yielding mutexes.} In kernels whose mutexes (or other synchronisation idioms) leave threads on the runqueue when they are notionally blocked, Landslide classifies such threads as not runnable.
 \end{itemize}
 
-Using this notion of runnability, the happens-before relation is established as follows. Let $X$ be a transition and $Y$ be a subsequent transition in a branch that was just explored, and $T_Y$ be the thread associated with $Y$. We say that $X$ {\em enables} $Y$ if $T_Y$ was not runnable immediately before $X$, but was runnable immediately after. Then, a transition $A$ happens-before a transition $B$ if $A$ is the same thread as $B$, if $A$ enables $B$, or if $A$ happens-before some transition $C$ that enables $B$.
+Using this notion of runnability, the happens-before relation is established as follows. Let $X$ be a transition and $Y$ be a subsequent transition in a branch that was just explored, and $T_Y$ be the thread associated with $Y$. We say that $X$ {\em enables} $Y$ if $T_Y$ was not runnable immediately before $X$, but was runnable immediately after. Then, a transition $A$ happens-before a transition $B$ if $T_A$ is the same thread as $T_B$, if $A$ enables $B$, or if $A$ happens-before some transition $C$ that enables $B$.
 
 \subsection{Memory Independence Relation}
 \label{sec:por-independence}
@@ -318,15 +318,15 @@ The independence relation expresses which transitions do not read-and-write or w
 		\end{tabular}
 	}}
 	\end{tabular}
-	\caption{This sample code defeats a DPOR implementation that only uses the first evil ancestor if a decision point is not defined between the two lines of thread 1's code. The first interleaving is explored first; DPOR identifies transition $B$ as the first evil ancestor of $A_1$, and runs the second interleaving next. In the second interleaving, $C$ is no longer a second evil ancestor of $A_2$, so the third interleaving is never explored, and the assertion failure is missed.}
+	\caption{This sample code defeats a DPOR implementation that uses only the first evil ancestor if a decision point is not defined between the two lines of thread 1's code. The first interleaving is explored first; DPOR identifies transition $B$ as the first evil ancestor of $A_1$, and runs the second interleaving next. In the second interleaving, $C$ is no longer a second evil ancestor of $A_2$, so the third interleaving is never explored, and the assertion failure is missed.}
 	\label{fig:evil-ancestors}
 \end{figure}
 
 We found that implementing DPOR in this way was not sound in our setup, because it relies on the invariant that each transition contains only one inter-thread communication event (in kernel-space, this means a shared memory access). Because Landslide builds its decision trees with coarser granularity, i.e. multiple different shared memory conflicts may happen in each transition, Landslide must consider every evil ancestor of each transition when performing DPOR.
 
-Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of only identifying one evil ancestor per transition given that transitions are allowed to have multiple different memory conflicts.
+Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of identifying only one evil ancestor per transition given that transitions are allowed to have multiple different memory conflicts.
 
-While DPOR is a proved-sound algorithm in environments that do have this memory access property, even with this every-ancestor change we are not certain if it is sound in our environment. We justify the use of DPOR anyway because Landslide is already prone to false negatives because of coarse interleaving granularity, and leave proving soundness to future work (and to the theoreticians).
+While DPOR is a proven-sound algorithm in environments that do have this memory access property, even with this every-ancestor change we are not certain if it is sound in our environment. We advocate the use of DPOR anyway because Landslide is already prone to false negatives because of coarse interleaving granularity, and leave investigatin soundness to future work.
 
 \section{Debugging Feedback}
 
@@ -338,7 +338,7 @@ While DPOR is a proved-sound algorithm in environments that do have this memory 
 	\label{fig:found_a_bug}
 \end{figure}
 
-In its unique position of control over when the kernel gets preempted and which thread gets scheduled at each context-switch, Landslide has the capability to provide the user with detailed information about a test case's execution.
+In its unique position of control over when the kernel gets preempted and which thread gets scheduled at each context switch, Landslide has the capability to provide the user with detailed information about a test case's execution.
 When Landslide determines that a bug was found, it immediately aborts exploration of the decision tree, and prints a {\em decision trace} - a comprehensive report of the particular interleaving of thread transitions that caused the bug to appear. Figure~\ref{fig:found_a_bug} depicts a simple decision trace for a use-after-free bug.
 
 The decision trace explains each preemption or voluntary reschedule in the interleaving: which thread used to be running, which thread was chosen to run instead, and the stack trace of the former thread at the point from which it was switched away.

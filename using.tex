@@ -17,7 +17,7 @@ The user guide itself is available at \url{http://bblum.net/landslide-guide.pdf}
 
 In order to cause desired preemptions, Landslide needs to assume that the core of the scheduler works. In short, this means that timer interrupts will trigger context switches, and that if a thread is ``runnable'', at any point where interrupts/preemption is enabled, a finite number of timer preemptions will eventually cause that thread to run.
 
-For deadlock detection, if the kernel has mutexes which loop around a call to \texttt{yield} (or similar), they must be annotated as described in section~\ref{sec:using-annotations}. If mutexes explicitly deschedule blocking threads, no special annotations are needed.
+For deadlock detection, if the kernel has mutexes which loop around a call to \texttt{yield} (or similar), they must be annotated as described in section~\ref{sec:using-annotations}. If mutexes explicitly deschedule blocking threads, no special annotations are needed, because the other annotations do the job.
 
 Landslide does not support kernels that spin-wait anywhere, whether in mutexes or otherwise, especially when waiting for keyboard input or in \texttt{sleep}. Relatedly, the kernel must never run the idle loop when not truly idle, because Landslide uses this as a way of telling when all threads are wedged and/or when the test is done running.
 
@@ -26,12 +26,12 @@ Landslide does not support kernels that spin-wait anywhere, whether in mutexes o
 Landslide does not have much to do with the virtual memory system, but the kernel must direct-map most of kernel memory, including the heap, globals, and kernel thread stacks. Landslide needs this to read values out of memory and to identify memory conflicts.\footnote{
 It would be simple to support more advanced virtual memory set-ups, in which the same virtual address has different physical memory mappings at different times, but this is not implemented.}
 
-The kernel should also use LMM (the \texttt{malloc} package in the 15-410 base code) for dynamic allocation.
+The kernel should also use LMM (the \texttt{malloc} package in the 15-410 base code) for dynamic allocation, to avoid having to manually instrument a custom allocator.
 
 \subsection{System Calls}
 
-In order to run with Landslide, the kernel must be able to boot up to the shell prompt\footnote{
-In Pebbles, the bootup sequence is usually fairly simple, involving the init process spawning the shell.},
+In order to run with Landslide, the kernel must be able to boot up to the shell prompt,\footnote{
+In Pebbles, the bootup sequence is usually fairly simple, involving the init process spawning the shell.}
 receive keyboard input to make the shell start a test case, and return to the shell prompt after the test case finishes. The kernel must have the following system calls implemented and working in at least a rudimentary way:
 \texttt{fork}, \texttt{exec}, \texttt{vanish}, \texttt{wait}, \texttt{readline}.
 
@@ -44,7 +44,7 @@ Apart from the system calls which init and shell execute, the rest are irrelevan
 \section{Instrumenting Kernels with Landslide}
 \label{sec:using-instrumenting}
 
-Here we describe the interface by which Landslide understands the execution of the guest kernel. Landslide tries to be as design-agnostic as possible, after assuming that the kernel implements the Pebbles specification, but it still needs to know about the implementation of certain abstractions within the kernel.
+Here we document the interface by which Landslide understands the execution of the guest kernel. Landslide tries to be as design-agnostic as possible, after assuming that the kernel implements the Pebbles specification, but it still needs to know about the implementation of certain abstractions within the kernel.
 
 \subsection{In-Kernel Annotations}
 \label{sec:using-annotations}
@@ -66,6 +66,9 @@ Note that this refers to the {\em actual runqueue data structure}, which does no
 If the kernel does not keep the currently-running thread on the runqueue, the user must also use \texttt{kern\_current\_extra\_runnable} (Section~\ref{sec:using-student-c}).
 
 \subsubsection{Required Annotations}
+
+Some of these annotations may need to be used in ``sensitive'' regions of scheduler code, where it may not necessarily be clear at what point during the operation the annotation should go. Landslide assumes the scheduler already protects these regions by disabling preemption, and so the exact position of the annotation does not matter as long as it is within the preemption-disabled range..
+
 \begin{itemize}
 	\small
 	\item \texttt{tell\_landslide\_thread\_switch(int new\_tid)} - Call this in the context switcher, when a new thread is switched to.
