@@ -31,12 +31,13 @@ Landslide is also missing functionality to automatically identify decision point
 	\begin{center}
 	\includegraphics[width=0.75\textwidth]{wont-modify-vail.jpg}
 	\end{center}
-	\caption{Ex-members of Operating Systems course staff lament the difficulty involved in teaching students concurrency debugging skills.}
+	\caption{Former members of Operating Systems course staff lament the difficulty involved in teaching students concurrency debugging skills.}
 \end{figure*}
 
 15-410 currently teaches students concurrency debugging skills ``the hard way'': by immersing them in environments where races will arise, and letting them find debugging tactics on their own to use in conjunction with conventional stress testing.
 
-We believe that a tool such as Landslide could change the way students learn such skills for the better, beyond simply increasing their likelihood of finding bugs during testing. The decision tree is a much more structured way of expressing a test case's concurrent behaviour than the way 15-410 currently teaches, which is ``think hard until you figure out the buggy interleaving''. Having students use Landslide, even to a small extent, might encourage them to think in this more structured way.
+We believe that a tool such as Landslide could change the way students learn such skills for the better, beyond simply increasing their likelihood of finding bugs during testing. The decision tree is a much more structured way of expressing a test case's concurrent behaviour than the way 15-410 currently teaches, which is ``think hard until you figure out the buggy interleaving''. Having students use Landslide, even to a small extent, might encourage them to think in this more structured way.\footnote{
+In 15-410, before the kernel project, students also implement a user-space thread library. Just as Landslide could help the students during the kernel project, so too could a user-space systematic exploration tool help during the thread library project.}
 
 \subsection{Landslide as a Grading Tool}
 
@@ -70,7 +71,7 @@ Landslide's tree exploration is implemented sequentially. However, because DPOR'
 
 \subsection{Symbolic Execution}
 
-In Section~\ref{sec:related-orthogonal}, we mentioned the technique of symbolic execution for dynamic verification. We believe that symbolic execution could be combined with systematic explorationto help find races in certain obscure code paths that systematic exploration by itself might not even execute.
+In Section~\ref{sec:related-orthogonal}, we mentioned the technique of symbolic execution for dynamic verification. We believe that symbolic execution could be combined with systematic exploration to help find races in certain obscure code paths that systematic exploration by itself might not even execute.
 
 One interesting phenomenon that would occur from combining symbolic execution and systematic exploration would be a new notion of decision points. Symbolic execution involves its own state space exploration, in which control flow branch points correspond to decision points; hence, to combine it with systematic exploration would create a hybrid state space in which a ``decision point'' could be a place where either different threads could preempt each other or multiple control flow paths could be taken\cite{dawson}.
 

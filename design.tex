@@ -20,7 +20,7 @@ The kernel instrumentation serves as the glue between what the guest kernel is d
 
 \begin{itemize}
 	\item {\bf User-provided instrumentation.} Some parts of the kernel may be written in any number of ways, and hence require the user's assistance for Landslide to understand. The user-provided instrumentation, described in detail in Section~\ref{sec:using-instrumenting}, informs Landslide about thread-related lifecycle and scheduling events and the anatomy of the kernel's scheduler.
-	\item {\bf Automatic instrumentation.} All Pebbles kernels have some things in common, and Landslide's build system is able to automatically instrument certain parts of the kernel. This instrumentation informs Landslide about the dynamic memory allocator, common library functions such as \texttt{panic}, and certain aspects of the kernel's executable format.
+	\item {\bf Automatic instrumentation.} All Pebbles kernels have some things in common (largely due to the common starter code provided for the class project), and Landslide's build system is able to automatically instrument certain parts of the kernel. This instrumentation informs Landslide about the dynamic memory allocator, common library functions such as \texttt{panic}, and certain aspects of the kernel's executable format.
 \end{itemize}
 
 \subsection{Landslide Scheduling}
@@ -128,7 +128,7 @@ One alternative simpler method would be, when triggering a timer interrupt, to t
 \subsection{Memory Tracking}
 \label{sec:components-memory}
 
-Landslide maintains a mirror image of the guest kernel's dynamic allocation heap, so it can know at any point what memory ranges are allocated and what ranges used to be allocated but now are freed. This set is updated each time the guest kernel calls \texttt{malloc} or \texttt{free}.
+Landslide maintains a mirror image of the guest kernel's dynamic allocation heap, so it can know at any point which memory ranges are allocated and which ranges used to be allocated but now are freed. This set is updated each time the guest kernel calls \texttt{malloc} or \texttt{free}.
 
 Landslide also maintains a set of shared memory accesses made since the last decision point, for use with Partial Order Reduction (Section~\ref{sec:por-independence}). Whenever the guest kernel accesses memory in its heap or in its global data regions, Landslide adds the address of the access to the set, with a flag indicating whether it was a read or a write. (If the address was already present, and the recorded access was a read and the current access is a write, we upgrade the recorded access to a write. Otherwise if the address was already present, we do nothing.)
 
@@ -139,7 +139,7 @@ When Landslide reaches a decision point, this accumulated set is copied in the d
 \subsection{The Arbiter}
 \label{sec:components-arbiter}
 
-The arbiter identifies points during execution should count as decision points. The selection is mainly controlled by the user, during the annotation and configuration process, but it also automatically identifies {\em voluntary reschedules}, which comprise the ``minimal necessary set'' of decision points.
+The arbiter identifies points during execution that should count as decision points. The selection is mainly controlled by the user, during the annotation and configuration process. In addition, the arbiter also automatically identifies {\em voluntary reschedules}, which comprise the ``minimal necessary set'' of decision points.
 
 A voluntary reschedule is identified when:
 \begin{itemize}
@@ -160,7 +160,7 @@ In future work (Section~\ref{sec:future-new}), the arbiter may also automaticall
 \subsection{The Explorer}
 \label{sec:components-explore}
 
-The explorer maintains a representation of the current branch of the decision tree. It is responsible for checkpointing at each decision point, deciding at the end of the test which branch of the tree to execute next (i.e., selecting which decision point should have been decided differently), and backtracking to appropriate points in the test's execution.
+The explorer maintains a representation of the current branch of the decision tree. It is responsible for checkpointing the state of both Landslide and the guest kernel at each decision point, deciding at the end of the test which branch of the tree to execute next (i.e., selecting which decision point should have been decided differently), and backtracking to appropriate points in the test's execution.
 
 At each decision point, Landslide creates a new node in the decision tree. It stores the TID of the thread that was chosen, the state of the scheduler (what threads are on the runqueue), the state of the heap and the accumulated set of shared memory accesses, and a stack trace of the thread that was running.
 
@@ -206,13 +206,13 @@ Figure~\ref{fig:teststate} depicts the states and transitions visually.
 
 Landslide is implemented as a module for Simics\cite{simics}. When running the kernel, Simics calls into Landslide once every time the kernel executes an instruction or performs a memory read or write. Landslide uses this information, in conjunction with the user-provided instrumentation, to maintain its internal representations of the state of the guest kernel.
 
-Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the execution state at decision points during the test.
+Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the guest kernel's execution state at decision points during the test.
 
 \section{Identifying Bugs}
 \label{sec:techniques-bugs}
 
 % A healthy dose of snark.
-Without a formal specification of the internals of the guest kernel's implementation\cite{sel4}, it is of course impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
+Without a formal specification of the internals of the guest kernel's implementation\cite{sel4}, it is impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
 In order to identify when the guest kernel has done something incorrect, Landslide performs several different types of checks, some accurate but noncomprehensive, and some heuristic-based.
 
 Landslide's bug reporting is false-negative oriented, meaning that it does not check for suspicious behaviours that might indicate underlying bugs, so it may report that it found no bugs even if some existed. If Landslide does report a bug, though, it is almost certainly correct (except in cases as listed below).
@@ -244,7 +244,7 @@ We make use of Dynamic Partial-Order Reduction (DPOR), the state-space pruning a
 
 \subsection{Happens-Before Relation}
 
-In order to establish a happens-before relation between transitions, Landslide uses the state of the scheduler runqueues (Section~\ref{sec:components-sched}), which are snapshotted at every decision point.
+The happens-before relation expresses for each pair of transitions whether executing the first one is required to ``enable'' the second one. In order to establish the relation, Landslide uses the state of the scheduler runqueues (Section~\ref{sec:components-sched}), which are snapshotted at every decision point (Section~\ref{sec:components-explore}).
 
 Unfortunately, a thread's presence or absence on the scheduler runqueue does not necessarily correspond to whether it is {\em runnable} at any point. We identify three exceptions, as foreshadowed in Section~\ref{sec:challenges-design}:
 

@@ -16,6 +16,8 @@ In this chapter we define certain terms that have specific meanings in the conte
 
 \section{Scheduling Terms}
 
+The following terms refer to parts of the guest kernel's execution.
+
 \resume{enumerate}
 	\item {\bf Thread}:
 		One participating agent in a concurrent program, which executes code sequentially, with the potential to be interleaved with the execution of other threads in the system.
@@ -37,9 +39,11 @@ In this chapter we define certain terms that have specific meanings in the conte
 	\label{fig:threadfork}
 \end{figure}
 
+The following terms refer to parts of Landslide's analysis, regardless of the kernel under test's implementation.
+
 \resume{enumerate}
 	\item {\bf Decision point}:
-		A point during execution (between two consecutive instructions, precisely) which is deemed ``interesting'' in terms of the likelihood that thread switches at that point will cause concurrency bugs to arise. All thread switches occur at a decision point; some are voluntary reschedules caused by the kernel and others are involuntary preemptions caused by Landslide.
+		A point during execution (between two consecutive instructions, precisely) which is deemed ``interesting'' in terms of the likelihood that thread switches at that point will cause concurrency bugs to arise. Every thread switch occurs at a decision point; some are voluntary reschedules caused by the kernel and others are involuntary preemptions caused by Landslide.
 	\item {\bf Transition}:
 		A sequence of instructions executed by a single thread between two decision points. At a given decision point, Landslide chooses which thread will run (and causes it to do so), and that thread executes a transition, after which point Landslide will have identified a subsequent decision point
 	\item {\bf Decision set} (or {\bf Set of decision points}):
@@ -48,7 +52,7 @@ In this chapter we define certain terms that have specific meanings in the conte
 		The tree defined by the possibility at each decision point of causing any runnable thread to execute its own transition. Abstractly, this tree comprises all possible states reachable by any interleaving of threads.
 		A decision tree is created/discovered during an exploration using a particular decision point set; the set is what the user configures, and the tree is what arises as a result.
 	\item {\bf Branch}:
-		One particular execution of the test case; a set of decision points with exactly one transition in between each of them, characterising a single interleaving of threads.
+		One particular execution of the test case; a set of decision points with exactly one transition between each of them, characterising a single interleaving of threads.
 	\item {\bf Interleaving}:
 		A less precise / more abstract term for a branch, or for a subset of transitions which make up a branch.
 	\item {\bf Bug}: An execution state which Landslide identifies as incorrect, which is indicative of illegal behaviour. Each branch of the tree may or may not have a bug in it. See Section~\ref{sec:techniques-bugs}.

@@ -3,13 +3,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 We evaluated Landslide in two ways.
-First, we conducted a user study with present students of 15-410, to understand the eases and difficulties of Landslide's user interface process, to understand how to polish it into a useful debugging tool.
+First, we conducted a user study with students of 15-410 during the spring 2012 semester, to understand the ease and difficulty of Landslide's user interface process, to understand how to polish it into a more useful debugging tool.
 Second, we did a case study of six bugs in two kernels, investigating them in-depth to understand how systematic testing might best be harnessed to find bugs without in advance knowing the decision set necessary to expose them.
 
 \section{User Experience}
 \label{sec:eval-studence}
 
-To evaluate the experience of non-expert users working with Landslide, we met with 5 groups of students in 15-410 (9 students in total) during the final week of the kernel project, and had them use Landslide with their own kernels.
+To evaluate the experience of non-expert users working with Landslide, we met with 5 groups of students in 15-410 (9 students in total) during the final week of the kernel project in spring 2012, and had them use Landslide with their own kernels.
 In order to garner student interest in Landslide, the author gave a lecture in 15-410 on systematic exploration in general and on Landslide specifically during the second-to-last week of the kernel project.\footnote{
 The lecture slides are available at \url{http://www.cs.cmu.edu/~410-s12/lectures/L30_Landslide.pdf}, and at \url{http://bblum.net/landslide-lecture.pdf}, and at \url{http://www.contrib.andrew.cmu.edu/~bblum/landslide-lecture.pdf}.}
 
@@ -73,7 +73,7 @@ Students also described compatibility issues they faced between their kernels an
 	\item {\bf Driver thread interfering with test lifecycle tracking.} One kernel (Pathos, the 15-410 reference kernel) had to be modified to ensure the keyboard thread ran once before the test started, which was not mandated by the kernel design. (If the thread didn't run, it would conflict with the population-tracking described in Section~\ref{sec:components-test}, and Landslide would not be able to detect when the test was over.)
 	\item {\bf Kernel behaviour requirement violations.}
 		The majority of groups needed to change their scheduling around the idle thread in order to meet the requirement that the kernel never run idle when progress could otherwise be made (Sections~\ref{sec:challenges-design} and \ref{sec:using-requirements-sched}).
-		Also, one kernel had to have its custom memory allocator disabled, because Landslide only supports LMM, the provided allocator.
+		Also, one kernel had to have its custom memory allocator disabled, because Landslide only supports LMM, the allocator that 15-410 provides.
 \end{itemize}
 
 Additionally, two enterprising users found ways to avoid implementing the functions in \texttt{student.c} (Section~\ref{sec:using-student-c}). It is worth considering integrating these approaches into the recommended approach to eliminate the need for \texttt{student.c} entirely.
@@ -85,7 +85,7 @@ Additionally, two enterprising users found ways to avoid implementing the functi
 \subsection{Landslide Victories}
 \label{sec:eval-victory}
 
-Of five student groups that we worked with during the user study, four groups completed the instrumentation process and got Landslide to explore at least a minimal decision tree. Of those groups, two found race conditions in their kernel. Additionally, Landslide helped all four groups find deterministic bugs - three groups had previously unknown problems with running the idle thread inappropriately, and the other group had a simple use-after-free.
+Of five student groups that we worked with during the user study, four groups completed the instrumentation process and got Landslide to explore at least a minimal decision tree. (A minimal decision tree is one resulting from decision points only on voluntary reschedules, which Landslide automatically identifies.) Of those groups, two found race conditions in their kernel. Additionally, Landslide helped all four groups find deterministic bugs - three groups had previously unknown problems with running the idle thread inappropriately, and the other group had a simple use-after-free.
 
 We list how much progress each group made, and whether or not they found any bugs.
 

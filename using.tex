@@ -21,9 +21,9 @@ For deadlock detection, if the kernel has mutexes which loop around a call to \t
 
 Landslide does not support kernels that spin-wait anywhere, whether in mutexes or otherwise, especially when waiting for keyboard input or in \texttt{sleep}. Relatedly, the kernel must never run the idle loop when not truly idle, because Landslide uses this as a way of telling when all threads are wedged and/or when the test is done running.
 
-\subsection{VM}
+\subsection{Virtual Memory}
 
-Landslide does not have much to do with the VM, but the kernel must direct-map most of kernel memory, including the heap, globals, and kernel thread stacks. Landslide needs this to read values out of memory and to identify memory conflicts.\footnote{
+Landslide does not have much to do with the virtual memory system, but the kernel must direct-map most of kernel memory, including the heap, globals, and kernel thread stacks. Landslide needs this to read values out of memory and to identify memory conflicts.\footnote{
 It would be simple to support more advanced virtual memory set-ups, in which the same virtual address has different physical memory mappings at different times, but this is not implemented.}
 
 The kernel should also use LMM (the \texttt{malloc} package in the 15-410 base code) for dynamic allocation.
@@ -60,7 +60,7 @@ We provide a set of functions that the kernel needs to call at certain points du
 
 \subsubsection{Important Note about Runqueues}
 \label{sec:using-runqueue}
-Landslide uses two of these annotations, \texttt{on\_rq()} and \texttt{off\_rq()}, for tracking the state of the scheduler's runqueue at each point during execution.
+Landslide uses two of these annotations, \texttt{on\_rq()} and \texttt{off\_rq()}, for tracking the state of the guest kernel's scheduler runqueue at each point during execution.
 Note that this refers to the {\em actual runqueue data structure}, which does not necessarily correspond to the abstract ``set of all runnable threads'', depending on whether or not the kernel keeps the current thread on the runqueue or off of it.
 
 If the kernel does not keep the currently-running thread on the runqueue, the user must also use \texttt{kern\_current\_extra\_runnable} (Section~\ref{sec:using-student-c}).
