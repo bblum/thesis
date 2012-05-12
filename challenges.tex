@@ -1,16 +1,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Challenges of Kernel-space}
+\chapter{Challenges of Kernel Space}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Causes of Concurrency}
 
-In user-space, a systematic exploration tool may use the underlying kernel to help control the concurrent behaviour of the system\cite{dbug-ssv}. Simple system call invocations can cause a particular thread to run at a particular time, or to block while another thread runs first.
+In user space, a systematic exploration tool may cooperate with the underlying kernel to help control the concurrent behaviour of the system\cite{dbug-ssv}. Simple system call invocations can cause a particular thread to run at a particular time, or to block while another thread runs first.
 
-In kernel-space, however, the scheduler is part of the system being tested, and we can no longer always interrupt the execution of a test case to ask the scheduler to instantly start running a different thread.
+In kernel space, however, the scheduler is part of the system being tested, and we can no longer always interrupt the execution of a test case to ask the scheduler to instantly start running a different thread.
 \begin{itemize}
 	\item {\bf Non-preemptibility.} Certain regions of code may be non-preemptible, so a testing tool must know when it is legal to preempt a kernel thread.
-	\item {\bf The context switcher.} A context switch between threads is no longer "instantaneous"; many instructions must be run between when we decide to preempt and when the next thread begins running, and the tool must be aware of this "intermediate state". A tool must be aware of the context switch process both to avoid flooding the kernel with interrupt frames that would overflow the stack, and to be able to ignore shared memory conflicts common to all thread transitions (Section~\ref{sec:por-independence}).
-	\item {\bf Runqueue tracking.} The kernel's scheduler and the tool must cooperate in some way so that the tool can both know what threads are runnable at every point during execution and cause any given runnable thread to begin running in place of the current one.
+	\item {\bf The context switcher.} A context switch between threads is no longer ``instantaneous'': many instructions must be run between when we decide to preempt and when the next thread begins running, and the tool must be aware of this ``intermediate state''. A tool must be aware of the context switch process both to avoid flooding the kernel with interrupt frames that would overflow the stack, and to be able to ignore shared memory conflicts inherent to all thread transitions (Section~\ref{sec:por-independence}).
+	\item {\bf Run-queue tracking.} The kernel's scheduler and the tool must cooperate in some way so that the tool can both know what threads are runnable at every point during execution and cause any given runnable thread to begin running in place of the current one.
 \end{itemize}
 
 In this work, we focus specifically on nondeterministic scheduling driven by timer interrupts. In future work (Section~\ref{sec:future-drivers}), we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.

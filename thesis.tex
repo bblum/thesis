@@ -54,9 +54,9 @@ We show that our techniques make systematic testing in kernel-space feasible, an
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Race conditions are notoriously difficult to debug.
-Because of their nondeterministic nature, they frequently do not manifest at all during testing, and when they do manifest, it is difficult to reproduce them reliably enough to collect enough information to help debug.
+Because of their nondeterministic nature, they frequently do not manifest at all during testing, and when they do manifest, it is difficult to reproduce them reliably enough to collect enough information to help debugging.
 
-In kernel-space, race condition debugging becomes even more difficult. Many aspects of the concurrency implementation itself are part of the system being tested, and may themselves have race-inducing flaws.
+In kernel space, race condition debugging becomes even more difficult. Many aspects of the concurrency implementation itself are part of the system being tested, and may themselves have race-inducing flaws.
 
 % TODO: talk about systematic exploration
 %It provides a better alternative to conventional long-running stress tests, because it is less likely to overlook buggy execution patterns, and it enables a testing framework to report more thorough debugging information.
@@ -64,21 +64,21 @@ In kernel-space, race condition debugging becomes even more difficult. Many aspe
 
 % TODO: make sure to talk about TAs
 
-Landslide
-\footnote{Landslide {\em (n)} - A phenomenon which demonstrates that Pebbles are not as stable as you might think.}
+Landslide\footnote{
+Landslide {\em (n)} - A phenomenon which demonstrates that Pebbles are not as stable as you might think.}
 is an effort to make easier the process of debugging kernel-space races.
-It is geared towards kernels that meet the Pebbles specification, the main project in Operating System Design and Implementation (15-410) at CMU, and implemented as a module for Simics, the x86 simulator that students use to run their Pebbles kernels.
+It is geared towards kernels that implement the Pebbles specification, the main project in Operating System Design and Implementation (15-410) at CMU, and implemented as a module for Wind River Simics\textsuperscript{\texttrademark}, the x86 simulator that students use to run their Pebbles kernels.
 During execution of a kernel, Landslide records important actions performed by the kernel, attempts to decide at which points in the kernel's execution a preemption will be most likely to expose a bug, and then exercises all possible interleavings of kernel threads around such points.
-When Landslide finds a bug (determined with a set of various checks and heuristics), it stops execution and prints information about the sequence of interleavings that caused the bug to show up.
+When Landslide finds a bug (predicted by a set of common checks and heuristics), it stops execution and prints information about the sequence of interleavings that exposed the bug.
 
-With Landslide, we see testing a kernel as a process of manipulating test parameters in two ways: first, in the choice of test case (the userspace program that exercises a specific set of system calls), and second, in the configuration of Landslide in regard to which parts of the kernel are ``interesting'' in the behaviour of the test case and which are irrelevant.
+With Landslide, we see testing a kernel as a process of manipulating test parameters in two ways: first, in the choice of test case (the user-space program that exercises a specific set of system calls), and second, in the configuration of Landslide in regard to which parts of the kernel are ``interesting'' in the behaviour of the test case and which are irrelevant.
 Searching for and understanding race conditions exposed by a given test becomes a joint effort between the programmer and Landslide, combining the programmer's specific knowledge about the design of the kernel and Landslide's ability to explore many interleavings efficiently.
 
 % TODO: this paragraph is incongruous in light of the above three; what audience are you writing for, anyway?
 Many techniques exist for dynamic testing of concurrent systems for race conditions.
 Systematic exploration, the strategy that Landslide uses, involves modelling a concurrent test case as a series of {\em transitions} by each of a set of {\em agents}
 \footnote{In this work, we equate agents with a kernel's scheduler threads.}
-between {\em decision points} (i.e., actions which the tool and/or the user determine to be relevant to the concurrent behaviour of the test), and attempting to exercise all possible orderings of the transitions in hopes that one or more ordering will expose a bug.
+between {\em decision points} (i.e., actions which the tool and/or the user determine to be relevant to the concurrent behaviour of the test), and attempting to exercise all possible orderings of the transitions in hope that one or more ordering will expose a bug.
 
 In this work, we present Landslide as a tool and framework for finding race conditions in kernels using systematic exploration, implemented as a module for the Simics simulator and geared towards Pebbles, the specification implemented by students in 15-410 at CMU.
 We study the challenges inherent in applying systematic testing techniques in kernel-space, in contrast with user-space applications, and present techniques (some sound, and some heuristic) for addressing them.
