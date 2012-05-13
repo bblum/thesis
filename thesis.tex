@@ -15,8 +15,9 @@
 \usepackage{mjz-titlepage}
 \usepackage{framed}
 \usepackage{setspace}
-\usepackage{subfig}
 \setstretch{1.05}
+\usepackage{subfig}
+\usepackage{changebar}
 
 \begin{document}
 %\captionsetup{width=.75\textwidth,font=small,labelfont=bf}
@@ -37,6 +38,10 @@
 \newcommand\QQ{\mathbb{Q}}
 \newcommand\RR{\mathbb{R}}
 \newcommand\ZZ{\mathbb{Z}}
+
+\setcounter{changebargrey}{35}
+\newcommand\revision[1]{\begin{samepage} \cbstart #1 \cbend \end{samepage}}
+%\newcommand\revision[1]{#1}
 
 \begin{abstract}
 Systematic exploration is an approach to finding race conditions by deterministically executing every possible interleaving of thread transitions and identifying which ones expose bugs.

@@ -17,7 +17,7 @@ The user guide itself is available at \url{http://bblum.net/landslide-guide.pdf}
 
 In order to cause desired preemptions, Landslide needs to assume that the core of the scheduler works. In short, this means that timer interrupts will trigger context switches, and that if a thread is ``runnable'', at any point where interrupts/preemption is enabled, a finite number of timer preemptions will eventually cause that thread to run.
 
-For deadlock detection, if the kernel has mutexes which loop around a call to \texttt{yield} (or similar), they must be annotated as described in section~\ref{sec:using-annotations}. If mutexes explicitly deschedule blocking threads, no special annotations are needed, because the other annotations do the job.
+For deadlock detection, if the kernel has mutexes which loop around a call to \texttt{yield} (or similar), they must be annotated as described in section~\ref{sec:using-annotations}. \revision{If mutexes explicitly deschedule blocking threads, no special annotations are needed, because the other annotations do the job.}
 
 Landslide does not support kernels that spin-wait anywhere, whether in mutexes or otherwise, especially when waiting for keyboard input or in \texttt{sleep}. Relatedly, the kernel must never run the idle loop when not truly idle, because Landslide uses this as a way of telling when all threads are wedged and/or when the test is done running.
 
@@ -26,7 +26,7 @@ Landslide does not support kernels that spin-wait anywhere, whether in mutexes o
 Landslide does not have much to do with the virtual memory system, but the kernel must direct-map most of kernel memory, including the heap, globals, and kernel thread stacks. Landslide needs this to read values out of memory and to identify memory conflicts.\footnote{
 It would be simple to support more advanced virtual memory set-ups, in which the same virtual address has different physical memory mappings at different times, but this is not implemented.}
 
-The kernel should also use LMM (the \texttt{malloc} package in the 15-410 base code) for dynamic allocation, to avoid having to manually instrument a custom allocator.
+The kernel should also use LMM (the \texttt{malloc} package in the 15-410 base code) for dynamic allocation, \revision{to avoid having to manually instrument a custom allocator.}
 
 \subsection{System Calls}
 
@@ -67,7 +67,7 @@ If the kernel does not keep the currently-running thread on the runqueue, the us
 
 \subsubsection{Required Annotations}
 
-Some of these annotations may need to be used in ``sensitive'' regions of scheduler code, where it may not necessarily be clear at what point during the operation the annotation should go. Landslide assumes the scheduler already protects these regions by disabling preemption, and so the exact position of the annotation does not matter as long as it is within the preemption-disabled range.
+\revision{Some of these annotations may need to be used in ``sensitive'' regions of scheduler code, where it may not necessarily be clear at what point during the operation the annotation should go. Landslide assumes the scheduler already protects these regions by disabling preemption, and so the exact position of the annotation does not matter as long as it is within the preemption-disabled range.}
 
 \begin{itemize}
 	\small
@@ -118,7 +118,7 @@ There are two functions that the user needs to implement in Landslide itself, in
         \item \texttt{bool kern\_ready\_for\_timer\_interrupt(conf\_object\_t *cpu)} - This function can be used to express when the scheduler is ``locked'' in a way not involving disabled interrupts. Landslide will avoid trying to preempt the kernel whenever this is false.
 \end{itemize}
 
-Both of these functions are predicates on the guest kernel's execution state (usually on the contents of its scheduler's data structures). Example implementations are given in Figure~\ref{fig:student-c}.
+\revision{Both of these functions are predicates on the guest kernel's execution state (usually on the contents of its scheduler's data structures). Example implementations are given in Figure~\ref{fig:student-c}.}
 
 \begin{figure}[h]
 	% FIXME: replace with an image
@@ -171,7 +171,7 @@ These configuration options help Landslide identify potentially-conflicting shar
 \begin{itemize}
 	\small
 	\item \texttt{sched\_func} - When functions that make up the kernel's scheduler are identified, Landslide knows to ignore shared memory accesses from them. Accesses to scheduler data structures happen during {\em every} transition, so ignoring these is necessary for achieving any reduction at all.
-	\item \texttt{ignore\_sym} - The user may wish to ignore memory accesses from other global data structures as well. For example, ignoring a mutex which is locked very frequently, but irrelevant to the actual test case, will result in an independence relation that better reflects what is actually being tested for.
+	\item \texttt{ignore\_sym} - The user may wish to ignore memory accesses from other global data structures as well. For example, ignoring a mutex which is locked very frequently, but irrelevant to the actual test case, will result in an independence relation that \revision{enables much better state space reduction without losing the ability to find bugs in the parts of the kernel the user is interested in testing}.
 	\item \texttt{within\_function} - If the user configures decision points to happen in common code paths, such as \texttt{mutex\_lock}, it will likely generate more branching than needed.\footnote{
 For example, if testing \texttt{vanish}, there's no need to branch on a \texttt{mutex\_lock} in \texttt{exec}.}
 This configuration option allows the user to whitelist functions so that Landslide will only decide if the current thread is ``within'' one of those functions.

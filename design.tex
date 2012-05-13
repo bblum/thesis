@@ -244,7 +244,7 @@ We make use of Dynamic Partial-Order Reduction (DPOR), the state-space pruning a
 
 \subsection{Happens-Before Relation}
 
-The happens-before relation expresses for each pair of transitions whether executing the first one is required to ``enable'' the second one. In order to establish the relation, Landslide uses the state of the scheduler runqueues (Section~\ref{sec:components-sched}), which are snapshotted at every decision point (Section~\ref{sec:components-explore}).
+\revision{The happens-before relation expresses for each pair of transitions whether executing the first one is required to ``enable'' the second one. In order to establish the relation,} Landslide uses the state of the scheduler runqueues (Section~\ref{sec:components-sched}), which are snapshotted at every decision point (Section~\ref{sec:components-explore}).
 
 Unfortunately, a thread's presence or absence on the scheduler runqueue does not necessarily correspond to whether it is {\em runnable} at any point. We identify three exceptions, as foreshadowed in Section~\ref{sec:challenges-design}:
 
