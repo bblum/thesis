@@ -67,7 +67,7 @@ If the kernel does not keep the currently-running thread on the runqueue, the us
 
 \subsubsection{Required Annotations}
 
-Some of these annotations may need to be used in ``sensitive'' regions of scheduler code, where it may not necessarily be clear at what point during the operation the annotation should go. Landslide assumes the scheduler already protects these regions by disabling preemption, and so the exact position of the annotation does not matter as long as it is within the preemption-disabled range..
+Some of these annotations may need to be used in ``sensitive'' regions of scheduler code, where it may not necessarily be clear at what point during the operation the annotation should go. Landslide assumes the scheduler already protects these regions by disabling preemption, and so the exact position of the annotation does not matter as long as it is within the preemption-disabled range.
 
 \begin{itemize}
 	\small
@@ -98,14 +98,14 @@ Some of these annotations may need to be used in ``sensitive'' regions of schedu
 \begin{itemize}
 	\small
 	\item \texttt{tell\_landslide\_decide()} - Call this to define additional decision points. See section~\ref{sec:using-decision}.
-	\item \texttt{assert()} or \texttt{panic()} - You should be using these already, but they are extra useful in Landslide.
+	\item \texttt{assert()} or \texttt{panic()} -
 		The more important invariants for which a kernel has \texttt{assert}s, the more likely Landslide is to find bugs that would trigger them - otherwise, even if they do happen, Landslide might never know (just like in conventional stress testing).
 \end{itemize}
 
 \subsection{Configuration File}
 \label{sec:using-config-landslide}
 
-There is also a config file the user needs to fill out, called \texttt{config.landslide}. Some of the fields are required information, and some are tweaks that change the way Landslide behaves. We omit discussion of the required fields, and explain the optimisations and behaviour tweaks that Landslide supports in Section~\ref{sec:using-search}.
+There is also a config file the user needs to fill out, called \texttt{config.landslide}. Some of the fields are required information, and some are tweaks that change the way Landslide behaves. We omit discussion of the required fields, and explain the optimisations and behaviour tweaks that Landslide supports using this file in Section~\ref{sec:using-search}.
 
 \subsection{Instrumenting Within Landslide}
 \label{sec:using-student-c}
@@ -118,6 +118,31 @@ There are two functions that the user needs to implement in Landslide itself, in
         \item \texttt{bool kern\_ready\_for\_timer\_interrupt(conf\_object\_t *cpu)} - This function can be used to express when the scheduler is ``locked'' in a way not involving disabled interrupts. Landslide will avoid trying to preempt the kernel whenever this is false.
 \end{itemize}
 
+Both of these functions are predicates on the guest kernel's execution state (usually on the contents of its scheduler's data structures). Example implementations are given in Figure~\ref{fig:student-c}.
+
+\begin{figure}[h]
+	% FIXME: replace with an image
+	\centering
+	\begin{framed}
+	{\small \begin{verbatim}
+	bool kern_current_extra_runnable(conf_object_t *cpu)
+	{
+	    int tcb = READ_MEMORY(cpu, GUEST_CURRENT_TCB_POINTER);
+	    int state_flag = READ_MEMORY(cpu, tcb + GUEST_TCB_STATE_FLAG_OFFSET);
+	    return state_flag == GUEST_TCB_RUNNABLE;
+	}
+	bool kern_ready_for_timer_interrupt(conf_object_t *cpu)
+	{
+	    int x = READ_MEMORY(cpu, GUEST_PREEMPTION_FLAG);
+	    return x == GUEST_PREEMPTION_ENABLED;
+	}
+	\end{verbatim}
+	}
+	\end{framed}
+	\caption{Example implementations of the two functions in \texttt{student.c}.}
+	\label{fig:student-c}
+\end{figure}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Configuring Landslide's Behaviour}
 \label{sec:using-customise}
@@ -128,7 +153,7 @@ Getting a good set of decision points is important to being able both to explore
 
 \begin{itemize}
         \item Use \texttt{tell\_landslide\_decide()} to indicate decision points.\footnote{
-	We recommend at the start of \texttt{mutex\_lock} and at the end of \texttt{mutex\_unlock}, though it is also important to use one's own intuition, depending on what system call(s) are being tested.}
+	We recommend at the start of \texttt{mutex\_lock} and at the end of \texttt{mutex\_unlock}, though it is also important to use one's own intuition, depending on which system call(s) are being tested.}
         \item Use \texttt{sched\_func} and \texttt{ignore\_sym} to make Landslide ignore global memory accesses, to enable better pruning.
         \item Use \texttt{DECISION\_INFO\_ONLY} to examine the set of decision points, and figure out which ones are irrelevant.
         \item Use \texttt{within\_func} and \texttt{without\_func} to make Landslide only use relevant decision points.
