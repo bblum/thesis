@@ -1,7 +1,7 @@
 \chapter{Code for Provided Test Cases}
 \label{sec:test-code}
 
-The test cases that use the \texttt{thread\_fork} system call are written in assembly, because thread creation can only safely be done from C using a userspace thread library. However, using a userspace thread library for thread creation might forcibly serialise certain operations that would expose kernel bugs only if concurrent, and also necessitates many more system calls, which dramatically increases the size of the decision tree.
+The test cases that use the \texttt{thread\_fork} system call are written in assembly, because thread creation can only safely be done from C using a user-space thread library. However, using a user-space thread library for thread creation might forcibly serialise certain operations that would expose kernel bugs only if concurrent, and also necessitates many more system calls, which dramatically increases the size of the decision tree.
 
 \section{\texttt{vanish\_vanish.c}}
 %\lstinputlisting[language=C]{vanish_vanish.c}

@@ -36,7 +36,7 @@ Landslide is also missing functionality to automatically identify decision point
 
 15-410 currently teaches students concurrency debugging skills ``the hard way'': by immersing them in environments where races will arise, and letting them find debugging tactics on their own to use in conjunction with conventional stress testing.
 
-We believe that a tool such as Landslide could change the way students learn such skills for the better, beyond simply increasing their likelihood of finding bugs during testing. The decision tree is a much more structured way of expressing a test case's concurrent behaviour than the way 15-410 currently teaches, which is ``think hard until you figure out the buggy interleaving''. Having students use Landslide, even to a small extent, might encourage them to think in this more structured way.\footnote{
+We believe that a tool such as Landslide could change the way students learn such skills for the better, beyond simply increasing their likelihood of finding bugs during testing. The decision tree is a much more structured way of expressing a test case's concurrent behaviour than the way 15-410 currently teaches, which is ``think hard until you figure out the buggy interleaving.'' Having students use Landslide, even to a small extent, might encourage them to think in this more structured way.\footnote{
 \revision{In 15-410, before the kernel project, students also implement a user-space thread library. Just as Landslide could help the students during the kernel project, so too could a user-space systematic exploration tool help during the thread library project.}}
 
 \subsection{Landslide as a Grading Tool}
@@ -60,7 +60,8 @@ Most notably among the information Landslide has at its disposal is the collecti
 
 Landslide could make use of data race detection techniques\cite{datacollider}, however, to strike a middle ground in which shared memory accesses it chooses.
 \begin{enumerate}
-	\item It should be aware of the types and interfaces associated with the kernel's synchronisation primitives (mutexes, condvars, semaphores, etc), and be able to treat operations on those as ``guaranteed to work'' (similar to Section~\ref{sec:por-independence}).
+	\item It should be aware of the types and interfaces associated with the kernel's synchronisation primitives (mutexes, condvars, semaphores, etc), and be able to treat operations on those as ``guaranteed to work'' (similar to Section~\ref{sec:por-independence}).\footnote{
+	\revision{If such operations were instead themselves incorrect, it would mean that data race detection might fail to identify certain racy accesses. The technique would then still identify some racy accesses, but might miss others.}}
 	\item Next, it should recognise acquire and release (or sleep and wake) operations on synchronisation primitives, and use that information to track lockset-type information.
 	\item Ultimately, it should use the lockset information in conjunction with the happens-before relation to identify which memory accesses are ``raciest'', and add decision points around those.
 \end{enumerate}
@@ -132,7 +133,7 @@ These components would all be candidates for being scheduled at a decision point
 
 Compared to executing the code being tested on real hardware (which tools such as \cite{dbug-ssv} are able to do for user-space programs), Simics is {\em slow}, and even slower with Landslide hooked up to it.
 
-Major benefit could be achieved by redesigning Landslide to work in a virtualised environment instead of a simulated one. This would pose several challenges, because Landslide would no longer be running in ``god mode'', having immediate access to every single instruction and memory access executed. It would, however, still be able to modify the kernel's memory and address space, which would be important to harness for increased control over the kernel's execution.
+Major benefit could be achieved by redesigning Landslide to work in a virtualised environment instead of a simulated one. This would pose several challenges, because Landslide would no longer be running in ``\revision{omniscient} mode'', having immediate access to every single instruction and memory access executed. It would, however, still be able to modify the kernel's memory and address space, which would be important to harness for increased control over the kernel's execution.
 
 We speculate on some challenges and potential solutions that virtualised execution might have to offer. We assume that our users will be talented kernel developers rather than undergraduate students, and hence allow for more complicated interface requirements.
 
@@ -156,7 +157,7 @@ Simics's convenient bookmarking mechanism will be no more in virtual-machine-lan
 
 \subsection{Control over Non-Determinism}
 
-Finally, Landslide will need to find new ways to control non-deterministic events in the system. Since virtualised kernels use the same timer interrupt as the host they run on, Landslide is unlikely to be able to intercept it. Instead, we may replace a guest kernel's timer-driven context switcher with a ``Landslide-driven'' context switcher, leaving the timer handler only to do other work.
+Finally, Landslide will need to find new ways to control non-deterministic events in the system. Since virtualised kernels use the same timer interrupt as the host they run on, Landslide \revision{will need to intercept it, and perhaps control the guest kernel's context switching with a custom ``Landslide-driven'' context switcher instead.}
 
 Likewise, Landslide will need to control other non-deterministic inputs to the kernel, including device interrupts/input and even the system clock.
 
@@ -211,7 +212,7 @@ We are not sure if combining these two insights is possible. In future work we m
 \subsection{Exploration Tree Structure}
 \label{sec:future-nadim}
 
-One member of group 1 from the user study fully explored decision trees from \texttt{double\_wait} and \texttt{vanish\_vanish} (Section~\ref{sec:eval-victory}), and found an oddity in the exploration time for a particular decision set.
+One member of Group 1 from the user study fully explored decision trees from \texttt{double\_wait} and \texttt{vanish\_vanish} (Section~\ref{sec:eval-victory}), and found an oddity in the exploration time for a particular decision set.
 
 When using decision points on just \texttt{mutex\_lock} or \texttt{mutex\_unlock}, the explorations for each test case took similar time. However, when using decision points on both mutex functions, \texttt{double\_wait} took substantially longer, despite the tree structure suggesting they should have been comparable, with \texttt{double\_wait} even being perhaps slightly faster. Figure~\ref{fig:nadim-stats} shows a comparison of the tree anatomy for these two test cases.
 

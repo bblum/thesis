@@ -2,7 +2,7 @@
 \chapter{Evaluation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\revision{In evaluating Landslide, we sought to answer seven overall questions.
+\revision{In evaluating Landslide, we sought to answer two overall questions.
 
 \begin{itemize}
 	\item Is Landslide an effective use of time by a developer seeking to find and understand race conditions in their code? How can Landslide be improved to improve the time tradeoff?
@@ -194,7 +194,7 @@ This bug was found by the author when grading this kernel. It took roughly an ho
 
 The parent pointer problem is the same as in the POBBLES vanish/vanish bugs, except the locking pattern is slightly different. When the parent reparents children, it drops its own mutex while it changes the parent pointer using the child's parent pointer mutex, which happens before the parent moves the child to init's child-list.
 
-Many problems can arise from this error. The one Landslide discovered was as follows: During this gap, the child can take its own parent pointer mutex (after the pointer was changed to init), and attempt to move itself from init's ``live child-list'' to the ``dead child-list'' before the parent moved the child to init's child-list at all. This results in the child instead moving the {\em shell process} off of init's ``live child-list''. Init gets signalled, reaps the reparented child, does \texttt{wait} again (expecting the shell to be alive), which fails. This results in init infinitely looping around failing calls to \texttt{wait}. To catch this bug, we added an assert statement in the \texttt{wait} failure case that the current thread was not init (because init should always have children to reap or wait for), which Landslide then caused to trip.
+Many problems can arise from this error. The one Landslide discovered was as follows: During this gap, the child can take its own parent pointer mutex (after the pointer was changed to init), and attempt to move itself from init's ``live child-list'' to the ``dead child-list'' before the parent moved the child to init's child-list at all. This results in the child instead moving the {\em shell process} off of init's ``live child-list''. Init gets signalled, reaps the reparented child, does \texttt{wait} again (expecting the shell to be alive), which fails. This results in init infinitely looping around failing calls to \texttt{wait}. To catch this bug \revision{immediately, rather than relying on infinite loop detection,} we added an assert statement in the \texttt{wait} failure case that the current thread was not init (because init should always have children to reap or wait for), which Landslide then caused to trip.
 
 This was the most complicated bug we studied. The fix would be nontrivial, like in POBBLES vanish/vanish.
 
@@ -249,7 +249,7 @@ The Landslide experimental set-up is as follows:
 
 \begin{itemize}
 	\item All Landslide trial times include the Simics start-up and kernel boot-up time (time between issuing the command and the test case beginning to run), roughly 15 seconds for POBBLES and 10 seconds for LudicrOS.
-	\item All Landslide trials were run on the Gates-Hillman cluster machines (2.6 GHz Xeon).
+	\item All Landslide trials were run on the Gates-Hillman cluster machines (2.6 GHz Xeon; \revision{four cores, though only one was used; 8 GB RAM}).
 	\item All Landslide trials were run with ``backwards exploration'' enabled (Section~\ref{sec:using-search}).
 	\item All trials were also run with Landslide configured to pay attention to only the relevant system calls (using \texttt{within\_function}; Section~\ref{sec:using-decision}).
 
@@ -353,7 +353,7 @@ We make several observations about the experimental results from Section~\ref{se
 	\item {\bf Different decision points are differently likely to expose different bugs.} We see that even though the ``lock'' and ``unlock'' trees tended to be about the same size, they were each sometimes better than the other at finding bugs. The ``lock'' tree did better on the vanish/vanish bugs and the yield/vanish bug, while the ``unlock'' tree did better on the wait/wait bug and the thread\_fork/vanish bug.\footnote{
 	The latter two bugs needed no more than the default set to uncover at all, but we claim this still demonstrates the principle in general.}
 	\item {\bf Finding a bug is fast, if it exists.} As especially exhibited in the POBBLES vanish/vanish (b) case, if two sets of decision points generate trees of approximately equal size, but one tree contains a bug and the other doesn't, then searching the bugful tree will likely terminate much more quickly.
-	Of course, it is always possible that a bug may only exist in the very last branch of a tree, but we found that in general bugs show up early during exploration.
+	Of course, it is always possible that a bug may exist only in the very last branch of a tree, but we found that in general bugs show up early during exploration.
 \end{enumerate}
 
 % TODO: Investigate the tree size that bugs did exist in. Investigate how many buggy branches there were.
