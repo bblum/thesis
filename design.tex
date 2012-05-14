@@ -24,7 +24,7 @@ The kernel instrumentation serves as the glue between what the guest kernel is d
 	\item {\bf Automatic instrumentation.} All Pebbles kernels have some things in common (largely due to the common starter code provided for the class project), and Landslide's build system is able to automatically instrument certain parts of the kernel. This instrumentation informs Landslide about the dynamic memory allocator, common library functions such as \texttt{panic}, and certain aspects of the kernel's executable format.
 \end{itemize}
 
-\subsection{Landslide Scheduling}
+\subsection{Scheduling}
 \label{sec:components-sched}
 
 The Landslide scheduler is responsible for keeping track of which threads exist in the guest kernel: which are runnable at any given time, and when they are created and destroyed.
@@ -272,9 +272,15 @@ The independence relation expresses which transitions do not read-and-write or w
 		Hence, even if the second thread that freed the block never accesses the particular address that the first thread used, the second thread's \texttt{free} still logically conflicts with the first thread's access. Landslide addresses this by treating every call to \texttt{free} as a {\em write} access to every address within the freed block when computing shared memory conflicts.
 \end{itemize}
 
-\subsection{Coarse Granularity}
+\subsection{Soundness}
 
-\cite{dpor} and \cite{dbug-retreat} present a partial order reduction algorithm in which only the first ``evil ancestor'' (term defined in \cite{dbug-retreat}) of each transition need be considered when identifying which alternate interleavings need to be explored.
+\revision{
+Because we recommend using Landslide with coarse-grained decision sets, as opposed to mandating a decision point between every pair of shared memory accesses, it is possible for Landslide to overlook race conditions that require finer-grained interleavings to expose. In this way, Landslide's search is not ``sound'', but instead false-negative-oriented.
+
+We do, however, claim that Landslide's search is sound in a different way: if the provided decision points are sufficient to express an interleaving that would expose a race, then Landslide will find it. That is, if Landslide is exploring an execution tree with bugs in some branches, it will eventually find a bug.
+
+Dynamic Partial Order Reduction works by identifying ``evil ancestors'' for each transition in a branch after executing that branch. Intuitively, a transition's evil ancestor is another transition such that executing the test with the order of those two transitions reversed could cause different concurrent behaviour to arise.}
+\cite{dpor} and \cite{dbug-retreat} present a partial order reduction algorithm in which only the first evil ancestor of each transition need be considered when identifying which alternate interleavings need to be explored.
 
 \begin{figure}[h]
 	\centering
@@ -285,10 +291,10 @@ The independence relation expresses which transitions do not read-and-write or w
 			\cline{2-4}
 			& {\bf Thread 1} & {\bf Thread 2} & {\bf Thread 3} \\
 			\cline{2-4}
-			$C$ & & & \texttt{x=42;} \\
+			$A$ & \texttt{x=42;} & & \\
 			$B$ & & \texttt{y=31337;} & \\
-			\multirow{2}{*}{$A_1$} & \texttt{if (y==31337)} & & \\
-			& \texttt{assert(x==42);} & & \\
+			\multirow{2}{*}{$C_1$} & & & \texttt{if (y==31337)} \\
+			& & & \texttt{assert(x==42);} \\
 			\cline{2-4}
 		\end{tabular}
 	} &
@@ -298,8 +304,8 @@ The independence relation expresses which transitions do not read-and-write or w
 			\cline{2-4}
 			& {\bf Thread 1} & {\bf Thread 2} & {\bf Thread 3} \\
 			\cline{2-4}
-			$C$ & & & \texttt{x=42;} \\
-			$A_2$ & \texttt{if (y==31337)} & & \\
+			$A$ & \texttt{x=42;} & & \\
+			$C_2$ & & & \texttt{if (y==31337)} \\
 			$B$ & & \texttt{y=31337;} & \\
 			\cline{2-4}
 		\end{tabular}
@@ -312,22 +318,22 @@ The independence relation expresses which transitions do not read-and-write or w
 			& {\bf Thread 1} & {\bf Thread 2} & {\bf Thread 3} \\
 			\cline{2-4}
 			$B$ & & \texttt{y=31337;} & \\
-			\multirow{2}{*}{$A_3$} & \texttt{if (y==31337)} & & \\
-			& \texttt{assert(x==42);} & & \\
-			$C$ & & & \texttt{x=42;} \\
+			\multirow{2}{*}{$C_3$} & & & \texttt{if (y==31337)} \\
+			& & & \texttt{assert(x==42);} \\
+			$A$ & \texttt{x=42;} & & \\
 			\cline{2-4}
 		\end{tabular}
 	}}
 	\end{tabular}
-	\caption{This sample code defeats a DPOR implementation that uses only the first evil ancestor if a decision point is not defined between the two lines of thread 1's code. The first interleaving is explored first; DPOR identifies transition $B$ as the first evil ancestor of $A_1$, and runs the second interleaving next. In the second interleaving, $C$ is no longer a second evil ancestor of $A_2$, so the third interleaving is never explored, and the assertion failure is missed.}
+	\caption{This sample code defeats a DPOR implementation that uses only the first evil ancestor if a decision point is not defined between the two lines of thread 3's code. The first interleaving is explored first; DPOR identifies transition $B$ as the first evil ancestor of $C_1$, and runs the second interleaving next, reordering them. In the second interleaving, $A$ is no longer a second evil ancestor of $C_2$, so the third interleaving is never explored, and the assertion failure is missed.}
 	\label{fig:evil-ancestors}
 \end{figure}
 
-We found that implementing DPOR in this way was not sound in our setup, because it relies on the invariant that each transition contains only one inter-thread communication event (in kernel-space, this means a shared memory access). Because Landslide builds its decision trees with coarser granularity, i.e. multiple different shared memory conflicts may happen in each transition, Landslide must consider every evil ancestor of each transition when performing DPOR.
+We found that implementing DPOR in this way violated our second notion of soundness, because it relies on the invariant that each transition contains only one inter-thread communication event (in kernel-space, this means a shared memory access).
+\revision{However, a key point of Landslide's recommended usage pattern is to sacrifice maximally-fine-grained decision points for performance, and so multiple different shared memory conflicts may happen in each transition.}
+Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of identifying only one evil ancestor per transition given our usage pattern.
 
-Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of identifying only one evil ancestor per transition given that transitions are allowed to have multiple different memory conflicts.
-
-While DPOR is a proven-sound algorithm in environments that do have this memory access property, even with this every-ancestor change we are not certain if it is sound in our environment. We advocate the use of DPOR anyway because Landslide is already prone to false negatives because of coarse interleaving granularity, and leave investigatin soundness to future work.
+\revision{Instead, Landslide uses considers every evil ancestor of each transition when performing DPOR. This modification enables Landslide to avoid the problem presented in the figure, because it will identify both alternate interleavings after exploring the first one. We claim without certainty that this change restores the second notion of soundness to Landslide's search, and leave proving this property to future work.}
 
 \section{Debugging Feedback}
 
