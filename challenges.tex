@@ -37,14 +37,14 @@ Inter-thread communication can be much more ad-hoc in kernel-space than in user-
 
 One challenge particular to the context of 15-410 is that the kernels Landslide must be able to test may all use slightly different implementations to achieve the same goals. For Landslide to be generally applicable to (almost) any kernel that students may submit, it must make some abstract assumptions about the kernel design which are compatible with many different implementations.
 
-In certain avenues of future work (Section~\ref{sec:future-linux}), remaining agnostic of most implementation details becomes less of an issue. For example, if we target Landslide to Linux, it is unlikely that core scheduler or interrupt-handling behaviour will change for as long as Landslide remains useful for finding bugs. In 15-410, however, repeated re-targetting is a necessity.
+% In certain avenues of future work (Section~\ref{sec:future-linux}), remaining agnostic of most implementation details becomes less of an issue. For example, if we target Landslide to Linux, it is unlikely that core scheduler or interrupt-handling behaviour will change for as long as Landslide remains useful for finding bugs. In 15-410, however, repeated re-targetting is a necessity.
 
 We built Landslide to be compatible with multiple designs for the following major scheduling behaviours:
 
 \begin{itemize}
-	\item {\bf Runqueues}: Does the kernel store the currently-running thread on the runqueue, or is it removed and stored separately?
-	\item {\bf Mutexes}: When a thread blocks on a mutex, is it left on the runqueue in a yield-loop, or is it explicitly descheduled? In yield-looping mutexes, when do blocked threads become ``unblocked'', notionally? (This might happen before the blocked thread runs next.)
+	\item {\bf Runqueues}: Does the kernel store the currently-running thread on the runqueue, or is it ``checked out'' while running and stored separately?
+	\item {\bf Mutexes}: When a thread blocks on a mutex, is it left on the runqueue in a yield loop, or is it explicitly descheduled (e.g., moved from the runqueue to another queue)? In yield-looping mutexes, when do blocked threads become ``unblocked'', notionally? (This might happen before the blocked thread runs next.)
 	\item {\bf Idling}: Does the kernel have an explicit idle thread, or is there an idle loop that runs on the stack of whatever thread was last running? Do explicit idle threads run their idle loop in userspace or in kernelspace?
 	\item {\bf Thread Creation}: When a thread is newly forked, is it placed onto the runqueue for later, or is it context-switched to immediately? Do just-forked threads begin life through the usual context-switch-return path, or is there a special path for that?
-	\item {\bf Test Lifecycle}: Even apart from running on a particular input that the user wishes to test, the kernel may need to perform extra work irrelevant to the test, such as initialisation (e.g. the bootup process) and housekeeping (e.g. cleaning up dead processes). Which parts of this work should be included or excluded in the test?
+	\item {\bf Test Lifecycle}: Apart from running on a particular input that the user wishes to test, the kernel may need to perform extra work irrelevant to the test, such as initialisation (e.g., the bootup process) and housekeeping (e.g., cleaning up dead processes). Which parts of this work should be included in or excluded from the test?
 \end{itemize}

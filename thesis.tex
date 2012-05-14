@@ -51,7 +51,7 @@ Current systematic exploration techniques are suitable for testing user-space pr
 We present Landslide, a systematic exploration tool for finding races in kernels.
 Landslide targets Pebbles, the kernel specification that students implement in the undergraduate Operating Systems course at Carnegie Mellon University (15-410).
 We discuss the techniques Landslide uses to address the general challenges of kernel-level concurrency, and we evaluate its effectiveness and usability as a debugging aid.
-We show that our techniques make systematic testing in kernel-space feasible, and that Landslide is a useful tool for doing so in the context of 15-410.
+We show that our techniques make systematic testing in kernel-space feasible and that Landslide is a useful tool for doing so in the context of 15-410.
 \end{abstract}
 
 \tableofcontents
@@ -81,7 +81,7 @@ Systematic exploration in kernel space is possible by understanding a kernel's c
 We present Landslide,\footnote{
 Landslide {\em (n)}: a phenomenon which demonstrates that Pebbles are not as stable as you might think.}
 a tool for applying systematic race detection techniques in to kernel-level code.
-It is geared towards kernels that implement the Pebbles specification, the main project in Operating System Design and Implementation (15-410) at CMU, and implemented as a module for Wind River Simics\textsuperscript{\texttrademark}\cite{simics}, the x86 simulator that students use to run their Pebbles kernels.
+It is geared towards kernels that implement the Pebbles specification, the main project in Operating System Design and Implementation (15-410) at CMU, and is implemented as a module for Wind River Simics\textsuperscript{\texttrademark}\cite{simics}, the x86 simulator that students use to run their Pebbles kernels.
 During execution of a kernel, Landslide records important actions performed by the kernel, attempts to decide at which points in the kernel's execution a preemption will be most likely to expose a bug, and then exercises all possible interleavings of kernel threads around such points.
 When Landslide finds a bug (predicted by a set of common checks and heuristics), it stops execution and prints information about the sequence of interleavings that exposed the bug.
 
