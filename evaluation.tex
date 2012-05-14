@@ -201,7 +201,7 @@ This was the most complicated bug we studied. The fix would be nontrivial, like 
 
 \subsubsection{LudicrOS yield/vanish}
 
-This bug was also found during grading, and took substantially less time to verify by hand than the previous bug. When a thread does \texttt{yield} to a specific other TID, the other thread's thread control block (TCB)is not protected between lookup-by-TID and yield-to. If that thread exits during that time, a use-after-free (and worse, a completely invalid schedule to a nonexistent thread) results.
+This bug was also found during grading, and took substantially less time to verify by hand than the previous bug. When a thread does \texttt{yield} to a specific other TID, the other thread's thread control block (TCB) is not protected between lookup-by-TID and yield-to. If that thread exits during that time, a use-after-free (and worse, a completely invalid schedule to a nonexistent thread) results.
 
 This bug is moderately complicated, requiring a preemption during that specific window of the first thread's execution during which the second thread must exit entirely and have its TCB freed. The fix is moderately complicated: some protection mechanism must be designed so that threads cannot exit after being looked-up by TID.
 
