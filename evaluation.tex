@@ -95,7 +95,7 @@ Additionally, two enterprising users found ways to avoid implementing the functi
 \subsection{Landslide Victories}
 \label{sec:eval-victory}
 
-Of five student groups that we worked with during the user study, four groups completed the instrumentation process and got Landslide to explore at least a minimal decision tree. \revision{(A minimal decision tree is one resulting from decision points only on voluntary reschedules, which Landslide automatically identifies.)} Of those groups, two found race conditions in their kernel. Additionally, Landslide helped all four groups find deterministic bugs - three groups had previously unknown problems with running the idle thread inappropriately, and the other group had a simple use-after-free.
+Of five student groups that we worked with during the user study, four groups completed the instrumentation process and got Landslide to explore at least a minimal decision tree. \revision{(A minimal decision tree is one resulting from decision points only on voluntary reschedules, which Landslide automatically identifies.)} Of those groups, two found race conditions in their kernel. Additionally, Landslide helped all four groups find deterministic bugs: three groups had previously unknown problems with running the idle thread inappropriately, and the other group had a simple use-after-free.
 
 We list how much progress each group made, and whether or not they found any bugs.
 
@@ -168,7 +168,7 @@ This bug is exposed with the \texttt{vanish\_vanish} test case. The complexity a
 \subsubsection{POBBLES wait/wait}
 
 Finding this bug was somewhat of a surprise. When two threads in the same process wait for a child to exit, they both block on the same condition variable, and one of them has a pointer to the other in its \texttt{cond\_queue\_next} pointer. However, when awakened, the condition variable code did not clear the value of this pointer. Fortunately, an assert statement in the thread destruction code caught that the pointer was non-\texttt{NULL} when it should have been, and the kernel panicked.\footnote{
-Even with this assert, extremely mysterious behaviour could have arisen in other use cases, such as during stress testing - if the awakened thread had gone to sleep on another condition variable, its \texttt{cond\_queue\_next} pointer could point to a thread asleep on a different condition variable, in which case a broadcast on the new condition variable cause a spurious wakeup of the second thread. Worse yet, if the second thread had also been awoken, and thence exited, a broadcast would result in a use-after-free.}
+Even with this assert, extremely mysterious behaviour could have arisen in other use cases, such as during stress testing: if the awakened thread had gone to sleep on another condition variable, its \texttt{cond\_queue\_next} pointer could point to a thread asleep on a different condition variable, in which case a broadcast on the new condition variable cause a spurious wakeup of the second thread. Worse yet, if the second thread had also been awoken, and thence exited, a broadcast would result in a use-after-free.}
 
 This bug is exposed with the \texttt{double\_wait} test case.
 The complexity of this bug is moderate, since it requires both waiting threads to block before the child process exits.
@@ -203,7 +203,7 @@ This was the most complicated bug we studied. The fix would be nontrivial, like 
 
 This bug was also found during grading, and took substantially less time to verify by hand than the previous bug. When a thread does \texttt{yield} to a specific other TID, the other thread's thread control block (TCB)is not protected between lookup-by-TID and yield-to. If that thread exits during that time, a use-after-free (and worse, a completely invalid schedule to a nonexistent thread) results.
 
-This bug is moderately complicated, requiring a preemption during that specific window of the first thread's execution during which the second thread must exit entirely and have its TCB freed. The fix is moderately complicated - some protection mechanism must be designed so that threads cannot exit after being looked-up by TID.
+This bug is moderately complicated, requiring a preemption during that specific window of the first thread's execution during which the second thread must exit entirely and have its TCB freed. The fix is moderately complicated: some protection mechanism must be designed so that threads cannot exit after being looked-up by TID.
 
 \subsection{Performance}
 \label{sec:eval-numbers}
@@ -254,7 +254,7 @@ The Landslide experimental set-up is as follows:
 	\item All Landslide trials were run with ``backwards exploration'' enabled (Section~\ref{sec:using-search}).
 	\item All trials were also run with Landslide configured to pay attention to only the relevant system calls (using \texttt{within\_function}; Section~\ref{sec:using-decision}).
 
-	We believe it is reasonable to test for these bugs in this way - using the minimal set of system calls to be paid attention to as necessary to find the bug - because it follows the recommended workflow of using Landslide, which is to start with what the user judges to be the ``smallest relevant set'' of decision points. The configuration using \texttt{within\_function} was as follows.
+	We believe it is reasonable to test for these bugs in this way (using the minimal set of system calls to be paid attention to as necessary to find the bug) because it follows the recommended workflow of using Landslide, which is to start with what the user judges to be the ``smallest relevant set'' of decision points. The configuration using \texttt{within\_function} was as follows.
 	{\small
 	\begin{itemize}
 		\item POBBLES vanish/vanish(a): \texttt{within\_function vanish}
@@ -340,7 +340,7 @@ While evaluating Landslide on these bugs, we determined two invariants that shou
 \end{enumerate}
 
 In short, even though Landslide may give false negatives from using imperfect sets of decision points, the exploration itself must be sound (i.e. not missing any bugs that exist in the resulting tree).\footnote{
-When running LudicrOS yield/vanish with decision points on \texttt{mutex\_unlock} but not on \texttt{mutex\_lock}, we found that the ordering invariant failed - ``backwards'' exploration found no bug, while ``forwards'' exploration did. We attribute this to a bug in Landslide itself, and present the results for the backwards exploration as usual, in which Landslide found no bug.}
+When running LudicrOS yield/vanish with decision points on \texttt{mutex\_unlock} but not on \texttt{mutex\_lock}, we found that the ordering invariant failed: ``backwards'' exploration found no bug, while ``forwards'' exploration did. We attribute this to a bug in Landslide itself, and present the results for the backwards exploration as usual, in which Landslide found no bug.}
 
 \subsection{Recommended Testing Strategies}
 \label{sec:discussion-strategies}
@@ -349,7 +349,7 @@ We make several observations about the experimental results from Section~\ref{se
 
 \begin{enumerate}
 	\item {\bf Fewer is faster.} While it is theoretically possible that a tree built of finer-grained interleavings might encounter a bug after fewer overall backtracks, we found that this did not happen in practice.\footnote{
-		The one suspicious case is the LudicrOS vanish/vanish bug - exploring the ``both'' tree found the bug faster than exploring the ``unlock'' tree, despite the latter's decision points being a subset of the former's. However, we see that exploring the ``lock'' tree found the bug faster than either, so overall the ``both'' tree did not outperform the fastest of the smaller trees.}
+		The one suspicious case is the LudicrOS vanish/vanish bug. Exploring the ``both'' tree found the bug faster than exploring the ``unlock'' tree, despite the latter's decision points being a subset of the former's. However, we see that exploring the ``lock'' tree found the bug faster than either, so overall the ``both'' tree did not outperform the fastest of the smaller trees.}
 		In general, for two sets of decision points that both find the same bug, the one that results in shorter {\em branches} will result in fewer {\em backtracks} needed to expose the bug, and hence less overall time.
 	\item {\bf Different decision points are differently likely to expose different bugs.} We see that even though the ``lock'' and ``unlock'' trees tended to be about the same size, they were each sometimes better than the other at finding bugs. The ``lock'' tree did better on the vanish/vanish bugs and the yield/vanish bug, while the ``unlock'' tree did better on the wait/wait bug and the thread\_fork/vanish bug.\footnote{
 	The latter two bugs needed no more than the default set to uncover at all, but we claim this still demonstrates the principle in general.}

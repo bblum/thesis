@@ -346,7 +346,7 @@ Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness o
 \end{figure}
 
 In its unique position of control over when the kernel gets preempted and which thread gets scheduled at each context switch, Landslide has the capability to provide the user with detailed information about a test case's execution.
-When Landslide determines that a bug was found, it immediately aborts exploration of the decision tree, and prints a {\em decision trace} - a comprehensive report of the particular interleaving of thread transitions that caused the bug to appear. Figure~\ref{fig:found_a_bug} depicts a simple decision trace for a use-after-free bug.
+When Landslide determines that a bug was found, it immediately aborts exploration of the decision tree, and prints a {\em decision trace}: a comprehensive report of the particular interleaving of thread transitions that caused the bug to appear. Figure~\ref{fig:found_a_bug} depicts a simple decision trace for a use-after-free bug.
 
 The decision trace explains each preemption or voluntary reschedule in the interleaving: which thread used to be running, which thread was chosen to run instead, and the stack trace of the former thread at the point from which it was switched away.
 

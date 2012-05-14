@@ -71,35 +71,35 @@ If the kernel does not keep the currently-running thread on the runqueue, the us
 
 \begin{itemize}
 	\small
-	\item \texttt{tell\_landslide\_thread\_switch(int new\_tid)} - Call this in the context switcher, when a new thread is switched to.
-	\item \texttt{tell\_landslide\_sched\_init\_done()} - Call this when the scheduler is done being initialized. Until this is called, Landslide will ignore all other annotations.
-	\item \texttt{tell\_landslide\_forking()} - Call this when a new thread is being forked.
+	\item \texttt{tell\_landslide\_thread\_switch(int new\_tid)}: Call this in the context switcher, when a new thread is switched to.
+	\item \texttt{tell\_landslide\_sched\_init\_done()}: Call this when the scheduler is done being initialized. Until this is called, Landslide will ignore all other annotations.
+	\item \texttt{tell\_landslide\_forking()}: Call this when a new thread is being forked.
 		(Hint: call it twice, once in \texttt{fork} and once in \texttt{thread\_fork}.)
 
-		Call it ``just before'' the action which makes the new thread runnable - whether the kernel just adds it to the runqueue (in which case the next annotation called would be \texttt{thread\_on\_rq}) or begins running it immediately (in which case \texttt{thread\_switch}); Landslide handles both cases.
-	\item \texttt{tell\_landslide\_vanishing()} - Call this when a thread is about to go away.
+		Call it ``just before'' the action which makes the new thread runnable. It does not matter whether the kernel just adds it to the runqueue (in which case the next annotation called would be \texttt{thread\_on\_rq}) or begins running it immediately (in which case \texttt{thread\_switch}); Landslide handles both cases.
+	\item \texttt{tell\_landslide\_vanishing()}: Call this when a thread is about to go away.
 		Call it ``just before'' the relevant context switch; i.e., the one that should never return.
-	\item \texttt{tell\_landslide\_sleeping()} - Call this when a thread is about to go to sleep (that's \texttt{sleep()} the system call).
+	\item \texttt{tell\_landslide\_sleeping()}: Call this when a thread is about to go to sleep (that's \texttt{sleep()} the system call).
 		Call it ``just before'' the relevant context switch; i.e., the one that won't return for as long as the thread requested to sleep.
-	\item \texttt{tell\_landslide\_thread\_on\_rq(int tid)} - Call this when a thread is about to be added to the runqueue.
+	\item \texttt{tell\_landslide\_thread\_on\_rq(int tid)}: Call this when a thread is about to be added to the runqueue.
 		(Make sure this call is done within whatever protection is also used for the runqueue modification itself.)
-	\item \texttt{tell\_landslide\_thread\_off\_rq(int tid)} - Call this when a thread is about to be removed from the runqueue. (Same protection clause as above applies.)
-	\item Mutex annotations - These are only necessary if the kernel uses mutexes that leave blocked threads on the runqueue, rather than explicitly descheduling them.
+	\item \texttt{tell\_landslide\_thread\_off\_rq(int tid)}: Call this when a thread is about to be removed from the runqueue. (Same protection clause as above applies.)
+	\item Mutex annotations. These are only necessary if the kernel uses mutexes that leave blocked threads on the runqueue, rather than explicitly descheduling them.
 	\begin{itemize}
-		\item \texttt{tell\_landslide\_mutex\_locking(void *mutex\_addr)} - Call this when a thread is about to start locking a mutex. Landslide needs the mutex address for deadlock detection, to track which mutex each thread is blocked on.
-		\item \texttt{tell\_landslide\_mutex\_locking\_done()} - Call this when a thread finishes locking a mutex (and now owns it).
-		\item \texttt{tell\_landslide\_mutex\_unlocking(void *mutex\_addr)} - Call this when a thread is about to start unlocking a mutex.
-		\item \texttt{tell\_landslide\_mutex\_unlocking\_done()} - Call this when a thread finishes unlocking a mutex (and no longer owns it).
-		\item \texttt{tell\_landslide\_mutex\_blocking(int owner\_tid)} - Call this when a thread is contending on a locked mutex, and hence is no longer logically ``runnable'' yet still on the runqueue. Landslide needs to know who owns the mutex for deadlock detection.
+		\item \texttt{tell\_landslide\_mutex\_locking(void *mutex\_addr)}: Call this when a thread is about to start locking a mutex. Landslide needs the mutex address for deadlock detection, to track which mutex each thread is blocked on.
+		\item \texttt{tell\_landslide\_mutex\_locking\_done()}: Call this when a thread finishes locking a mutex (and now owns it).
+		\item \texttt{tell\_landslide\_mutex\_unlocking(void *mutex\_addr)}: Call this when a thread is about to start unlocking a mutex.
+		\item \texttt{tell\_landslide\_mutex\_unlocking\_done()}: Call this when a thread finishes unlocking a mutex (and no longer owns it).
+		\item \texttt{tell\_landslide\_mutex\_blocking(int owner\_tid)}: Call this when a thread is contending on a locked mutex, and hence is no longer logically ``runnable'' yet still on the runqueue. Landslide needs to know who owns the mutex for deadlock detection.
 	\end{itemize}
 \end{itemize}
 
 \subsubsection{Optional Annotations}
 \begin{itemize}
 	\small
-	\item \texttt{tell\_landslide\_decide()} - Call this to define additional decision points. See section~\ref{sec:using-decision}.
+	\item \texttt{tell\_landslide\_decide()}: Call this to define additional decision points. See section~\ref{sec:using-decision}.
 	\item \texttt{assert()} or \texttt{panic()} -
-		The more important invariants for which a kernel has \texttt{assert}s, the more likely Landslide is to find bugs that would trigger them - otherwise, even if they do happen, Landslide might never know (just like in conventional stress testing).
+		The more important invariants for which a kernel has \texttt{assert}s, the more likely Landslide is to find bugs that would trigger them; otherwise, even if they do happen, Landslide might never know (just like in conventional stress testing).
 \end{itemize}
 
 \subsection{Configuration File}
@@ -114,8 +114,8 @@ There are two functions that the user needs to implement in Landslide itself, in
 
 \begin{itemize}
 	\small
-        \item \texttt{bool kern\_current\_extra\_runnable(conf\_object\_t *cpu)} - See Section~\ref{sec:using-runqueue}. This says whether the current thread is ``logically runnable'' despite not being on the runqueue itself (that is, \texttt{tell\_landslide\_on\_rq} won't have been called for it).
-        \item \texttt{bool kern\_ready\_for\_timer\_interrupt(conf\_object\_t *cpu)} - This function can be used to express when the scheduler is ``locked'' in a way not involving disabled interrupts. Landslide will avoid trying to preempt the kernel whenever this is false.
+        \item \texttt{bool kern\_current\_extra\_runnable(conf\_object\_t *cpu)}: See Section~\ref{sec:using-runqueue}. This says whether the current thread is ``logically runnable'' despite not being on the runqueue itself (that is, \texttt{tell\_landslide\_on\_rq} won't have been called for it).
+        \item \texttt{bool kern\_ready\_for\_timer\_interrupt(conf\_object\_t *cpu)}: This function can be used to express when the scheduler is ``locked'' in a way not involving disabled interrupts. Landslide will avoid trying to preempt the kernel whenever this is false.
 \end{itemize}
 
 \revision{Both of these functions are predicates on the guest kernel's execution state (usually on the contents of its scheduler's data structures). Example implementations are given in Figure~\ref{fig:student-c}.}
@@ -170,19 +170,19 @@ These configuration options help Landslide identify potentially-conflicting shar
 
 \begin{itemize}
 	\small
-	\item \texttt{sched\_func} - When functions that make up the kernel's scheduler are identified, Landslide knows to ignore shared memory accesses from them. Accesses to scheduler data structures happen during {\em every} transition, so ignoring these is necessary for achieving any reduction at all.
-	\item \texttt{ignore\_sym} - The user may wish to ignore memory accesses from other global data structures as well. For example, ignoring a mutex which is locked very frequently, but irrelevant to the actual test case, will result in an independence relation that \revision{enables much better state space reduction without losing the ability to find bugs in the parts of the kernel the user is interested in testing}.
-	\item \texttt{within\_function} - If the user configures decision points to happen in common code paths, such as \texttt{mutex\_lock}, it will likely generate more branching than needed.\footnote{
+	\item \texttt{sched\_func}: When functions that make up the kernel's scheduler are identified, Landslide knows to ignore shared memory accesses from them. Accesses to scheduler data structures happen during {\em every} transition, so ignoring these is necessary for achieving any reduction at all.
+	\item \texttt{ignore\_sym}: The user may wish to ignore memory accesses from other global data structures as well. For example, ignoring a mutex which is locked very frequently, but irrelevant to the actual test case, will result in an independence relation that \revision{enables much better state space reduction without losing the ability to find bugs in the parts of the kernel the user is interested in testing}.
+	\item \texttt{within\_function}: If the user configures decision points to happen in common code paths, such as \texttt{mutex\_lock}, it will likely generate more branching than needed.\footnote{
 For example, if testing \texttt{vanish}, there's no need to branch on a \texttt{mutex\_lock} in \texttt{exec}.}
 This configuration option allows the user to whitelist functions so that Landslide will only decide if the current thread is ``within'' one of those functions.
-	\item \texttt{without\_function} - Similar to above, but a blacklist. These two can be used together; later invocations take precedence over earlier ones.
+	\item \texttt{without\_function}: Similar to above, but a blacklist. These two can be used together; later invocations take precedence over earlier ones.
 \end{itemize}
 
 \subsubsection{Behaviour Tweaks}
 \begin{itemize}
 	\small
-	\item \texttt{EXPLORE\_BACKWARDS} - In which order to explore the branches? Backwards means with more preemptions first; forwards means tending to let the current thread keep running more often. Backwards tends to find bugs more quickly, but produces longer decision traces. (Section~\ref{sec:future-backwards})
-	\item \texttt{DECISION\_INFO\_ONLY} - This option makes Landslide stop after one branch, and output the list of decision points it identified using the current config. Useful to see all decision points, and tweak settings to get rid of frivolous ones.
+	\item \texttt{EXPLORE\_BACKWARDS}: In which order to explore the branches? Backwards means with more preemptions first; forwards means tending to let the current thread keep running more often. Backwards tends to find bugs more quickly, but produces longer decision traces. (Section~\ref{sec:future-backwards})
+	\item \texttt{DECISION\_INFO\_ONLY}: This option makes Landslide stop after one branch, and output the list of decision points it identified using the current config. Useful to see all decision points, and tweak settings to get rid of frivolous ones.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -192,10 +192,10 @@ This configuration option allows the user to whitelist functions so that Landsli
 We ship Landslide with a suite of small test cases designed to expose several common races that students frequently encounter during 15-410 Project 3. We list their code in Appendix~\ref{sec:test-code}.
 
 \begin{itemize}
-        \item \texttt{vanish\_vanish} - Tests when a parent and child process \texttt{vanish()} simultaneously.
-        \item \texttt{double\_wait} - Tests interactions of multiple waiters on a single child.
-        \item \texttt{double\_thread\_fork} - Tests for interactions of multiple threads in one process vanishing.
-        \item \texttt{yield\_vanish} - Tests for interactions between \texttt{yield()} and \texttt{vanish()}.
+        \item \texttt{vanish\_vanish}: Tests when a parent and child process \texttt{vanish()} simultaneously.
+        \item \texttt{double\_wait}: Tests interactions of multiple waiters on a single child.
+        \item \texttt{double\_thread\_fork}: Tests for interactions of multiple threads in one process vanishing.
+        \item \texttt{yield\_vanish}: Tests for interactions between \texttt{yield()} and \texttt{vanish()}.
 \end{itemize}
 
 \subsection{Landslide-Friendly Test Characteristics}
