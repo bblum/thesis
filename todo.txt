@@ -30,6 +30,12 @@ diagrams
 		theoretical oddities
 			- picture of shapes of trees
 
-feedback
-	citations in abstract y/n?
-	table of contents
+things to add to pebbles spec
+	timer ticks control runnable threads
+	no idling when progress can be made
+model material
+	timer as only source of concurrency / timer driven scheduling
+		including sleeping threads
+	no idling when progress can be made
+	identifying bugs
+scope
