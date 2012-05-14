@@ -14,8 +14,6 @@ In kernel space, however, the scheduler is part of the system being tested, and 
 	\item {\bf Run-queue tracking.} The kernel's scheduler and the tool must cooperate in some way so that the tool can both know what threads are runnable at every point during execution and cause any given runnable thread to begin running in place of the current one.
 \end{itemize}
 
-In this work, we focus specifically on nondeterministic scheduling driven by timer interrupts. In future work (Section~\ref{sec:future-drivers}), we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
-
 \begin{figure*}[t]
 	\begin{center}
 	\includegraphics[width=0.75\textwidth]{vip1066720.jpg}
@@ -29,12 +27,12 @@ Inter-thread communication can be much more ad-hoc in kernel-space than in user-
 
 \begin{itemize}
 	\item {\bf Avoiding reliance on message-passing.} Some systems for user-space systematic testing require that threads communicate only by message-passing, to better track the concurrency relationships between thread transitions\cite{dbug-ssv}. With few exceptions\cite{barrelfish}, kernels do not rely on message-passing as a primary communication mechanism, and to be compatible with the kernels of today, a testing framework must allow for less idealised state-sharing (Section~\ref{sec:components-memory}).
-	\item {\bf Recognising blocked threads.} It is difficult to detect when threads are ready to do useful work. Even if notionally runnable, they may be waiting in a yield loop (Sections~\ref{sec:using-annotations} and \ref{sec:future-linux}). A tool that did not recognise this might decide to attempt to run that thread over and over, and get stuck because the other threads would never be allowed to make progress.
-	\item {\bf Thread lifecycle tracking.} It is also difficult to demarcate threads' lifecycles: when a new thread gets created, when is it available to run? and when a thread is exiting, at what point does it stop running code (Section~\ref{sec:using-annotations})? In user-space, these boundaries are defined by the system call instructions, but in kernel-space, the boundary is fuzzier.
-	\item {\bf Use of virtual memory.} The kernel's complete control over the machine's virtual memory system means a system for tracking memory accesses must be aware of changing virtual memory mappings (Section~\ref{sec:using-requirements}).
+	\item {\bf Recognising blocked threads.} It is difficult to detect when threads are ready to do useful work. Even if notionally runnable, they may be waiting in a yield loop (Sections~\ref{sec:using-annotations} and \ref{sec:future-linux}), which can be difficult to discern without an understanding of whatever shared resource the thread is waiting for. A tool that did not recognise this might decide to attempt to run that thread over and over, and get stuck because the other threads would never be allowed to make progress.
+	\item {\bf Thread lifecycle tracking.} It is also difficult to demarcate threads' lifecycles: when a new thread gets created, when is it available to run? When a thread is exiting, at what point does it stop running code (Section~\ref{sec:using-annotations})? In user-space, these boundaries are defined by the system call instructions, but in kernel-space, the boundary is fuzzier.
+	\item {\bf Use of virtual memory.} The kernel's complete control over the machine's virtual memory system means a system for tracking memory accesses must be aware of changing virtual memory mappings (Section~\ref{sec:using-requirements}). A tool not aware of virtual memory might falsely identify whether or not two transitions' memory accesses conflict.
 \end{itemize}
 
-\section{Kernel Design}
+\section{Kernel Design Independence}
 \label{sec:challenges-design}
 
 One challenge particular to the context of 15-410 is that the kernels Landslide must be able to test may all use slightly different implementations to achieve the same goals. For Landslide to be generally applicable to (almost) any kernel that students may submit, it must make some abstract assumptions about the kernel design which are compatible with many different implementations.
@@ -49,11 +47,4 @@ We built Landslide to be compatible with multiple designs for the following majo
 	\item {\bf Idling}: Does the kernel have an explicit idle thread, or is there an idle loop that runs on the stack of whatever thread was last running? Do explicit idle threads run their idle loop in userspace or in kernelspace?
 	\item {\bf Thread Creation}: When a thread is newly forked, is it placed onto the runqueue for later, or is it context-switched to immediately? Do just-forked threads begin life through the usual context-switch-return path, or is there a special path for that?
 	\item {\bf Test Lifecycle}: Even apart from running on a particular input that the user wishes to test, the kernel may need to perform extra work irrelevant to the test, such as initialisation (e.g. the bootup process) and housekeeping (e.g. cleaning up dead processes). Which parts of this work should be included or excluded in the test?
-\end{itemize}
-
-Conversely, Landslide needs to make some assumptions about scheduling behaviour, in order for its control over scheduling to work:
-
-\begin{itemize}
-	\item {\bf Timer ticks control ``runnable'' threads.} With the exception of a non-preemptible ``scheduler lock'', and yield-looping mutexes (both of which must be instrumented by the user), a thread's presence on the runqueue indicates that a finite number of timer interrupts in succession will eventually cause it to run.
-	\item {\bf No idling when progress can be made.} The kernel must not enter its idle loop (whether in an explicit idle thread or no) when the kernel is not truly idle. Landslide uses the idle loop to detect when a test begins/ends and to detect when all threads in a test are wedged.
 \end{itemize}

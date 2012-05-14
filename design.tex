@@ -3,7 +3,61 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:design}
 
+In this chapter we describe Landslide's implementation in detail. Section~\ref{sec:model} outlines the testing model on top of which Landslide's exploration mechanisms are built. Section~\ref{sec:components} describes the individual components within Landslide. Section~\ref{sec:techniques-bugs} describes Landslide's metrics for identifying bugs. Section~\ref{sec:techniques-por} describes how Landslide achieves effective state space reduction. Section~\ref{sec:techniques-feedback} describes the debugging feedback Landslide provides to the user when bugs are encountered.
+
+\revision{
+\section{Landslide's View of the World}
+\label{sec:model}
+
+Landslide's model for applying systematic exploration in kernel-space is comprised of four key points, which we overview here.
+
+\subsection{Simulated Execution}
+\label{sec:model-simics}
+
+Landslide is implemented as a module for Simics\cite{simics}, a full-system x86 emulator. When running the kernel, Simics calls into Landslide once every time the kernel executes an instruction or performs a memory read or write. Landslide uses this information, in conjunction with the user-provided instrumentation, to maintain its internal representations of the state of the guest kernel.
+
+Landslide makes use of Simics ``bookmarks'', a feature which enables checkpointing and restoring the execution state of the guest kernel, to implement backtracking when the end of each branch in the decision tree is reached.
+
+\subsection{Timer-Driven Scheduling}
+\label{sec:model-timer}
+
+In this work, we focus specifically on nondeterministic scheduling driven by timer interrupts. Landslide assumes that timer interrupts are the only source of nondeterminism for the guest kernel, so controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. In future work (Section~\ref{sec:future-drivers}), we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
+
+Landslide needs to impose some requirements on the guest kernel's scheduling behaviour, in order for its control over scheduling to work:
+
+\begin{itemize}
+	\item {\bf Timer ticks control ``runnable'' threads.} With the exception of a non-preemptible ``scheduler lock'', and yield-looping mutexes (both of which must be instrumented by the user), a thread's presence on the runqueue indicates that a finite number of timer interrupts in succession will eventually cause it to run.
+
+	Landslide treats the sleep queue no differently from the runqueue when deciding which threads are runnable. The guest kernel will treat it differently, but since sleeping for a predetermined amount of time is never an appropriate way to solve race conditions, Landslide treats sleeping threads as notionally runnable. This fits directly into its model that runnable threads are ones that can be caused to run with a finite number of timer ticks in succession.
+	\item {\bf No idling when progress can be made.} The kernel must not enter its idle loop (whether in an explicit idle thread or no) when the kernel is not truly idle. Landslide uses the idle loop to detect when a test begins/ends (test lifecycle tracking) and to detect when all threads in a test are wedged (bug detection).
+\end{itemize}
+
+Section~\ref{sec:components-inflight} gives more detail about how Landslide abstracts raw timer interrupts into the ability to cause arbitrary threads to run.
+
+\subsection{False-Negative-Oriented Bug Detection}
+\label{sec:model-bugs}
+
+% A healthy dose of snark.
+Without a formal specification of the internals of the guest kernel's implementation\cite{sel4}, it is impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
+Landslide's bug reporting is false-negative oriented, meaning that it does not check for suspicious behaviours that might indicate underlying bugs, so it may report that it found no bugs even if some existed. If Landslide does report a bug, though, it is almost certainly correct. Section~\ref{sec:techniques-bugs} details the conditions Landslide uses to identify when something has gone wrong.
+
+\subsection{User-Assisted State Space Reduction}
+\label{sec:model-user}
+
+In addition to Dynamic Partial Order Reduction (DPOR) for automated state space reduction, Landslide relies on the user's guidance to help mitigate the possible combinatorial explosion of thread interleaving possibilities. This manifests in two ways:
+
+\begin{itemize}
+	\item {\bf Decision point selection.} Landslide provides an interface for the user to manually limit identification of decision points to only ``relevant'' modules of the kernel, thereby only generating thread interleavings around points within those modules.
+	\item {\bf Memory conflict selection.} Landslide also provides a mechanism for ignoring shared memory conflicts on certain common data structures (especially those accessed in every thread transition, such as the scheduler queues), to enable DPOR to achieve greater reduction. Intuitively, this represents sacrificing the ability to find races around those data structures to make searching other components more feasible.
+\end{itemize}
+
+We advocate relying on the user for such information because the user need only understand the basics of their kernel design (which is difficult for Landslide to guess) while not knowing in advance what bugs are being looked for (which Landslide is able to provide). We claim that this combination of the user's knowledge and Landslide's testing mechanisms leads to an effective usage dynamic, in which the user ``steers'' Landslide towards focused search spaces that are more likely to find bugs.
+
+The interfaces by which the user provides this information are documented in Section~\ref{sec:using-customise}.
+}
+
 \section{Components of Landslide}
+\label{sec:components}
 
 In this section we briefly describe each major component of Landslide.
 
@@ -29,9 +83,7 @@ The kernel instrumentation serves as the glue between what the guest kernel is d
 
 The Landslide scheduler is responsible for keeping track of which threads exist in the guest kernel: which are runnable at any given time, and when they are created and destroyed.
 
-It maintains a ``mirror image'' of the guest kernel's scheduler state in the form of three queues, a pointer to the currently-running thread, and a pointer to the previously-running thread. The queues are the {\em runqueue}, containing the runnable threads, the {\em sleep queue}, containing threads which become runnable after a certain number of timer ticks\footnote{
-Landslide treats the sleep queue no differently from the runqueue when deciding which threads are runnable. The guest kernel will treat it differently, but since sleeping for a predetermined amount of time is never an appropriate way to solve race conditions, Landslide treats sleeping threads as notionally runnable. This fits directly into its model that runnable threads are ones that can be caused to run with a finite number of timer ticks in succession.},
-and the {\em deschedule queue}, which might not correspond to a data structure in the guest kernel, but contains all other threads that exist on the system, which are not runnable for whatever reason.
+It maintains a ``mirror image'' of the guest kernel's scheduler state in the form of three queues, a pointer to the currently-running thread, and a pointer to the previously-running thread. The queues are the {\em runqueue}, containing the runnable threads, the {\em sleep queue}, containing threads which become runnable after a certain number of timer ticks, and the {\em deschedule queue}, which might not correspond to a data structure in the guest kernel, but contains all other threads that exist on the system, which are not runnable for whatever reason.
 
 The Landslide scheduler also tracks which important actions each thread is performing. These actions are {\em forking}, {\em vanishing}, and {\em sleeping}, which are described in the next section, and also {\em in\_timer\_handler} and {\em in\_context\_switch}, which express what type of context switch a given thread may be performing, and are useful for both thread scheduling (Section~\ref{sec:components-inflight}) and detecting voluntary reschedules (Section~\ref{sec:components-arbiter}).\footnote{
 There are also other minor actions: {\em readlining}, used to track test lifecycle (Section~\ref{sec:components-test}), {\em just\_forked}, used for special-case context switch behaviour (Section~\ref{sec:components-arbiter}), and also several flags for tracking mutex lock/unlock events.}
@@ -120,7 +172,7 @@ Finally, the Landslide scheduler is responsible for managing involuntary preempt
 	\label{alg:inflight}
 \end{algorithm}
 
-In Landslide's current model, timer interrupts are the only source of nondeterminism for the guest kernel, and controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. (We discuss expanding this limited model in Section~\ref{sec:future-drivers}.) However, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
+Though we define timer interrupts as the only source of non-determinism in our environment, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
 
 Landslide's scheduling technique, called the {\em schedule in-flight}, involves successive triggering of timer interrupts to trigger context switches until the desired thread begins to run. Algorithm~\ref{alg:inflight} shows how Landslide makes this happen.
 
@@ -182,8 +234,7 @@ The state machine relies on certain information provided by the scheduler (Secti
 \begin{itemize}
 	\item {\bf Is the shell waiting for keyboard input?} In general, the shell only waits for keyboard input when the kernel is ready for the user (or Landslide) to cause a test to run, or after the test has finished and a new one could be run.
 		However, the shell may sometimes be waiting for keyboard input while other threads have some work to do (for example, the init process might not yet have reaped a reparented child process), and this work may be affected by race conditions during the test, so we need to include it in the test as well. For these cases an additional check is needed.
-	\item {\bf Is the kernel idling?} This indicates whether any work is left to be done during bootup or during teardown.\footnote{
-		If the kernel is idling and the shell is not waiting for keyboard input, it is likely that the test case has deadlocked.}
+	\item {\bf Is the kernel idling?} This indicates whether any work is left to be done during bootup or during teardown.
 	\item {\bf How many threads currently exist on the system?} This indicates whether the test has begun running.
 \end{itemize}
 
@@ -203,22 +254,12 @@ Figure~\ref{fig:teststate} depicts the states and transitions visually.
 %\subsection{Stack Tracing}
 % FIXME
 
-\section{On Simics}
-
-Landslide is implemented as a module for Simics\cite{simics}. When running the kernel, Simics calls into Landslide once every time the kernel executes an instruction or performs a memory read or write. Landslide uses this information, in conjunction with the user-provided instrumentation, to maintain its internal representations of the state of the guest kernel.
-
-Landslide also makes use of Simics ``bookmarks'' to checkpoint and restore the guest kernel's execution state at decision points during the test.
-
 \section{Identifying Bugs}
 \label{sec:techniques-bugs}
 
-% A healthy dose of snark.
-Without a formal specification of the internals of the guest kernel's implementation\cite{sel4}, it is impossible to identify both soundly and completely when a behaviour that constitutes a ``bug'' arises during a test case's execution.
 In order to identify when the guest kernel has done something incorrect, Landslide performs several different types of checks, some accurate but noncomprehensive, and some heuristic-based.
 
-Landslide's bug reporting is false-negative oriented, meaning that it does not check for suspicious behaviours that might indicate underlying bugs, so it may report that it found no bugs even if some existed. If Landslide does report a bug, though, it is almost certainly correct (except in cases as listed below).
-
-\subsection{Accurate Bug-Detection Conditions}
+\subsection{Definite Bug-Detection Conditions}
 
 \begin{enumerate}
 	\item {\bf Kernel panic bugs.} If the kernel invoked \texttt{panic}, it detected its own bug, and Landslide need do nothing but report it.
@@ -226,7 +267,7 @@ Landslide's bug reporting is false-negative oriented, meaning that it does not c
 	\item {\bf Deadlock bugs.} If Landslide finds no runnable threads on the runqueue,\footnote{Except for idle, if it exists.} or if it detects a cycle of threads blocked on each other, it declares that the kernel has deadlocked.
 \suspend{enumerate}
 
-\subsection{Uncertain Bug-Detection Conditions}
+\subsection{Probable Bug-Detection Conditions}
 
 \resume{enumerate}
 	\item {\bf Memory leak bugs.} Landslide records the state of the heap before the test case begins, and compares it to the state of the heap after the test case ends. If memory allocated during the test was not freed, Landslide assumes that it was leaked.
@@ -330,12 +371,12 @@ Dynamic Partial Order Reduction works by identifying ``evil ancestors'' for each
 \end{figure}
 
 We found that implementing DPOR in this way violated our second notion of soundness, because it relies on the invariant that each transition contains only one inter-thread communication event (in kernel-space, this means a shared memory access).
-\revision{However, a key point of Landslide's recommended usage pattern is to sacrifice maximally-fine-grained decision points for performance, and so multiple different shared memory conflicts may happen in each transition.}
-Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of identifying only one evil ancestor per transition given our usage pattern.
+\revision{However, a key point of Landslide's recommended usage pattern is to sacrifice maximally-fine-grained decision points for performance, and so multiple different shared memory conflicts may happen in each transition.} Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of identifying only one evil ancestor per transition given our usage pattern.
 
 \revision{Instead, Landslide uses considers every evil ancestor of each transition when performing DPOR. This modification enables Landslide to avoid the problem presented in the figure, because it will identify both alternate interleavings after exploring the first one. We claim without certainty that this change restores the second notion of soundness to Landslide's search, and leave proving this property to future work.}
 
 \section{Debugging Feedback}
+\label{sec:techniques-feedback}
 
 \begin{figure}[t]
 	\begin{center}
