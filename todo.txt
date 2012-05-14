@@ -29,3 +29,7 @@ diagrams
 	future work
 		theoretical oddities
 			- picture of shapes of trees
+
+feedback
+	citations in abstract y/n?
+	table of contents
