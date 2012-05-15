@@ -17,7 +17,8 @@ Second, we did a case study of six bugs in two kernels, investigating them in-de
 \section{User Experience}
 \label{sec:eval-studence}
 
-To evaluate the experience of non-expert users working with Landslide, we met with 5 groups of students in 15-410 (9 students in total) during the final week of the kernel project in spring 2012, and had them use Landslide with their own kernels.
+To evaluate the experience of non-expert users working with Landslide, we met with 5 groups of students in 15-410 (9 students in total) during the final week of the kernel project in spring 2012, and had them use Landslide with their own kernels. \revision{Additionally, one former 15-410 Teaching Assistant (TA) participated in the study.}
+
 In order to garner student interest in Landslide, the author gave a lecture in 15-410 on systematic exploration in general and on Landslide specifically during the second-to-last week of the kernel project.\footnote{
 The lecture slides are available at \url{http://www.cs.cmu.edu/~410-s12/lectures/L30_Landslide.pdf}, and at \url{http://bblum.net/landslide-lecture.pdf}, and at \url{http://www.contrib.andrew.cmu.edu/~bblum/landslide-lecture.pdf}.}
 
@@ -159,7 +160,7 @@ Students also described compatibility issues they faced between their kernels an
 Additionally, two enterprising users found ways to avoid implementing the functions in \texttt{student.c} (Section~\ref{sec:using-student-c}). It is worth considering integrating these approaches into the recommended approach to eliminate the need for \texttt{student.c} entirely.
 \begin{itemize}
 	\item One student bypassed the \texttt{kern\_ready\_for\_timer\_interrupt} annotation by disabling their scheduler's preemption-disabling mechanism and replacing it with explicit disabling of interrupts. \revision{This caused the kernel to context switch every timer interrupt, so Landslide did not need to be aware of extra conditions that would cause the scheduler to ignore timer ticks.}
-	\item One former 15-410 Teaching Assistant (TA) was able to avoid the \texttt{kern\_current\_extra\_runnable} annotation by using the \texttt{on\_rq} and \texttt{off\_rq} annotations (Section~\ref{sec:using-annotations}) to express the ``abstract set of runnable threads'' (which included the currently-running thread, even though the runqueue didn't) instead of the literal runqueue itself. \revision{We did not advertise this method because we suspected students might make more mistakes instrumenting this way, but it might be worth advocating anyway for the sake of making the interface simpler.}
+	\item The former TA was able to avoid the \texttt{kern\_current\_extra\_runnable} annotation by using the \texttt{on\_rq} and \texttt{off\_rq} annotations (Section~\ref{sec:using-annotations}) to express the ``abstract set of runnable threads'' (which included the currently-running thread, even though the runqueue didn't) instead of the literal runqueue itself. \revision{We did not advertise this method because we suspected students might make more mistakes instrumenting this way, but it might be worth advocating anyway for the sake of making the interface simpler.}
 \end{itemize}
 
 \subsection{Landslide Victories}
