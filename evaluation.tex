@@ -41,12 +41,82 @@ We also wanted descriptive feedback, to evaluate which specific parts of the pro
 	\item Was there anything you wanted to make Landslide do that it didn't support?
 \end{itemize}
 
-Finally, we briefly studied each bug that the students found, which we describe below.
+Finally, we briefly studied each bug that the students found: whether they were deterministic or race conditions, whether they were deep unsolved concurrency problems or simple oversights, and the complexity of the necessary fixes.
+
+\revision{Of five student groups that we worked with during the user study, four groups completed the instrumentation process and got Landslide to explore at least a minimal decision tree. (A minimal decision tree is one resulting from decision points only on voluntary reschedules, which Landslide automatically identifies.)}
 
 \subsection{Time Breakdown}
 
-This section will be written after the draft is submitted. Hang on tight, my friends.
-% TODO
+\newcommand\asdf[1]{\hspace{-0.05in}\footnotesize\bf{#1}\hspace{-0.05in}}
+\revision{
+\begin{figure}[t]
+	\begin{center}
+	\small
+	\begin{tabular}{|l||c|c|c|c|c|c||c|c|}
+		\hline
+		\multirow{2}{*}{\bf Group} & \multicolumn{6}{|c||}{\bf Minutes spent doing\dots} & \multicolumn{2}{|c|}{\bf Total time spent} \\
+		\cline{2-9}
+		& \asdf{annotating} & \asdf{config} & \asdf{student.c} & \asdf{fixing} & \asdf{customising} & \asdf{found races} & \asdf{required} & \asdf{refinement} \\
+		\hline \hline
+		% ntaha/jmchow
+		\multirow{2}{*}{Group 1} & 35 & {\footnotesize \em N/A} & {\footnotesize \em N/A} & 5 & {\footnotesize \em N/A} & {\footnotesize \em N/A} & {\footnotesize \em N/A} & {\footnotesize \em N/A} \\
+		\cline{2-9}
+		& 5 & 30 & 10 & 100 & {\footnotesize \em N/A} & {\footnotesize \em N/A} & 145 & {\footnotesize \em N/A} \\
+		\hline
+		% echo/margaret
+		\multirow{2}{*}{Group 2} & 20 & 30 & 10 & 80 & {\footnotesize \em N/A} & 10 & 140 & 10 \\
+		\cline{2-9}
+		& 15 & 45 & 30 & 60 & {\footnotesize \em N/A} & 30 & 150 & 30 \\
+		\hline
+		% tpassaro
+		\multirow{2}{*}{Group 3} & 15 & 10 & 5 & 60 & 30 & 30 & 90 & 60 \\
+		\cline{2-9}
+		& 15 & 10 & 5 & 60 & 30 & 30 & 90 & 60 \\
+		\hline
+		% pjumde
+		\multirow{2}{*}{Group 4} & 10 & 42 & 3 & 5 & 30 & {\footnotesize \em N/A} & 60 & 30 \\
+		\cline{2-9}
+		& 15 & 35 & {\footnotesize \em N/A} & 5 & 35 & {\footnotesize \em N/A} & {\footnotesize \em N/A} & 35 \\
+		\hline
+		% apodolsk
+		Group 5 & 50 & 15 & {\footnotesize \em N/A} & 15 & {\footnotesize \em N/A} & {\footnotesize \em N/A} & {\footnotesize \em N/A} & {\footnotesize \em N/A} \\
+		\hline
+		Former TA & 40 & 20 & 3 & 95 & {\footnotesize \em N/A} & 30 & 158 & 30 \\
+		\hline
+		\hline
+		{\bf Average } & {\bf 22 } & {\bf 26.33 } & {\bf 9.43 } & {\bf 48.5 } & {\bf 31.25 } & {\bf 26 } & {\bf 119 } & {\bf 36.43} \\
+		\hline
+	\end{tabular}
+	\end{center}
+	\caption{Self-reported times spent by users on each phase while using Landslide. ``N/A'' indicates a student reported spending no time on a particular phase. ``Required'' indicates the sum of the times from the first four phases; ``refinement'' inducates the sum from the last two phases.
+	``N/A'' indicates that a user did not report spending any time on a phase; the ``required'' field is ``N/A'' if any of its represented phases are, and ``N/A'' fields are not reflected in the averages.}
+	\label{fig:student-times}
+\end{figure}
+
+While the students were using Landslide, we asked them at intervals from 30 to 60 minutes to record how much time they had spent on each phase of instrumenting and using Landslide.
+
+\begin{itemize}
+	\item {\bf Required instrumentation.} These phases represent work necessary to getting Landslide to work with a kernel at all.
+	\begin{itemize}
+		\item {\bf Annotating the kernel.} In this phase, the student modifies their kernel to use the provided annotations (Section~\ref{sec:using-annotations}).
+		\item {\bf Writing the configuration file.} In this phase, the student fills out certain information about their kernel in \texttt{config.landslide} (Section~\ref{sec:using-config-landslide}).
+		\item {\bf Instrumenting within Landslide.} In this phase, the student implements the two instrumentation functions in \texttt{student.c} (Section~\ref{sec:using-student-c}).
+		\item {\bf Fixing instrumentation problems/crashing.} In this phase, the user repairs problems that arose due to incorrect instrumentation (or bugs in Landslide itself, in some cases).
+	\end{itemize}
+	\item {\bf Extra refinement.} These phases represent additional work to be done after successfully exploring a minimal decision tree. When such minimal exploration finds no bugs, such additional work is necessary to provide meaningful results.
+	\begin{itemize}
+		\item {\bf Customising decision points.} In this phase, the user configures Landslide to use decision sets more refined than the minimal one, in search of hard-to-find bugs (Section~\ref{sec:using-customise}).
+		\item {\bf Investigating found race conditions.} In this phase, the user attempts to understand and fix bugs that Landslide found and reported.
+	\end{itemize}
+\end{itemize}
+
+Table~\ref{fig:student-times} presents the time breakdown among phases that students experienced while using Landslide. On average, students spent two hours getting Landslide to work with their kernels, and slightly more than half an hour customising the search and/or studying found bugs on top of that.
+
+We consider the absolute values of these numbers largely artifacts of the user interface's quality (i.e., they could be improved with extra interface polishing, though they also currently present an upper bound). The relative values among phases, however, serve to give a notion of which phases were most difficult.
+
+We do not think it useful to consider these times amortised over how many bugs were found for each group, because in general we do not know whether each group would have found more bugs with marginal extra effort, having already paid the initial cost of instrumenting. (The vanish/vanish bug we describe finding ourselves in Section~\ref{sec:eval-victory-races} serves as an example of this perennial possibility.)
+Instead, we claim that the fact that Landslide found bugs for all groups who completed the required instrumentation proves its baseline effectivness as a debugging tool, and we note that the time tradeoff will become more worthwhile the more the user interface improves.
+}
 
 \subsection{Descriptive Feedback}
 \label{sec:eval-feedback}
@@ -95,7 +165,7 @@ Additionally, two enterprising users found ways to avoid implementing the functi
 \subsection{Landslide Victories}
 \label{sec:eval-victory}
 
-Of five student groups that we worked with during the user study, four groups completed the instrumentation process and got Landslide to explore at least a minimal decision tree. \revision{(A minimal decision tree is one resulting from decision points only on voluntary reschedules, which Landslide automatically identifies.)} Of those groups, two found race conditions in their kernel. Additionally, Landslide helped all four groups find deterministic bugs: three groups had previously unknown problems with running the idle thread inappropriately, and the other group had a simple use-after-free.
+Of the four groups that completed the required instrumentation, two found race conditions in their kernel. Additionally, Landslide helped all four groups find deterministic bugs: three groups had previously unknown problems with running the idle thread inappropriately, and the other group had a simple use-after-free.
 
 We list how much progress each group made, and whether or not they found any bugs.
 
@@ -114,6 +184,7 @@ We list how much progress each group made, and whether or not they found any bug
 \end{enumerate}
 
 \subsubsection{Race Conditions Found}
+\label{sec:eval-victory-races}
 
 Two groups found race conditions using Landslide. We describe them here.
 
