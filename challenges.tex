@@ -3,6 +3,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:challenges}
 
+\revision{In this chapter, we discuss several problems that stand in the way of systematic exploration's applicability to kernel space. We address these problems in part with certain aspects of Landslide's design and in part by relying on the user to provide important information, which we discuss in Chapter~\ref{sec:design} and Chapter~\ref{sec:using} respectively.}
+
 \section{Causes of Concurrency}
 
 In user space, a systematic exploration tool may cooperate with the underlying kernel to help control the concurrent behaviour of the system\cite{dbug-ssv}. Simple system call invocations can cause a particular thread to run at a particular time, or to block while another thread runs first.
@@ -36,8 +38,8 @@ Inter-thread communication can be much more ad-hoc in kernel-space than in user-
 \label{sec:challenges-design}
 
 One challenge particular to the context of 15-410 is that the kernels Landslide must be able to test may all use slightly different implementations to achieve the same goals.
-\revision{While 15-410's kernel project mandates that students implement the Pebbles specification, students are free to make their own design decisions under the hood, which can result in significantly different scheduler behaviour among multiple kernels.}
-For Landslide to be generally applicable to (almost) any kernel that students may submit, it must make some abstract assumptions about the kernel design which are compatible with many different implementations.
+\revision{While 15-410's kernel project mandates that students implement the Pebbles specification, students are free to make their own design decisions under the hood, which can result in significantly different scheduler behaviour among multiple kernels. In general, Landslide may rely on concrete details provided by kernel specifications, but must be compatible with arbitrary implementation details.}
+For Landslide to be generally applicable to many different kernels, even only multiple ones that implement the same specification (such as Pebbles), it must make some abstract assumptions about the kernel design which are compatible with many different implementations.
 
 % In certain avenues of future work (Section~\ref{sec:future-linux}), remaining agnostic of most implementation details becomes less of an issue. For example, if we target Landslide to Linux, it is unlikely that core scheduler or interrupt-handling behaviour will change for as long as Landslide remains useful for finding bugs. In 15-410, however, repeated re-targetting is a necessity.
 

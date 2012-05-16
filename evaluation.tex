@@ -213,7 +213,7 @@ We also claim that Landslide is useful in its ability to find certain types of n
 \section{Bug Case Studies}
 \label{sec:eval-casestudy}
 
-While building Landslide, we worked primarily with two kernels: one, the kernel the author wrote as a student in 15-410 (Fall 2008), and another, a kernel the author graded as a TA for 15-410 (Fall 2011). With permission, we refer to the first kernel as ``POBBLES'' and the second as ``LudicrOS''.
+While building Landslide, we worked primarily with two kernels: one, the kernel the author wrote as a student in 15-410 (Fall 2008), and another, a kernel the author graded as a TA for 15-410 (Fall 2011). We refer to the first kernel as ``POBBLES'' and to the second, with permission, as ``LudicrOS''.
 
 With Landslide, we found four bugs in POBBLES and two bugs in LudicrOS, and investigated them more deeply.
 
@@ -411,8 +411,9 @@ While evaluating Landslide on these bugs, we determined two invariants that shou
 	\item {\bf Superset invariant.} For a given set of decision points, if an exploration of the resulting tree finds a bug, using a superset of that set of decision points should also find a bug. This is because the first tree will be a sub-tree of the second, as shown by never preempting at a decision point that appears in the second set but not the first.
 \end{enumerate}
 
-In short, even though Landslide may give false negatives from using imperfect sets of decision points, the exploration itself must be sound (i.e. not missing any bugs that exist in the resulting tree).\footnote{
-When running LudicrOS yield/vanish with decision points on \texttt{mutex\_unlock} but not on \texttt{mutex\_lock}, we found that the ordering invariant failed: ``backwards'' exploration found no bug, while ``forwards'' exploration did. We attribute this to a bug in Landslide itself, and present the results for the backwards exploration as usual, in which Landslide found no bug.}
+In short, even though Landslide may give false negatives from using imperfect sets of decision points, the exploration itself must be sound (i.e. not missing any bugs that exist in the resulting tree).
+
+When running LudicrOS yield/vanish with decision points on \texttt{mutex\_unlock} but not on \texttt{mutex\_lock}, we found that the ordering invariant failed: ``backwards'' exploration found no bug, while ``forwards'' exploration did. We attribute this to a bug in Landslide itself, and present the results for the backwards exploration as usual, in which Landslide found no bug.
 
 \subsection{Recommended Testing Strategies}
 \label{sec:discussion-strategies}
