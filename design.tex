@@ -332,8 +332,8 @@ The independence relation expresses which transitions do not read-and-write or w
 
 \begin{itemize}
 	\item {\bf Always-accessed memory locations.}
-		In kernel-space, every thread switch goes through common scheduler and context-switcher routines. These routines inevitably access scheduler data structures, such as the runqueue.\footnote{
-		Another example is the timer tick counter: this global variable is not necessarily accessed every transition, because voluntary reschedules do not involve timer interrupts, but every involuntary preemption will cause a write to this counter.}
+		In kernel-space, every thread switch goes through common scheduler and context-switcher routines. These routines inevitably access scheduler data structures, such as the runqueue. The timer tick counter is another example: this global variable is not necessarily accessed every transition, because voluntary reschedules do not involve timer interrupts, but every involuntary preemption will cause a write to this counter.
+
 		If we include such memory accesses in the independence relation, it will result that all transitions conflict, and DPOR won't be able to achieve any reduction. To allow for state space reduction, we sacrifice our ability to find races involving these particular accesses by ignoring them. Currently we require the user to identify these locations as part of the instrumentation process, as described in Section~\ref{sec:using-config-landslide}.
 	\item {\bf Freed memory poisoning.}
 		A use-after-free bug happens whenever one thread accesses an address within an allocated block that another thread previously freed. Even if no other code makes a conflicting access to the same address after the \texttt{free}, accessing dynamically-allocated memory after it has been freed is illegal no matter what.

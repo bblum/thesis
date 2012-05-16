@@ -25,7 +25,9 @@ In this chapter we define certain terms that have specific meanings in the conte
 	\item {\bf Involuntary preemption}:
 		A context switch from one thread to another caused by a nondeterministic event, such as a timer tick or device interrupt. The systematic testing framework must control all sources of nondeterminism. In this work, we focus only on timer-driven thread switches.
 	\item {\bf Voluntary reschedule}:
-		A context switch from one thread to another which the guest kernel performed automatically, not triggered by nondeterministic events and/or Landslide but rather as part of its normal execution.\footnote{Voluntary reschedules may or may not be necessary for the kernel to behave correctly at all (for example: switching away from an exiting thread or from a thread blocked on \texttt{wait} is necessary, but switching to a newly-forked thread is not). Involuntary preemptions are never necessary for correct kernel behaviour.}
+		A context switch from one thread to another which the guest kernel performed automatically, not triggered by nondeterministic events and/or Landslide but rather as part of its normal execution.
+
+		Voluntary reschedules may or may not be necessary for the kernel to behave correctly at all (for example: switching away from an exiting thread or from a thread blocked on \texttt{wait} is necessary, but switching to a newly-forked thread is not). Involuntary preemptions, however, are never necessary for correct kernel behaviour.
 		See Section~\ref{sec:components-arbiter}.
 \suspend{enumerate}
 

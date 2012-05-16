@@ -239,8 +239,9 @@ This bug is exposed with the \texttt{vanish\_vanish} test case. The complexity a
 
 \subsubsection{POBBLES wait/wait}
 
-Finding this bug was somewhat of a surprise. When two threads in the same process wait for a child to exit, they both block on the same condition variable, and one of them has a pointer to the other in its \texttt{cond\_queue\_next} pointer. However, when awakened, the condition variable code did not clear the value of this pointer. Fortunately, an assert statement in the thread destruction code caught that the pointer was non-\texttt{NULL} when it should have been, and the kernel panicked.\footnote{
-Even with this assert, extremely mysterious behaviour could have arisen in other use cases, such as during stress testing: if the awakened thread had gone to sleep on another condition variable, its \texttt{cond\_queue\_next} pointer could point to a thread asleep on a different condition variable, in which case a broadcast on the new condition variable cause a spurious wakeup of the second thread. Worse yet, if the second thread had also been awoken, and thence exited, a broadcast would result in a use-after-free.}
+Finding this bug was somewhat of a surprise. When two threads in the same process wait for a child to exit, they both block on the same condition variable, and one of them has a pointer to the other in its \texttt{cond\_queue\_next} pointer. However, when awakened, the condition variable code did not clear the value of this pointer. Fortunately, an assert statement in the thread destruction code caught that the pointer was non-\texttt{NULL} when it should have been, and the kernel panicked.
+
+Even with this assert, extremely mysterious behaviour could have arisen in other use cases, such as during stress testing: if the awakened thread had gone to sleep on another condition variable, its \texttt{cond\_queue\_next} pointer could point to a thread asleep on a different condition variable, in which case a broadcast on the new condition variable would cause a spurious wakeup of the second thread. Worse yet, if the second thread had also been awoken, and thence exited, a broadcast would result in scheduler data structure corruption.
 
 This bug is exposed with the \texttt{double\_wait} test case.
 The complexity of this bug is moderate, since it requires both waiting threads to block before the child process exits.
@@ -254,8 +255,8 @@ We would also note that this bug was never uncovered by any stress test, but the
 
 This bug was presented in the lecture, and exhibited as a decision tree in Figure~\ref{fig:threadfork} and as a trace in Figure~\ref{fig:found_a_bug} and as source code in Figure~\ref{fig:tell-landslide}. When a new thread is forked and made runnable, and the forking thread subsequently dereferences its TID to use as a return value, it's possible for the dereference to be a use-after-free. This could result in a garbage value being returned.
 
-This bug is exposed with the \texttt{double\_thread\_fork} test case. The complexity is relatively simple\footnote{
-Many userspace thread libraries forcibly serialise invocations of \texttt{thread\_fork} and \texttt{vanish} with their own synchronisation barriers, so the kernel bug may never be noticed when using such libraries (this caused the author some trouble).},
+This bug is exposed with the \texttt{double\_thread\_fork} test case. The complexity is relatively simple,\footnote{
+Many userspace thread libraries forcibly serialise invocations of \texttt{thread\_fork} and \texttt{vanish} with their own synchronisation barriers, so the kernel bug may never be noticed when using such libraries (this caused the author some trouble).}
 and the fix is only two lines long; the dereference should simply occur before making the child thread runnable.
 
 Nevertheless, this bug was present in the author's student kernel and was not noticed by the TA who graded it.

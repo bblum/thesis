@@ -10,10 +10,6 @@ future work
 acknowledgements
 
 diagrams
-	terminology
-		sys ex terms
-			- case study bug
-			- picture of decision tree; corresponding concurrency table
 	eval
 		user study
 			- pie chart of time spent?
@@ -21,18 +17,8 @@ diagrams
 			- perf
 			- tree anatomy charts
 			- backwards vs forwards perf
-	using
-		- annotation pictuers
 	future work
 		theoretical oddities
 			- picture of shapes of trees
 
-things to add to pebbles spec
-	timer ticks control runnable threads
-	no idling when progress can be made
-model material
-	timer as only source of concurrency / timer driven scheduling
-		including sleeping threads
-	no idling when progress can be made
-	identifying bugs
 scope

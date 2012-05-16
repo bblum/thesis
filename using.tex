@@ -186,8 +186,8 @@ These configuration options help Landslide identify potentially-conflicting shar
 	\small
 	\item \texttt{sched\_func}: When functions that make up the kernel's scheduler are identified, Landslide knows to ignore shared memory accesses from them. Accesses to scheduler data structures happen during {\em every} transition, so ignoring these is necessary for achieving any reduction at all.
 	\item \texttt{ignore\_sym}: The user may wish to ignore memory accesses from other global data structures as well. For example, ignoring a mutex which is locked very frequently, but irrelevant to the actual test case, will result in an independence relation that \revision{enables much better state space reduction without losing the ability to find bugs in the parts of the kernel the user is interested in testing}.
-	\item \texttt{within\_function}: If the user configures decision points to happen in common code paths, such as \texttt{mutex\_lock}, it will likely generate more branching than needed.\footnote{
-For example, if testing \texttt{vanish}, there's no need to branch on a \texttt{mutex\_lock} in \texttt{exec}.}
+	\item \texttt{within\_function}: If the user configures decision points to happen in common code paths, such as \texttt{mutex\_lock}, it will likely generate more branching than needed. For example, if testing \texttt{vanish}, there's no need to branch on a \texttt{mutex\_lock} in \texttt{exec}.
+
 This configuration option allows the user to whitelist functions so that Landslide will only decide if the current thread is ``within'' one of those functions.
 	\item \texttt{without\_function}: Similar to above, but a blacklist. These two can be used together; later invocations take precedence over earlier ones.
 \end{itemize}
