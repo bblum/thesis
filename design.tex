@@ -194,19 +194,25 @@ When Landslide reaches a decision point, this accumulated set is copied in the d
 
 The arbiter identifies points during execution that should count as decision points. The selection is mainly controlled by the user, during the annotation and configuration process. In addition, the arbiter also automatically identifies {\em voluntary reschedules}, which comprise the ``minimal necessary set'' of decision points.
 
-A voluntary reschedule is identified when:
-\begin{itemize}
-	\item The previously-running thread entered the context switcher without first entering the timer interrupt handler,
-\end{itemize}
+In Landslide, it is always necessary to identify a decision point during a voluntary reschedule, to maintain the invariant that each transition between decision points is comprised of the execution of only one thread.
+\revision{In future work, we may also investigate the implications of allowing some transitions to consist of multiple threads' executions, which would have applications for heuristic state space reduction.}
 
-and {\em any one} of the following:
-\begin{itemize}
-	\item The currently-running thread was handling a timer interrupt, and exits the {\em timer interrupt handler}.
-	\item The currently-running thread was not handling a timer interrupt, and exits the {\em context switcher}.
-	\item The currently-running thread was {\em just forked} (i.e, it has never run before), and hence may never exit either the timer handler or context switcher.
-\end{itemize}
+\revision{
+Because voluntary reschedules happen of the guest kernel's own volition, when a thread begins one, it will necessarily not have been preempted by the timer handler. Hence, we identify voluntary reschedules when a thread enters the context switcher without having entered the timer handler.\footnote{
+Landslide actually identifies voluntary reschedules at the point when the reschedule ends, so the {\em previous} thread would not have entered the timer handler, and the current thread may or may not have.
+We do this to avoid the complexity of dealing with the possibility that the guest kernel would have interrupts disabled at the beginning of the reschedule and not re-enable them until after the thread switch.}
+}
 
-It is always necessary to identify a decision point during a voluntary reschedule, to maintain the invariant that each transition between decision points is comprised of the execution of only one thread.
+%\begin{itemize}
+%	\item The previously-running thread entered the context switcher without first entering the timer interrupt handler,
+%\end{itemize}
+%
+%and {\em any one} of the following:
+%\begin{itemize}
+%	\item The currently-running thread was handling a timer interrupt, and exits the {\em timer interrupt handler}.
+%	\item The currently-running thread was not handling a timer interrupt, and exits the {\em context switcher}.
+%	\item The currently-running thread was {\em just forked} (i.e, it has never run before), and hence may never exit either the timer handler or context switcher.
+%\end{itemize}
 
 In future work (Section~\ref{sec:future-new}), the arbiter may also automatically identify extra decision points, such as conflicting shared memory accesses.
 
