@@ -49,7 +49,6 @@ Here we document the interface by which Landslide understands the execution of t
 \subsection{In-Kernel Annotations}
 \label{sec:using-annotations}
 
-\newcommand\hilight[2]{\color{#1}#2\color{white}}
 \begin{figure}[h]
 	\centering
 	\colorbox{black}{\color{white}
@@ -60,7 +59,7 @@ Here we document the interface by which Landslide understands the execution of t
 	\texttt{~~~~\hilight{green}{thread\_t}~*child = construct\_new\_thread();} \\
 	\texttt{~~~~\hilight{cyan}{tell\_landslide\_forking}();} \\
 	\texttt{~~~~add\_to\_runqueue(child);} \\
-	\texttt{~~~~\hilight{cyan}{tell\_landslide\_decide}(); \hilight{purple}{/* Interrupt me here! */}} \\
+	\texttt{~~~~\hilight{cyan}{tell\_landslide\_decide}(); \hilight{magenta}{/* Interrupt me here! */}} \\
 	\texttt{~~~~\hilight{brown}{return}~child->tid;} \\
 	\texttt{\}} \\
 	\end{tabular}

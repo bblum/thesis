@@ -409,10 +409,37 @@ We found that implementing DPOR in this way violated our second notion of soundn
 \section{Debugging Feedback}
 \label{sec:techniques-feedback}
 
+\newcommand\hilight[2]{\color{#1}#2\color{white}}
 \begin{figure}[h]
-	\begin{center}
-		\includegraphics[width=0.95\textwidth]{found_a_bug.png}
-	\end{center}
+	%\includegraphics[width=0.95\textwidth]{found_a_bug.png}
+	\centering
+	\colorbox{black}{\color{white}
+	{\small
+	\begin{tabular}{l}
+	\texttt{\hilight{green}{[SCHEDULE]}~~~~~~thread 4 vanished} \\
+	\texttt{\hilight{green}{[SCHEDULE]}~~~~~~switched threads 4 -> 3} \\
+	\texttt{\hilight{brown}{[MEMORY]}~~~~~~~~\hilight{red}{USE AFTER FREE - read from 0x0015a8f0 at eip 0x00104209}} \\
+	\texttt{\hilight{brown}{[MEMORY]}~~~~~~~~Heap contents:~\{...\}} \\
+	\texttt{\hilight{brown}{[MEMORY]}~~~~~~~~[0x15a8f0 | 4136] was allocated by TID3 at (...)} \\
+	\texttt{\hilight{brown}{[MEMORY]}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~and freed by TID4 at (...)} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~\hilight{red}{****~~~~~A bug was found!~~~~****}} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~\hilight{red}{**** Decision trace follows.~****}} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~\hilight{yellow}{1:~~1347079 instructions, old 3 new 4, current 4}} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~~~~~TID3 at 0x00105a10 in \hilight{cyan}{context\_switch},} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~~~~~~~~~~~~~0x001041f4 in \hilight{cyan}{thread\_fork},} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~~~~~~~~~~~~~0x0010362b in \hilight{cyan}{thread\_fork\_wrapper}} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~\hilight{yellow}{2:~~1350725 instructions, old 4 new 3, current 3}} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~~~~~TID4 at 0x00105a10 in \hilight{cyan}{context\_switch},} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~~~~~~~~~~~~~0x00104681 in \hilight{cyan}{yield},} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~~~~~~~~~~~~~0x00104570 in \hilight{cyan}{vanish},} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~~~~~~~~~~~~~0x00103708 in \hilight{cyan}{vanish\_wrapper}} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~Stack:~TID3 at 0x00104209 in \hilight{cyan}{thread\_fork},} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~~~~~~~~~~~~~~~~0x0010362b in \hilight{cyan}{thread\_fork\_wrapper}} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~Total decision points 24, total backtracks 5} \\
+	\texttt{\hilight{red}{[BUG!]}~~~~~~~~~~Average instrs/decision 16155, average branch depth 5} \\
+	\end{tabular}
+	}
+	}
 	\caption{A sample decision trace (with extraneous text trimmed) that Landslide generated using the \texttt{double\_thread\_fork} test case (Section~\ref{sec:using-tests}).}
 	\label{fig:found_a_bug}
 \end{figure}
