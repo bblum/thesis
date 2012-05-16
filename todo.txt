@@ -1,6 +1,3 @@
-design
-	components
-		stack tracing?
 eval
 	case study
 		stress tests
@@ -22,3 +19,4 @@ diagrams
 			- picture of shapes of trees
 
 scope
+fix the decision point configuring section
