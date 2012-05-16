@@ -31,14 +31,6 @@ In this chapter we define certain terms that have specific meanings in the conte
 
 \section{Systematic Exploration Terms}
 
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=0.75\textwidth]{threadfork.png}
-	% TODO: make some other subfigs
-	\caption{A simple decision tree, showing possible interleavings of a buggy \texttt{thread\_fork} implementation. (This describes a bug studied in Section~\ref{sec:eval-thread-fork}.)}
-	\label{fig:threadfork}
-\end{figure}
-
 \revision{The following terms refer to parts of Landslide's analysis, regardless of the kernel under test's implementation.}
 
 \resume{enumerate}
@@ -51,6 +43,8 @@ In this chapter we define certain terms that have specific meanings in the conte
 	\item {\bf Decision tree} (or {\bf Execution tree}):
 		The tree defined by the possibility at each decision point of causing any runnable thread to execute its own transition. Abstractly, this tree comprises all possible states reachable by any interleaving of threads.
 		A decision tree is created/discovered during an exploration using a particular decision point set; the set is what the user configures, and the tree is what arises as a result.
+
+		Figure~\ref{fig:threadfork} depicts a decision tree for a simple race with three possible interleavings.
 	\item {\bf Branch}:
 		One particular execution of the test case; a set of decision points with exactly one transition between each of them, characterising a single interleaving of threads.
 	\item {\bf Interleaving}:
@@ -61,5 +55,85 @@ In this chapter we define certain terms that have specific meanings in the conte
 	\item {\bf Decision trace}:
 		A list of information about all decision points in a given branch, printed when a bug is found to help the user analyse its cause. Contains, for each decision point, the TID of the thread that was running previously, the TID that was newly chosen, the current instruction pointer, and the stack trace of the previous thread at the point it was switched away from.\footnote{Though Landslide does not provide it, a decision trace may also contain for each transition a list of shared memory accesses that conflicted with other transitions, and/or a listing of happens-before relationships between transitions.}
 \end{enumerate}
+
+\definecolor{thread1}{RGB}{87,172,255}
+\definecolor{thread2}{RGB}{255,201,102}
+\newcommand\hilight[2]{\color{#1}#2\color{white}}
+\begin{figure}[h]
+	\centering
+	\begin{framed}
+	\begin{tabular}{cc}
+	\multicolumn{2}{c}{\colorbox{black}{\color{white}
+	{\small
+	\begin{tabular}{l}
+	\texttt{\hilight{green}{int}~thread\_fork()} \\
+	\texttt{\{} \\
+	\texttt{~~~~\hilight{green}{thread\_t}~*child = construct\_new\_thread();} \\
+	\texttt{~~~~add\_to\_runqueue(child);} \\
+	\texttt{~~~~\hilight{brown}{return}~child->tid; \hilight{magenta}{/* Hopefully child hasn't exited yet!~*/}} \\
+	\texttt{\}} \\
+	\end{tabular}
+	}
+	}
+	}
+	\vspace{0.2in}
+	\\
+	\scriptsize
+	\begin{tabular}{|c|c|}
+	\hline
+	\cellcolor{thread1}{\bf Thread 1} & \cellcolor{thread2}{\bf Thread 2} \\
+	\hline
+	\texttt{construct\_new\_thread();} & \\
+	\hline
+	\texttt{add\_to\_runqueue(child);} & \\
+	\hline
+	\texttt{return child->tid;} & \\
+	\hline
+	& \texttt{exit();} \\
+	\hline
+	& \texttt{(free TCB)} \\
+	\hline
+	\end{tabular} \vspace{0.1in} &
+	\multirow{3}{*}{\includegraphics[width=0.48\textwidth]{threadfork.png}\vspace{0.5in}} \\
+	\scriptsize
+	\vspace{0.1in}
+	\begin{tabular}{|c|c|}
+	\hline
+	\cellcolor{thread1}{\bf Thread 1} & \cellcolor{thread2}{\bf Thread 2} \\
+	\hline
+	\texttt{construct\_new\_thread();} & \\
+	\hline
+	\texttt{add\_to\_runqueue(child);} & \\
+	\hline
+	& \texttt{exit();} \\
+	\hline
+	\texttt{return child->tid;} & \\
+	\hline
+	& \texttt{(free TCB)} \\
+	\hline
+	\end{tabular} \vspace{0.1in} & \\
+	\scriptsize
+	\begin{tabular}{|c|c|}
+	\hline
+	\cellcolor{thread1}{\bf Thread 1} & \cellcolor{thread2}{\bf Thread 2} \\
+	\hline
+	\texttt{construct\_new\_thread();} & \\
+	\hline
+	\texttt{add\_to\_runqueue(child);} & \\
+	\hline
+	& \texttt{exit();} \\
+	\hline
+	& \texttt{(free TCB)} \\
+	\hline
+	\texttt{return child->tid;} & \\
+	\hline
+	\end{tabular} & \\
+
+	\end{tabular}
+	\end{framed}
+	\caption{This \texttt{thread\_fork} implementation is prone to a use-after-free bug. Three different possible interleavings with the newly-forked thread (left) can be viewed together as a single decision tree (right).
+	(Section~\ref{sec:eval-thread-fork} studies this particular bug in detail.)}
+	\label{fig:threadfork}
+\end{figure}
 
 % vim: ft=tex
