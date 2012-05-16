@@ -54,6 +54,7 @@ However, in both cases, such steps have little bearing on code that exists in th
 Research in dynamic verification has also seen other techniques apart from systematic exploration.
 
 Data race detection is the canonical runtime concurrency verification technique. Tools such as ThreadSanitizer\cite{tsan} track synchronisation operations and happens-before relationships to identify unsafe concurrent memory accesses. Such accesses, called ``data races'', might not necessarily cause incorrect behaviour, but are usually warning indicators of such, and represent bad coding practice in any case.
+\revision{RaceTrack\cite{racetrack} is another data race detection tool notable for its ability to adaptively adjust its testing granularity after some execution analysis.}
 
 Symbolic execution\cite{symbolic,symbolic-disks} is a technique for testing programs by abstractly interpreting symbols and operations within a program, rather than directly executing its compiled code, which grants the ability to analyse conditional statements and cause-effect relationships among certain code paths.
 Tools such as KLEE\cite{klee} and projects such as Automated Exploit Generation\cite{aeg} demonstrate the effectiveness of symbolic execution in dynamic verification.
