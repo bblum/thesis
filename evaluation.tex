@@ -284,7 +284,7 @@ This bug is moderately complicated, requiring a preemption during that specific 
 Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using Landslide, configured with several different sets of decision points, and using conventional stress testing.
 
 \newcommand\bugnum[2]{\textcolor{BrickRed}{{\bf #1} {\scriptsize \em (#2)}}}
-\newcommand\nobugnum[2]{\textcolor{Blue}{{\em #1} {\scriptsize \em (#2)}}}
+\newcommand\nobugnum[2]{\textcolor{Blue}{[{\em #1 {\scriptsize (#2)}}]}}
 
 \begin{figure*}[t!]
 	\begin{center}
@@ -352,7 +352,7 @@ The Landslide experimental set-up is as follows:
 %%%%
 
 \newcommand\bugtree[1]{\textcolor{BrickRed}{\bf #1}}
-\newcommand\nobugtree[1]{\textcolor{Blue}{\em #1}}
+\newcommand\nobugtree[1]{\textcolor{Blue}{[{\em #1}]}}
 \begin{figure*}[t!]
 	\begin{center}
 	\small
