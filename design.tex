@@ -85,7 +85,7 @@ The Landslide scheduler is responsible for keeping track of which threads exist 
 
 It maintains a ``mirror image'' of the guest kernel's scheduler state in the form of three queues, a pointer to the currently-running thread, and a pointer to the previously-running thread. The queues are the {\em runqueue}, containing the runnable threads, the {\em sleep queue}, containing threads which become runnable after a certain number of timer ticks, and the {\em deschedule queue}, which might not correspond to a data structure in the guest kernel, but contains all other threads that exist on the system, which are not runnable for whatever reason.
 
-The Landslide scheduler also tracks which important actions each thread is performing. These actions are {\em forking}, {\em vanishing}, and {\em sleeping}, which are described in the next section, and also {\em in\_timer\_handler} and {\em in\_context\_switch}, which express what type of context switch a given thread may be performing, and are useful for both thread scheduling (Section~\ref{sec:components-inflight}) and detecting voluntary reschedules (Section~\ref{sec:components-arbiter}).\footnote{
+The Landslide scheduler also tracks which important actions each thread is performing. These actions are {\em forking}, {\em vanishing}, and {\em sleeping}, which are described in the next section \revision{(note that ``vanish'' is simply Pebbles's name for ``exit'')}, and also {\em in\_timer\_handler} and {\em in\_context\_switch}, which express what type of context switch a given thread may be performing, and are useful for both thread scheduling (Section~\ref{sec:components-inflight}) and detecting voluntary reschedules (Section~\ref{sec:components-arbiter}).\footnote{
 There are also other minor actions: {\em readlining}, used to track test lifecycle (Section~\ref{sec:components-test}), {\em just\_forked}, used for special-case context switch behaviour (Section~\ref{sec:components-arbiter}), and also several flags for tracking mutex lock/unlock events.}
 
 \subsubsection{Thread Lifecycle Tracking}
@@ -275,6 +275,7 @@ In order to identify when the guest kernel has done something incorrect, Landsli
 
 \subsection{Probable Bug-Detection Conditions}
 
+\revision{
 \begin{figure}[ht]
 	\centering
 	\begin{tabular}{cc}
@@ -289,9 +290,10 @@ In order to identify when the guest kernel has done something incorrect, Landsli
 	\hspace{0.12\textwidth}
 	}
 	\end{tabular}
-	\caption{Landslide judges whether the kernel has gotten stuck by analysing the structure of the execution tree. The red branches indicate non-terminating thread interleavings, which Landslide would identify by comparing them with their respective alternate interleavings.}
+	\caption{Landslide judges whether the kernel has gotten stuck by analysing the structure of the execution tree. The red branches indicate non-terminating thread interleavings, which Landslide would identify by comparing them with other branches in their respective trees.}
 	\label{fig:infiniteloop}
 \end{figure}
+}
 
 \resume{enumerate}
 	\item {\bf Memory leak bugs.} Landslide records the state of the heap before the test case begins, and compares it to the state of the heap after the test case ends. If memory allocated during the test was not freed, Landslide assumes that it was leaked.
@@ -302,9 +304,9 @@ In order to identify when the guest kernel has done something incorrect, Landsli
 		\item {\bf Infinite loops without decision points.} While exploring the decision tree, Landslide computes the average number of instructions executed between two consecutive decision points. If at any point the current number of instructions executed since the most recent decision point exceeds this average times a constant factor (arbitrarily chosen to be 2000), Landslide assumes the kernel must have gotten stuck in an infinite loop.
 		\item {\bf Infinite loops around decision points.} Landslide also computes the average number of decision points in each branch of the decision tree (the average ``branch depth''). If the depth of the current branch ever exceeds this average times a constant factor (arbitrarily chosen to be 20), Landslide assumes the kernel must have gotten stuck in an infinite loop.
 	\end{itemize}
-	In our experience, these heuristics have never falsely identified an infinite loop when the kernel was making real progress.
+	\revision{In our experience, these heuristics have never falsely identified an infinite loop when the kernel was making real progress.
 	However, both of these heuristics require a minimum number of branches to be explored before Landslide considers the already-explored tree structure to be statistically significant (arbitrarily chosen to be 20).
-	As such, these heuristics occasionally fail to trigger on a real infinite loop in cases when the loop occurs before enough ``safe'' branches were explored. In the future we might improve this heuristic by scaling the associated cutoff factor depending on how many branches were explored: the fewer branches explored so far, the less reliable the comparison, and hence the higher the cutoff factor to be used.
+	As such, these heuristics occasionally fail to trigger on a real infinite loop in cases when the loop occurs before enough ``safe'' branches were explored. In the future we might improve this heuristic by scaling the associated cutoff factor depending on how many branches were explored: the fewer branches explored so far, the less reliable the comparison, and hence the higher the cutoff factor to be used.}
 \end{enumerate}
 
 \section{Partial-Order Reduction}
@@ -336,7 +338,7 @@ The independence relation expresses which transitions do not read-and-write or w
 		Another example is the timer tick counter: this global variable is not necessarily accessed every transition, because voluntary reschedules do not involve timer interrupts, but every involuntary preemption will cause a write to this counter.}
 		If we include such memory accesses in the independence relation, it will result that all transitions conflict, and DPOR won't be able to achieve any reduction. To allow for state space reduction, we sacrifice our ability to find races involving these particular accesses by ignoring them. Currently we require the user to identify these locations as part of the instrumentation process, as described in Section~\ref{sec:using-config-landslide}.
 	\item {\bf Freed memory poisoning.}
-		A use-after-free bug happens whenever one thread accesses an address within an allocated block that another thread previously freed. Even if no other code makes a conflicting access to the same address after the \texttt{free}, the C idiom says that accessing dynamically-allocated memory after it has been freed is illegal no matter what.
+		A use-after-free bug happens whenever one thread accesses an address within an allocated block that another thread previously freed. Even if no other code makes a conflicting access to the same address after the \texttt{free}, accessing dynamically-allocated memory after it has been freed is illegal no matter what.
 
 		Hence, even if the second thread that freed the block never accesses the particular address that the first thread used, the second thread's \texttt{free} still logically conflicts with the first thread's access. Landslide addresses this by treating every call to \texttt{free} as a {\em write} access to every address within the freed block when computing shared memory conflicts.
 \end{itemize}
@@ -406,7 +408,7 @@ We found that implementing DPOR in this way violated our second notion of soundn
 \section{Debugging Feedback}
 \label{sec:techniques-feedback}
 
-\begin{figure}[t]
+\begin{figure}[h]
 	\begin{center}
 		\includegraphics[width=0.95\textwidth]{found_a_bug.png}
 	\end{center}

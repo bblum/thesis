@@ -10,7 +10,7 @@ Other work has focused on kernel verification apart from systematic exploration,
 Still other efforts are for testing and verification techniques that are orthogonal to systematic exploration and kernel-level testing entirely.
 Here we discuss related work in all three categories.
 
-Landslide is distinguished from related systematic testing tools in its field as more of an exploratory work, presenting techniques to make systematic testing compatible with kernel-level code; less so as a development on the core testing approach itself.
+\revision{Compared to related systematic testing tools in its field, Landslide is more of an exploratory work, presenting techniques to make systematic testing compatible with kernel-level code, rather than a development on the core testing approach itself.}
 
 \section{Systematic Exploration}
 
@@ -21,6 +21,7 @@ dBug\cite{dbug-ssv} is a systematic testing tool which makes use of DPOR. It foc
 CHESS\cite{chess} is another userspace systematic testing tool. The authors explore the insight that many races require very few forced preemptions to uncover, and develop a search strategy which prioritises thread interleavings with fewer preemptions. Landslide does not (yet) make use of this strategy, though we did find a related insight which we discuss in Section~\ref{sec:future-backwards}.
 
 There are also several tools, such as MaceMC\cite{macemc} and MODIST\cite{modist}, which provide systematic testing frameworks for networked and distributed applications.
+\revision{MODIST is especially notable in its ability to test unmodified distributed systems by using event interposition.}
 
 RacePRO\cite{racepro} is a tool based in kernel space which uncovers ``process races'' \revision{(races involving interleaving system call patterns between multiple processes)} using systematic exploration of multi-process interactions in user-space. They use system calls, such as filesystem accesses, as points to explore different interleavings of concurrent code, and detect bugs which can corrupt persistent system resources.
 
@@ -40,7 +41,7 @@ In Section~\ref{sec:future-drivers} we discuss the potential applicability of sy
 \subsection{New Kernel Architectures}
 
 On the far end of the ``formality and correctness'' spectrum for kernel verification lies seL4\hspace{0in}\cite{sel4}, a microkernel fully designed and specified in Haskell and translated directly into C. Because Haskell is type-safe (strict constraints on legal program behaviour that make it easier to reason about) and pure (most code cannot have stateful side-effects), the developers of seL4 were able to formally prove the specification's correctness and the implementation's adherence to the spec.
-Developing kernel code in languages and environments that enable formal complete verification, even in small components of a larger codebase, represents an admirable step towards writing correct code to begin with and avoiding many classes of bugs entirely.
+Developing kernel code in languages and environments that enable formal complete verification, even in small components of a larger codebase \revision{(generally more tractable than seL4's extreme approach)}, represents an admirable step towards writing correct code to begin with and avoiding many classes of bugs entirely.
 
 Barrelfish\cite{barrelfish} is another novel kernel architecture designed with concurrency in mind. The Barrelfish kernel relies exclusively on message-passing for inter-thread communication, for increased performance on massively multi-core systems. While not a verification project, the strict limitation of inter-thread communication makes the concurrent properties of the system easy to reason about in ways that modern production kernels do not provide.
 We believe Barrelfish, like seL4, is a step in the right direction for bringing better concurrent code into the world.

@@ -35,7 +35,9 @@ Inter-thread communication can be much more ad-hoc in kernel-space than in user-
 \section{Kernel Design Independence}
 \label{sec:challenges-design}
 
-One challenge particular to the context of 15-410 is that the kernels Landslide must be able to test may all use slightly different implementations to achieve the same goals. For Landslide to be generally applicable to (almost) any kernel that students may submit, it must make some abstract assumptions about the kernel design which are compatible with many different implementations.
+One challenge particular to the context of 15-410 is that the kernels Landslide must be able to test may all use slightly different implementations to achieve the same goals.
+\revision{While 15-410's kernel project mandates that students implement the Pebbles specification, students are free to make their own design decisions under the hood, which can result in significantly different scheduler behaviour among multiple kernels.}
+For Landslide to be generally applicable to (almost) any kernel that students may submit, it must make some abstract assumptions about the kernel design which are compatible with many different implementations.
 
 % In certain avenues of future work (Section~\ref{sec:future-linux}), remaining agnostic of most implementation details becomes less of an issue. For example, if we target Landslide to Linux, it is unlikely that core scheduler or interrupt-handling behaviour will change for as long as Landslide remains useful for finding bugs. In 15-410, however, repeated re-targetting is a necessity.
 

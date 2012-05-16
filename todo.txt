@@ -21,6 +21,8 @@ diagrams
 			- perf
 			- tree anatomy charts
 			- backwards vs forwards perf
+	using
+		- annotation pictuers
 	future work
 		theoretical oddities
 			- picture of shapes of trees
