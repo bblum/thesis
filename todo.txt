@@ -1,17 +1,12 @@
-intro
 design
 	components
 		stack tracing?
 eval
-	user study
-		time breakdown
 	case study
 		stress tests
 		backwards explorations
-	summary of bugs found
 future work
 	backwards numbers
-conclusion
 acknowledgements
 
 diagrams

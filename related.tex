@@ -14,7 +14,7 @@ Landslide is distinguished from related systematic testing tools in its field as
 
 \section{Systematic Exploration}
 
-Dynamic Partial Order Reduction (DPOR)\hspace{0in}\cite{dpor,sdpor,dbug-retreat,distributed-dpor} is an algorithm for reducing the state space of ``all possible thread interleavings'' by identifying independent thread transitions and pruning the redundant state spaces that result from interleaving those transitions. Landslide makes generous use of the DPOR algorithm.
+Dynamic Partial Order Reduction (DPOR)\hspace{0in}\cite{dpor,distributed-dpor,sdpor,dbug-retreat} is an algorithm for reducing the state space of ``all possible thread interleavings'' by identifying independent thread transitions and pruning the redundant state spaces that result from interleaving those transitions. Landslide makes generous use of the DPOR algorithm.
 
 dBug\cite{dbug-ssv} is a systematic testing tool which makes use of DPOR. It focuses on multithreaded userspace applications, identifying when to preempt by interposing on \revision{\texttt{libc} and \texttt{pthreads}} library calls. It uses a message-passing model for inter-thread communication and for establishing a happens-before relationship between transitions. The dBug project inspired the development of Landslide.
 
