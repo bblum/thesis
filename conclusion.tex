@@ -2,7 +2,25 @@
 \chapter{Conclusion}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\revision{
+Systematic exploration is a powerful technique for exposing race conditions in concurrent systems.
+%It is more reliable than stress testing, and able to find more diverse types of bugs than data race detection.
+In previous research, systematic exploration has proven useful in user-level and distributed systems, yet a gap stands between the technique and the complex world of kernel-level concurrency debugging. In this thesis, we present techniques for bridging this gap.
+
+We have built Landslide, a tool for performing systematic exploration in kernel space with a focus on Pebbles kernels written for 15-410. We showed that Landslide's techniques make systematic exploration in kernel space both possible and efficient, and that Landslide can help students find bugs in their own kernels.
+
+With Landslide, we see testing a kernel as a process of manipulating test parameters in two ways: first, in the choice of test case, and second, in the user's configuration of Landslide to express which parts of the kernel are ``interesting'' and which are irrelevant.
+Finding and understanding race conditions exposed by a given test becomes a joint effort between the user and Landslide, combining the user's knowledge about the kernel's design and Landslide's ability to explore many interleavings efficiently.
+
+Our work on Landslide has indicated many possible avenues for continued work on systematic exploration in kernel space. We see potential for Landslide to be a useful debugging tool both for students of 15-410 and for developers of general purpose operating systems. Application to mainstream kernels also opens up the possibility to apply systematic testing techniques to device driver code, known for being prone to concurrency errors.
+Finally, the current emphasis on user-guided steering of test parameters suggests long-running testing approaches which could automate a user's intuition for how to find meaningful results quickly.
+
+We hope that the ideas presented here serve as stepping stones to develop more sophisticated systematic debugging techniques for kernel-level race conditions.
+}
+
 \newcommand{\s}{\fontfamily{jkpvos}\selectfont{}s}
 
-% TODO write this for real
+\begin{quote}
+\em
 And lo, the Author did{\s}t pre{\s}ent Land{\s}lide to yon re{\s}earch Community, and to the {\s}tudents of XV-CDX as well. Verily, the Kernel developers young and olde found Bugges of Concurren{\s}y in their code. The {\s}oftware then{\s}eforth worked as Intended, cra{\s}hing nevermore, and there was much rejoicing.
+\end{quote}

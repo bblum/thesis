@@ -82,11 +82,10 @@ We present Landslide,\footnote{
 Landslide {\em (n)}: a phenomenon which demonstrates that Pebbles are not as stable as you might think.}
 a tool for applying systematic race detection techniques in to kernel-level code.
 It is geared towards kernels that implement the Pebbles specification, the main project in Operating System Design and Implementation (15-410) at CMU, and is implemented as a module for Wind River Simics\textsuperscript{\texttrademark}\cite{simics}, the x86 simulator that students use to run their Pebbles kernels.
-During execution of a kernel, Landslide records important actions performed by the kernel, attempts to decide at which points in the kernel's execution a preemption will be most likely to expose a bug, and then exercises all possible interleavings of kernel threads around such points.
+\revision{In order to use Landslide, a kernel programmer must instrument their kernel to inform Landslide of important concurrency events during the execution, and configure Landslide to focus its search on components of the kernel most relevant to the test.
+%During a kernel's execution, Landslide records important actions performed by the kernel, decides at which points in the kernel's execution a preemption will be most likely to expose a bug, and then exercises all possible interleavings of kernel threads around such points.
+Using this instrumentation and configuration, Landslide is able to enumerate all possible interleavings of kernel threads at a granularity both fine-grained enough to expose interesting concurrency behaviour and coarse-grained enough to produce state spaces that are feasible to explore. Landslide then forces the kernel to exercise each of these interleavings, and checks for race conditions in each of them.}
 When Landslide finds a bug (predicted by a set of common checks and heuristics), it stops execution and prints information about the sequence of interleavings that exposed the bug.
-
-With Landslide, we see testing a kernel as a process of manipulating test parameters in two ways: first, in the choice of test case (the user-space program that exercises a specific set of system calls), and second, in the configuration of Landslide in regard to which parts of the kernel are ``interesting'' in the behaviour of the test case and which are irrelevant.
-Searching for and understanding race conditions exposed by a given test becomes a joint effort between the programmer and Landslide, combining the programmer's specific knowledge about the design of the kernel and Landslide's ability to explore many interleavings efficiently.
 
 \revision{
 In this work, we study the challenges inherent in applying systematic testing techniques in kernel-space, in contrast with user-space applications (Chapter~\ref{sec:challenges}), present our techniques (some sound, and some heuristic) for addressing them (Chapter~\ref{sec:design}), and document the process of using Landslide (Chapter~\ref{sec:using}).
