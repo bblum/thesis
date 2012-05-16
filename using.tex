@@ -49,9 +49,23 @@ Here we document the interface by which Landslide understands the execution of t
 \subsection{In-Kernel Annotations}
 \label{sec:using-annotations}
 
+\newcommand\hilight[2]{\color{#1}#2\color{white}}
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=\textwidth]{tell_landslide.png}
+	\colorbox{black}{\color{white}
+	{\small
+	\begin{tabular}{l}
+	\texttt{\hilight{green}{int}~thread\_fork()} \\
+	\texttt{\{} \\
+	\texttt{~~~~\hilight{green}{thread\_t}~*child = construct\_new\_thread();} \\
+	\texttt{~~~~\hilight{cyan}{tell\_landslide\_forking}();} \\
+	\texttt{~~~~add\_to\_runqueue(child);} \\
+	\texttt{~~~~\hilight{cyan}{tell\_landslide\_decide}(); \hilight{purple}{/* Interrupt me here! */}} \\
+	\texttt{~~~~\hilight{brown}{return}~child->tid;} \\
+	\texttt{\}} \\
+	\end{tabular}
+	}
+	}
 	\caption{Example annotated code. In theory, the use of \texttt{tell\_landslide\_decide()} in the place where a preemption needs to occur is not necessary for Landslide to know to preempt then; it is shown for the sake of demonstration.}
 	\label{fig:tell-landslide}
 \end{figure}
@@ -123,22 +137,23 @@ There are two functions that the user needs to implement in Landslide itself, in
 \begin{figure}[h]
 	% FIXME: replace with an image
 	\centering
-	\begin{framed}
-	{\small \begin{verbatim}
-	bool kern_current_extra_runnable(conf_object_t *cpu)
-	{
-	    int tcb = READ_MEMORY(cpu, GUEST_CURRENT_TCB_POINTER);
-	    int state_flag = READ_MEMORY(cpu, tcb + GUEST_TCB_STATE_FLAG_OFFSET);
-	    return state_flag == GUEST_TCB_RUNNABLE;
+	\colorbox{black}{\color{white}
+	{\small
+	\begin{tabular}{l}
+	\texttt{\hilight{green}{bool}~kern\_current\_extra\_runnable(\hilight{green}{conf\_object\_t}~*cpu)} \\
+	\texttt{\{} \\
+	\texttt{~~~~\hilight{green}{int}~tcb = \hilight{cyan}{READ\_MEMORY}(cpu, GUEST\_CURRENT\_TCB\_POINTER);} \\
+	\texttt{~~~~\hilight{green}{int}~state\_flag = \hilight{cyan}{READ\_MEMORY}(cpu, tcb + GUEST\_TCB\_STATE\_FLAG\_OFFSET);} \\
+	\texttt{~~~~\hilight{brown}{return}~state\_flag == GUEST\_TCB\_RUNNABLE;} \\
+	\texttt{\}} \\
+	\texttt{\hilight{green}{bool}~kern\_ready\_for\_timer\_interrupt(\hilight{green}{conf\_object\_t}~*cpu)} \\
+	\texttt{\{} \\
+	\texttt{~~~~\hilight{green}{int}~x = \hilight{cyan}{READ\_MEMORY}(cpu, GUEST\_PREEMPTION\_FLAG);} \\
+	\texttt{~~~~\hilight{brown}{return}~x == GUEST\_PREEMPTION\_ENABLED;} \\
+	\texttt{\}} \\
+	\end{tabular}
 	}
-	bool kern_ready_for_timer_interrupt(conf_object_t *cpu)
-	{
-	    int x = READ_MEMORY(cpu, GUEST_PREEMPTION_FLAG);
-	    return x == GUEST_PREEMPTION_ENABLED;
 	}
-	\end{verbatim}
-	}
-	\end{framed}
 	\caption{Example implementations of the two functions in \texttt{student.c}.}
 	\label{fig:student-c}
 \end{figure}
