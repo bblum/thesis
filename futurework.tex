@@ -83,6 +83,7 @@ Landslide could make use of data race detection techniques\cite{datacollider}, h
 Landslide's tree exploration is implemented sequentially. However, because DPOR's approach of tagging which sibling branches should be explored next generally follows a workqueue-based depth-first-search structure, it should not be too difficult to parallelise. Prior work exists for this technique\cite{distributed-dpor}, so it would not be a research contribution, but would substantially improve Landslide's effectiveness regardless.
 
 \subsection{Symbolic Execution}
+\label{sec:future-dawson}
 
 In Section~\ref{sec:related-orthogonal}, we mentioned the technique of symbolic execution for dynamic verification. We believe that symbolic execution could be combined with systematic exploration to help find races in certain obscure code paths that systematic exploration by itself might not even execute.
 
@@ -121,7 +122,7 @@ Linux is much bigger than a Pebbles kernel (in terms of amount of code that runs
 
 \subsection{Complicated Synchronisation Patterns}
 
-Many components of Linux contain ad-hoc synchronisation which would be difficult to reason about. One common pattern is attempting some operation, checking later if it got interfered with, and rewinding and trying again if so. A straightforward approach to building a decision tree representing this might result in an infinitely deep branch: if the thread that gets interfered with keeps getting selected for scheduling, it would never make any progress. The testing tool would need to recognise these cases, and understand the invisible dependency on ``somebody else'' running first.
+Many components of Linux contain ad-hoc synchronisation, often done for performance reasons, which would be difficult to reason about. One common pattern is attempting some operation, checking later if it got interfered with, and rewinding and trying again if so. A straightforward approach to building a decision tree representing this might result in an infinitely deep branch: if the thread that gets interfered with keeps getting selected for scheduling, it would never make any progress. The testing tool would need to recognise these cases, and understand the invisible dependency on ``somebody else'' running first.
 
 \subsection{Device Drivers}
 \label{sec:future-drivers}
@@ -130,14 +131,12 @@ There is much more device driver code in Linux than there is for its core compon
 
 However, the concurrency model of device drivers is much more complicated than the simple timer-based scheduling model we used in this work. In addition to timer-driven preemptions, code may also be interleaved as caused by device interrupts and input. Like support for SMP, being able to systematically test for device driver races will also require a more sophisticated representation of the decision tree.
 
-In addition to controlling timer interrupts, a systematic testing tool would also need to control device interrupts and device input, both of which are also nondeterministic inputs to the kernel. Furthermore, it would need to recognise common components of device drivers to properly cause relevant scheduling patterns, such as the ``top half'' and ``bottom half'' of interrupt handlers and dedicated device driver threads.
+In addition to controlling timer interrupts, a systematic testing tool would also need to control device interrupts and device input, both of which are also nondeterministic inputs to the kernel.
+Furthermore, it would need to recognise common components of device drivers to properly cause relevant scheduling patterns, such as the ``top half'' and ``bottom half'' of interrupt handlers and dedicated device driver threads.
 
 These components would all be candidates for being scheduled at a decision point, although it more complicated still than simply choosing from among several threads to run. For example, the bottom half of an interrupt handler would depend on a top half having already executed, and interrupt handlers would run on the same stack as other thread rather than on their own stack.
 
-% FIXME
-%\subsection{Other Kernel Environments}
-
-%Some other production kernels would also make good targets for systematic exploration.
+\revision{Because many driver bugs result from interactions with error-handling paths, it will also help to understand the difference between normal device input and faulty input in order to maximise code path coverage. Symbolic execution (Section~\ref{sec:future-dawson}) may help address this.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Virtualisation}
@@ -179,7 +178,6 @@ Likewise, Landslide will need to control other non-deterministic inputs to the k
 
 Another area to investigate is that of systems which could be tested continuously. Instead of the goal of finishing exploring a test case without finding a bug, a long-running testing approach would focus on ``shaping'' the test configuration to more and more refined configurations in hopes of finding a bug eventually.
 
-%\subsection{Iterating Decision Sets}
 In Section~\ref{sec:discussion-strategies}, we recommend an iteration strategy to effectively explore trees with multiple different sets of decision points, while not knowing ahead of time which, if any, may contain a bug.
 This strategy would give rise to a test framework which could explore multiple different types and granularities of interleavings at once, heuristically judge which are more likely to uncover bugs, and prioritise resource allocation and search direction accordingly.
 
@@ -188,10 +186,7 @@ One possibility would be to begin exploration with a small set of decision point
 Another possibility would be to identify decision points along the way, analysing each branch of the tree after executing it, to generate the decision points for that very branch, and thence use them to find which branch to explore next.
 It remains to be seen which approach would be more effective.
 
-% TODO talk about heuristic-guided tree construction
-
-% FIXME
-%In Section~\ref{Sec:future-nadim}, we discuss an interesting property of certain decision trees, and suggest a heuristic
+\revision{One possible application of such a strategy would be in searching for bugs given only a stack trace and/or kernel log from a crash report. The components of the kernel mentioned in the trace or log could be used as the initial focus for the test, and the framework could gradually expand its scope to search for an interleaving granularity which would reproduce the bug.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Theoretical Oddities}
