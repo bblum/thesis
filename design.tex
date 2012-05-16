@@ -182,6 +182,7 @@ One alternative simpler method would be, when triggering a timer interrupt, to t
 \label{sec:components-memory}
 
 Landslide maintains a mirror image of the guest kernel's dynamic allocation heap, so it can know at any point which memory ranges are allocated and which ranges used to be allocated but now are freed. This set is updated each time the guest kernel calls \texttt{malloc} or \texttt{free}.
+\revision{This heap tracking provides the ability to check for dynamic allocation errors (e.g., use-after-free and double-free bugs), such as in Valgrind\cite{valgrind}.}
 
 Landslide also maintains a set of shared memory accesses made since the last decision point, for use with Partial Order Reduction (Section~\ref{sec:por-independence}). Whenever the guest kernel accesses memory in its heap or in its global data regions, Landslide adds the address of the access to the set, with a flag indicating whether it was a read or a write. (If the address was already present, and the recorded access was a read and the current access is a write, we upgrade the recorded access to a write. Otherwise if the address was already present, we do nothing.)
 
