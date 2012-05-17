@@ -93,6 +93,12 @@ Finally, we briefly studied each bug that the students found: whether they were 
 	``N/A'' indicates that a user did not report spending any time on a phase; the ``required'' field is ``N/A'' if any of its represented phases are, and ``N/A'' fields are not reflected in the averages.}
 	\label{fig:student-times}
 \end{table}
+\begin{figure}[h]
+	\center
+	\includegraphics[width=0.5\textwidth]{graphs/studence-pie.pdf}
+	\caption{Average time breakdown for each phase of instrumenting a kernel with Landslide, based on student self-reported times.}
+	\label{fig:student-pie}
+\end{figure}
 
 While the students were using Landslide, we asked them at intervals from 30 to 60 minutes to record how much time they had spent on each phase of instrumenting and using Landslide.
 
@@ -111,7 +117,7 @@ While the students were using Landslide, we asked them at intervals from 30 to 6
 	\end{itemize}
 \end{itemize}
 
-Table~\ref{fig:student-times} presents the time breakdown among phases that students experienced while using Landslide. On average, students spent two hours getting Landslide to work with their kernels, and slightly more than half an hour customising the search and/or studying found bugs on top of that.
+Table~\ref{fig:student-times} presents the time breakdown among phases that students experienced while using Landslide, visualised in Figure~\ref{fig:student-pie}. On average, students spent two hours getting Landslide to work with their kernels, and slightly more than half an hour customising the search and/or studying found bugs on top of that.
 
 We consider the absolute values of these numbers largely artifacts of the user interface's quality (i.e., they could be improved with extra interface polishing, though they also currently present an upper bound). The relative values among phases, however, serve to give a notion of which phases were most difficult.
 
@@ -281,45 +287,52 @@ This bug is moderately complicated, requiring a preemption during that specific 
 \subsection{Performance}
 \label{sec:eval-numbers}
 
-Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using Landslide, configured with several different sets of decision points, and using conventional stress testing.
+Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using Landslide, configured with several different sets of decision points.
+\revision{Figure~\ref{fig:number-graph} compares the total exploration time among each different decision set for the trials that did find bugs.}
 
 \newcommand\bugnum[2]{\textcolor{BrickRed}{{\bf #1} {\scriptsize \em (#2)}}}
 \newcommand\nobugnum[2]{\textcolor{Blue}{[{\em #1 {\scriptsize (#2)}}]}}
 
 \begin{table}[t!]
 	\begin{center}
-	\small
-	\begin{tabular}{|l||c|c|c|c||c|}
+	\footnotesize
+	\begin{tabular}{|l||c|c|c|c|}
 		\hline
-		\multirow{2}{*}{\bf Kernel and test case} & \multicolumn{4}{c||}{\bf Decision points used} & \multirow{2}{*}{\bf Stress test} \\
+		\multirow{2}{*}{\bf Kernel and test case} & \multicolumn{4}{c|}{\bf Decision points used} \\ % & \multirow{2}{*}{\bf Stress test} \\
 		\cline{2-5}
-		& \bf default & \bf lock & \bf unlock & \bf both & \\
+		& {\bf default} & {\bf lock} & {\bf unlock} & {\bf both} \\
 		\hline\hline
-		POBBLES vanish/vanish (a) & \nobugnum{31.8}{0.6} & \bugnum{57.1}{1.7} & $\infty$ & $\infty$ & \\
+		POBBLES vanish/vanish (a) & \nobugnum{31.8}{0.6} & \bugnum{57.1}{1.7} & $\infty$ & $\infty$ \\
 		\hline
-		POBBLES vanish/vanish (b) & \nobugnum{32.0}{0.4} & \bugnum{51.5}{2.1} & \nobugnum{8057.9}{336.9} & $\infty$ & \\
+		POBBLES vanish/vanish (b) & \nobugnum{32.0}{0.4} & \bugnum{51.5}{2.1} & \nobugnum{8057.9}{336.9} & $\infty$ \\
 		\hline
-		POBBLES wait/wait & \bugnum{23.3}{0.7} & \bugnum{27.9}{0.8} & \bugnum{27.9}{2.1} & \bugnum{41.6}{1.4} & \\
+		POBBLES wait/wait & \bugnum{23.3}{0.7} & \bugnum{27.9}{0.8} & \bugnum{27.9}{2.1} & \bugnum{41.6}{1.4} \\
 		\hline
-		POBBLES thread\_fork/vanish & \bugnum{22.0}{0.6} & \bugnum{37.4}{1.1} & \bugnum{27.6}{0.5} & \bugnum{72.0}{2.6} & \\
+		POBBLES thread\_fork/vanish & \bugnum{22.0}{0.6} & \bugnum{37.4}{1.1} & \bugnum{27.6}{0.5} & \bugnum{72.0}{2.6} \\
 		\hline
-		LudicrOS vanish/vanish & \nobugnum{13.2}{0.2} & \bugnum{13.7}{0.7} & \bugnum{34.6}{1.1} & \bugnum{17.1}{0.3} & \\
+		LudicrOS vanish/vanish & \nobugnum{13.2}{0.2} & \bugnum{13.7}{0.7} & \bugnum{34.6}{1.1} & \bugnum{17.1}{0.3} \\
 		\hline
-		LudicrOS yield/vanish & \nobugnum{12.3}{0.3} & \bugnum{11.4}{0.4} & \nobugnum{27.4}{0.8} & \bugnum{11.7}{0.4} & \\
+		LudicrOS yield/vanish & \nobugnum{12.3}{0.3} & \bugnum{11.4}{0.4} & \nobugnum{27.4}{0.8} & \bugnum{11.7}{0.4} \\
 		\hline
-		\multicolumn{6}{c}{Key: \bugnum{seconds}{stddev} indicates bug found; \nobugnum{seconds}{stddev} indicates whole tree explored with no bug.} \\
+		\multicolumn{5}{c}{Key: \bugnum{seconds}{stddev} indicates bug found; \nobugnum{seconds}{stddev} indicates whole tree explored with no bug.} \\
 	\end{tabular}
 	\end{center}
-	\caption{Comparison of time taken (in seconds) to find bugs using Landslide and using conventional stress testing.
-	Landslide's times are given for several different sets of decision points: the default set, consisting only of voluntary reschedules (Section~\ref{sec:components-arbiter}); and using custom decision points in addition to the default set: calls to \texttt{mutex\_lock}, calls to \texttt{mutex\_unlock}, and both.
-	All numbers represent the average from 5 trials, with the standard deviations given in parentheses. ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: what timeout for stress testing?
+	\caption{Comparison of time taken (in seconds) to find bugs using Landslide with various decision sets:
+	the default set, consisting only of voluntary reschedules (Section~\ref{sec:components-arbiter}); and using custom decision points in addition to the default set: calls to \texttt{mutex\_lock}, calls to \texttt{mutex\_unlock}, and both.
+	All numbers represent the average from 5 trials, with the standard deviations given in parentheses. ``$\infty$'' indicates that Landslide's search did not finish (after 8 hours).
 	}
 	\label{fig:numbers}
 \end{table}
+\revision{
+\begin{figure}[h]
+	\center
+	\includegraphics[width=0.7\textwidth]{graphs/decisions.pdf}
+	\caption{Bar graph visualisation of the exploration time in trials that did find bugs. The decision trees that did not expose bugs, and the ones that timed out, are not shown.}
+	\label{fig:number-graph}
+\end{figure}
+}
 
-% TODO: have a graph
-
-The Landslide experimental set-up is as follows:
+The experimental set-up is as follows:
 
 \begin{itemize}
 	\item All Landslide trial times include the Simics start-up and kernel boot-up time (time between issuing the command and the test case beginning to run), roughly 15 seconds for POBBLES and 10 seconds for LudicrOS.
@@ -347,7 +360,6 @@ The Landslide experimental set-up is as follows:
 %	\item All stress test trials are on on the ``412 lab crashbox'' (3.2 GHz Pentium D).
 %	\item The kernel and test case are configured to not print any messages during the test
 %\end{itemize}
-% TODO: say specs of crash machine
 
 %%%%
 
@@ -355,7 +367,7 @@ The Landslide experimental set-up is as follows:
 \newcommand\nobugtree[1]{\textcolor{Blue}{[{\em #1}]}}
 \begin{table}[t!]
 	\begin{center}
-	\small
+	\footnotesize
 	\begin{tabular}{|l|l||c|c|c|c|}
 		\hline
 		\multirow{2}{*}{\bf Kernel and test case} & \multirow{2}{*}{\bf Property of tree} & \multicolumn{4}{|c|}{\bf Decision points used} \\
