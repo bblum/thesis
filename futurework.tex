@@ -200,11 +200,9 @@ During our in-depth case studies, we noticed two interesting properties about ce
 
 \revision{
 \renewcommand\bugnum[2]{#1 {\scriptsize \em (#2)}}
-\begin{figure}[t]
+\begin{table}[t]
 	\centering
-	\begin{tabular}{cc}
-	\multicolumn{2}{c}{\footnotesize
-	\centering
+	\footnotesize
 	\begin{tabular}{|l|l||c|c|c|}
 	\hline
 	{\bf Bug} & {\bf Direction} & {\bf Time} & {\bf Backtracks} & {\bf Trace Length} \\
@@ -228,14 +226,16 @@ During our in-depth case studies, we noticed two interesting properties about ce
 	& Backwards & \bugnum{11.4}{0.4} & 0 & 5 \\
 	\hline
 	\end{tabular}
-	}
-	\vspace{0.1in}
-	\\
-	\includegraphics[width=0.48\textwidth]{graphs/backwards-time.pdf} &
-	\includegraphics[width=0.48\textwidth]{graphs/backwards-trace.pdf}
-	\end{tabular}
-	\caption{Comparison of forwards and backwards explorations for the six case study bugs (using decision points on \texttt{mutex\_lock} but not \texttt{mutex\_unlock}). In general, backwards exploration finds bugs faster, but forwards exploration produces shorter (more understandable) decision traces.}
+	\caption{Comparison of forwards and backwards explorations for the six case study bugs (using decision points on \texttt{mutex\_lock} but not \texttt{mutex\_unlock}).}
 	\label{fig:backwards}
+\end{table}
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.47\textwidth]{graphs/backwards-time.pdf}
+	\hspace{0.02\textwidth}
+	\includegraphics[width=0.48\textwidth]{graphs/backwards-trace.pdf}
+	\caption{In general, backwards exploration finds bugs faster, but forwards exploration produces shorter (more understandable) decision traces.}
+	\label{fig:backwards-graphs}
 \end{figure}
 }
 
@@ -251,7 +251,7 @@ We configured Landslide to be able to explore trees in two different orderings, 
 		Compared to forwards exploration, we found that backwards exploration tended to find bugs much more quickly, with fewer backtracks needed before the buggy branch was chosen.
 \end{itemize}
 
-\revision{Figure~\ref{fig:backwards} compares the tree explorations and resulting decision traces. The one exception is the POBBLES thread\_fork/vanish bug, which Landslide found immediately during forwards exploration, because the race actually required no forced preemptions to expose.}
+\revision{Table~\ref{fig:backwards} and Figure~\ref{fig:backwards-graphs} compare the tree explorations and resulting decision traces. The one exception is the POBBLES thread\_fork/vanish bug, which Landslide found immediately during forwards exploration, because the race actually required no forced preemptions to expose.}
 
 Compared to Iterative Context Bounding\cite{chess}, which is based on the insight that bugs need fewer forced preemptions to expose, we believe that our insight is orthogonal. The ICB insight results in smaller decision trees overall needing to be explored before bugs appear, while our insight determines exploration ordering once the tree is constructed.
 
