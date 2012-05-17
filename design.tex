@@ -176,7 +176,7 @@ Though we define timer interrupts as the only source of non-determinism in our e
 
 Landslide's scheduling technique, called the {\em schedule in-flight}, involves successive triggering of timer interrupts to trigger context switches until the desired thread begins to run. Algorithm~\ref{alg:inflight} shows how Landslide makes this happen.
 
-One alternative simpler method would be, when triggering a timer interrupt, to tell the guest kernel explicitly which thread should be run next. This would require the kernel programmer to write extra code in their timer handler and/or context switcher. We chose the ``in-flight'' approach instead, because it does not require additional kernel modifications.
+One alternative simpler method would be, when triggering a timer interrupt, to tell the guest kernel explicitly which thread should be run next. This approach could potentially save the cost of extra context switches, especially in test cases with very many threads. However, it would also require the kernel programmer to write extra code in their timer handler and/or context switcher. Because we mostly focus on test cases with few threads, we judged that ease of use was more important than the marginal performance increase, so we chose the ``in-flight'' approach instead.
 
 \subsection{Memory Tracking}
 \label{sec:components-memory}
