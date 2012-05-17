@@ -50,7 +50,7 @@ Finally, we briefly studied each bug that the students found: whether they were 
 
 \newcommand\asdf[1]{\hspace{-0.05in}\footnotesize\bf{#1}\hspace{-0.05in}}
 \revision{
-\begin{figure}[t]
+\begin{table}[t]
 	\begin{center}
 	\small
 	\begin{tabular}{|l||c|c|c|c|c|c||c|c|}
@@ -92,7 +92,7 @@ Finally, we briefly studied each bug that the students found: whether they were 
 	\caption{Self-reported times spent by users on each phase while using Landslide. ``N/A'' indicates a student reported spending no time on a particular phase. ``Required'' indicates the sum of the times from the first four phases; ``refinement'' inducates the sum from the last two phases.
 	``N/A'' indicates that a user did not report spending any time on a phase; the ``required'' field is ``N/A'' if any of its represented phases are, and ``N/A'' fields are not reflected in the averages.}
 	\label{fig:student-times}
-\end{figure}
+\end{table}
 
 While the students were using Landslide, we asked them at intervals from 30 to 60 minutes to record how much time they had spent on each phase of instrumenting and using Landslide.
 
@@ -286,7 +286,7 @@ Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using
 \newcommand\bugnum[2]{\textcolor{BrickRed}{{\bf #1} {\scriptsize \em (#2)}}}
 \newcommand\nobugnum[2]{\textcolor{Blue}{[{\em #1 {\scriptsize (#2)}}]}}
 
-\begin{figure*}[t!]
+\begin{table}[t!]
 	\begin{center}
 	\small
 	\begin{tabular}{|l||c|c|c|c||c|}
@@ -315,7 +315,7 @@ Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using
 	All numbers represent the average from 5 trials, with the standard deviations given in parentheses. ``$\infty$'' indicates the bug was not found with stress testing (after 1 hour), or that Landslide's search did not finish (after 8 hours). % TODO: what timeout for stress testing?
 	}
 	\label{fig:numbers}
-\end{figure*}
+\end{table}
 
 % TODO: have a graph
 
@@ -353,7 +353,7 @@ The Landslide experimental set-up is as follows:
 
 \newcommand\bugtree[1]{\textcolor{BrickRed}{\bf #1}}
 \newcommand\nobugtree[1]{\textcolor{Blue}{[{\em #1}]}}
-\begin{figure*}[t!]
+\begin{table}[t!]
 	\begin{center}
 	\small
 	\begin{tabular}{|l|l||c|c|c|c|}
@@ -390,7 +390,7 @@ The Landslide experimental set-up is as follows:
 	\end{center}
 	\caption{Information about the decision trees explored when finding bugs. As in the previous table, each test case was run with the four different sets of decision points. ``\nobugtree{X}'' means the tree was completely explored because Landslide did not find a bug in that configuration. ``\bugtree{X}'' reflects the portion of the tree that was explored before a bug was found.}
 	\label{fig:trees}
-\end{figure*}
+\end{table}
 
 Table~\ref{fig:trees} presents more detailed information about the decision trees that Landslide explored when finding these bugs.
 For each set of decision points on each bug, we give the total number of decision points in the tree, the total number of backtracks (i.e. branches explored before the bug was found), and the average branch depth (i.e. number of decision points in each branch).
