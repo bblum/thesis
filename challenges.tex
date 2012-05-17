@@ -7,7 +7,7 @@
 
 \section{Causes of Concurrency}
 
-In user space, a systematic exploration tool may cooperate with the underlying kernel to help control the concurrent behaviour of the system\cite{dbug-ssv}. Simple system call invocations can cause a particular thread to run at a particular time, or to block while another thread runs first.
+In user space, a systematic exploration tool may cooperate with the underlying kernel to help control the concurrent behaviour of the system~\cite{dbug-ssv}. Simple system call invocations can cause a particular thread to run at a particular time, or to block while another thread runs first.
 
 In kernel space, however, the scheduler is part of the system being tested, and we can no longer always interrupt the execution of a test case to ask the scheduler to instantly start running a different thread.
 \begin{itemize}
@@ -20,15 +20,15 @@ In kernel space, however, the scheduler is part of the system being tested, and 
 	\begin{center}
 	\includegraphics[width=0.65\textwidth]{vip1066720.jpg}
 	\end{center}
-	\caption{{\em !`Cuidado! !`Las llamas son muy peligrosas!}\cite{de0u}}
+	\caption{{\em !`Cuidado! !`Las llamas son muy peligrosas!}~\cite{de0u}}
 \end{figure*}
 
 \section{Ad-hoc Thread Communication}
 
-Inter-thread communication can be much more ad-hoc in kernel-space than in user-space\hspace{0in}\cite{datacollider}, and a systematic testing framework needs to be aware of all the kernel's synchronisation idioms.
+Inter-thread communication can be much more ad-hoc in kernel-space than in user-space \cite{datacollider}, and a systematic testing framework needs to be aware of all the kernel's synchronisation idioms.
 
 \begin{itemize}
-	\item {\bf Avoiding reliance on message-passing.} Some systems for user-space systematic testing require that threads communicate only by message-passing, to better track the concurrency relationships between thread transitions\cite{dbug-ssv}. With few exceptions\cite{barrelfish}, kernels do not rely on message-passing as a primary communication mechanism, and to be compatible with the kernels of today, a testing framework must allow for less idealised state-sharing (Section~\ref{sec:components-memory}).
+	\item {\bf Avoiding reliance on message-passing.} Some systems for user-space systematic testing require that threads communicate only by message-passing, to better track the concurrency relationships between thread transitions~\cite{dbug-ssv}. With few exceptions~\cite{barrelfish}, kernels do not rely on message-passing as a primary communication mechanism, and to be compatible with the kernels of today, a testing framework must allow for less idealised state-sharing (Section~\ref{sec:components-memory}).
 	\item {\bf Recognising blocked threads.} It is difficult to detect when threads are ready to do useful work. Even if notionally runnable, they may be waiting in a yield loop (Sections~\ref{sec:using-annotations} and \ref{sec:future-linux}), which can be difficult to discern without an understanding of whatever shared resource the thread is waiting for. A tool that did not recognise this might decide to attempt to run that thread over and over, and get stuck because the other threads would never be allowed to make progress.
 	\item {\bf Thread lifecycle tracking.} It is also difficult to demarcate threads' lifecycles: when a new thread gets created, when is it available to run? When a thread is exiting, at what point does it stop running code (Section~\ref{sec:using-annotations})? In user-space, these boundaries are defined by the system call instructions, but in kernel-space, the boundary is fuzzier.
 	\item {\bf Use of virtual memory.} The kernel's complete control over the machine's virtual memory system means a system for tracking memory accesses must be aware of changing virtual memory mappings (Section~\ref{sec:using-requirements}). A tool not aware of virtual memory might falsely identify whether or not two transitions' memory accesses conflict.

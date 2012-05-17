@@ -78,7 +78,7 @@ Landslide currently never alters its set of decision points once it begins execu
 
 Most notably among the information Landslide has at its disposal is the collection of conflicting shared memory accesses among transitions. Theoretically, to identify a decision point immediately before and after each such access would generate an execution tree with perfect granularity (i.e., exactly one shared memory access per transition), and thence find every possible race condition, which would be the opposite extreme to the current setup.
 
-Landslide could make use of data race detection techniques\cite{datacollider}, however, to strike a middle ground in which shared memory accesses it chooses.
+Landslide could make use of data race detection techniques~\cite{datacollider}, however, to strike a middle ground in which shared memory accesses it chooses.
 \begin{enumerate}
 	\item It should be aware of the types and interfaces associated with the kernel's synchronisation primitives (mutexes, condvars, semaphores, etc), and be able to treat operations on those as ``guaranteed to work'' (similar to Section~\ref{sec:por-independence}).\footnote{
 	\revision{If such operations were instead themselves incorrect, it would mean that data race detection might fail to identify certain racy accesses. The technique would then still identify some racy accesses, but might miss others.}}
@@ -88,19 +88,19 @@ Landslide could make use of data race detection techniques\cite{datacollider}, h
 
 \subsection{Parallelism}
 
-Landslide's tree exploration is implemented sequentially. However, because DPOR's approach of tagging which sibling branches should be explored next generally follows a workqueue-based depth-first-search structure, it should not be too difficult to parallelise. Prior work exists for this technique\cite{distributed-dpor}, so it would not be a research contribution, but would substantially improve Landslide's effectiveness regardless.
+Landslide's tree exploration is implemented sequentially. However, because DPOR's approach of tagging which sibling branches should be explored next generally follows a workqueue-based depth-first-search structure, it should not be too difficult to parallelise. Prior work exists for this technique~\cite{distributed-dpor}, so it would not be a research contribution, but would substantially improve Landslide's effectiveness regardless.
 
 \subsection{Symbolic Execution}
 \label{sec:future-dawson}
 
 In Section~\ref{sec:related-orthogonal}, we mentioned the technique of symbolic execution for dynamic verification. We believe that symbolic execution could be combined with systematic exploration to help find races in certain obscure code paths that systematic exploration by itself might not even execute.
 
-One interesting phenomenon that would occur from combining symbolic execution and systematic exploration would be a new notion of decision points. Symbolic execution involves its own state space exploration, in which control flow branch points correspond to decision points; hence, to combine it with systematic exploration would create a hybrid state space in which a ``decision point'' could be a place where either different threads could preempt each other or multiple control flow paths could be taken\cite{dawson}.
+One interesting phenomenon that would occur from combining symbolic execution and systematic exploration would be a new notion of decision points. Symbolic execution involves its own state space exploration, in which control flow branch points correspond to decision points; hence, to combine it with systematic exploration would create a hybrid state space in which a ``decision point'' could be a place where either different threads could preempt each other or multiple control flow paths could be taken~\cite{dawson}.
 
 \subsection{Trace Minimisation}
 \label{sec:future-trace-minimisation}
 
-Also in Section~\ref{sec:related-orthogonal}, we mentioned related research that attempts to {\em minimise} the set of conditions that are known to be associated with a bug\cite{dag-mining}.
+Also in Section~\ref{sec:related-orthogonal}, we mentioned related research that attempts to {\em minimise} the set of conditions that are known to be associated with a bug~\cite{dag-mining}.
 In the context of Landslide, this corresponds to how easy the decision trace is to understand. Even if Landslide finds a bug and prints the list of thread switches that were made, it may still be very difficult for the user to understand if the list includes many unnecessary switches that were completely unrelated to the bug.
 
 Landslide could continue to be of use even after it has found a bug, by attempting to find a ``minimal decision trace''. It could search different subsets of the known-buggy trace in an attempt to find shorter traces which result in the same bug.
@@ -261,7 +261,7 @@ We configured Landslide to be able to explore trees in two different orderings, 
 
 \revision{Table~\ref{fig:backwards} and Figure~\ref{fig:backwards-graphs} compare the tree explorations and resulting decision traces. The one exception is the POBBLES thread\_fork/vanish bug, which Landslide found immediately during forwards exploration, because the race actually required no forced preemptions to expose.}
 
-Compared to Iterative Context Bounding\cite{chess}, which is based on the insight that bugs need fewer forced preemptions to expose, we believe that our insight is orthogonal. The ICB insight results in smaller decision trees overall needing to be explored before bugs appear, while our insight determines exploration ordering once the tree is constructed.
+Compared to Iterative Context Bounding~\cite{chess}, which is based on the insight that bugs need fewer forced preemptions to expose, we believe that our insight is orthogonal. The ICB insight results in smaller decision trees overall needing to be explored before bugs appear, while our insight determines exploration ordering once the tree is constructed.
 
 We are not sure if combining these two insights is possible. In future work we might compare them and investigate this possibility, to determine a heuristic for what exploration orderings are most likely to expose bugs with the fewest needed preemptions.
 
