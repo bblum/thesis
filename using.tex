@@ -8,9 +8,13 @@ In this chapter we discuss how to use Landslide with a kernel that meets 15-410'
 In preparation for conducting the student user study (Section~\ref{sec:eval-studence}), we distributed a user guide roughly similar to this chapter.\footnote{
 The user guide itself is available at \url{http://bblum.net/landslide-guide.pdf}, and at \url{http://www.contrib.andrew.cmu.edu/~bblum/landslide-guide.pdf}.}
 
+The recommended ``attack plan'' for using Landslide corresponds directly to the sections in this chapter. Section~\ref{sec:using-requirements} lists the requirements a kernel must fulfill to be compatible with Landslide. Section~\ref{sec:using-instrumenting} describes the process of instrumenting a kernel, which involves annotating the kernel, filling out a configuration file, and instrumenting within Landslide itself. Section~\ref{sec:using-customise} describes ways to configure Landslide's behaviour to help focus its search for bugs.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Kernel Requirements}
 \label{sec:using-requirements}
+
+In addition to meeting the Pebbles specifcation for 15-410, there are some additional restrictions that Landslide imposes, some inherent to its testing model, and others as artifacts of its interface/implementation.
 
 \subsection{Scheduler Functionality}
 \label{sec:using-requirements-sched}

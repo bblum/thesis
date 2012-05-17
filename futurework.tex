@@ -172,7 +172,7 @@ More challenging than tracking important kernel events will be tracking all acce
 
 \subsection{Backtracking}
 
-Simics's convenient bookmarking mechanism will be no more in virtual-machine-land. One possibility for backtracking would be to record-and-replay the events of each branch (up to the point at which Landslide chooses to have decided differently), restarting the system's execution from the beginning each time. Another option might be to snapshot the state of the kernel at each decision point, and use those to resume without re-executing everything from the beginning (kernel boot-up and initialisation is much more expensive than individual system calls, after all).
+Simics's convenient bookmarking mechanism will be no more in virtual-machine-land. One possibility for backtracking would be to record-and-replay the events of each branch (up to the point at which Landslide chooses to have decided differently), restarting the system's execution from the beginning each time. Another option might be to snapshot the state of the kernel (and associated devices) at each decision point, and use those to resume without re-executing everything from the beginning (kernel boot-up and initialisation is much more expensive than individual system calls, after all).
 
 \subsection{Control over Non-Determinism}
 

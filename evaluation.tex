@@ -417,7 +417,7 @@ For each set of decision points on each bug, we give the total number of decisio
 
 \subsection{Invariants}
 
-While evaluating Landslide on these bugs, we determined two invariants that should hold for multiple explorations on the same test case.
+While evaluating Landslide on these bugs, we determined two invariants that must hold for multiple explorations on the same test case.
 
 \begin{enumerate}
 	\item {\bf Ordering invariant.} For a given set of decision points, exploring the tree in multiple different orders (``forwards''/``backwards'') should produce the same result in terms of whether a bug was found or not. The bugs found may be different, and the number of branches explored may be different, but it should never be that one ordering finds a bug while another ordering of the same tree finds no bug.

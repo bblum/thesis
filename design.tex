@@ -47,6 +47,7 @@ Landslide's bug reporting is false-negative oriented, meaning that it does not c
 In addition to Dynamic Partial Order Reduction (DPOR) for automated state space reduction, Landslide relies on the user's guidance to help mitigate the possible combinatorial explosion of thread interleaving possibilities. This manifests in two ways:
 
 \begin{itemize}
+	\item {\bf Iterative refinement of interleaving granularity.} The recommended usage pattern is to begin by searching state spaces with coarse-grained interleavings, and then refining the decision set afterwards until bugs are found. Landslide automatically identifies a ``minimal decision set'', comprising only voluntary reschedules (Section~\ref{sec:components-arbiter}), to use as the coarsest granularity.
 	\item {\bf Decision point selection.} Landslide provides an interface for the user to manually limit identification of decision points to only ``relevant'' modules of the kernel, thereby only generating thread interleavings around points within those modules.
 	\item {\bf Memory conflict selection.} Landslide also provides a mechanism for ignoring shared memory conflicts on certain common data structures (especially those accessed in every thread transition, such as the scheduler queues), to enable DPOR to achieve greater reduction. Intuitively, this represents sacrificing the ability to find races around those data structures to make searching other components more feasible.
 \end{itemize}
