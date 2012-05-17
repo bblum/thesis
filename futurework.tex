@@ -45,9 +45,9 @@ The 15-410 grading infrastructure currently uses a program called Fritz, which i
 
 While far from being able to replace talented humans for grading, we believe that, after some improvement, Landslide could augment or replace Fritz as a tool for automatically finding several common patterns of concurrency errors that students have (especially races involving exiting threads, which we have shown Landslide is effective at finding).
 
+\revision{
 \subsection{Making Pebbles Landslide-Friendly}
 
-\revision{
 If Landslide becomes integrated into an undergraduate course curriculum, it will be important to minimise the amount of effort students have to go through to instrument their kernels. This could be achieved in part by changing the project definition in ways that make Landslide better able to automatically instrument kernels. For Pebbles, we recommend the following changes.
 
 \begin{enumerate}
@@ -55,6 +55,14 @@ If Landslide becomes integrated into an undergraduate course curriculum, it will
 	\item {\bf No idling when progress can be made.} Also as discussed in Section~\ref{sec:model-timer}. With the current specification, inappropriate idling is merely a performance bug, though it is incompatible with Landslide. If the project gave stricter requirements regarding this, fewer students would need to fix problems with their scheduler idling during the instrumentation process.
 	\item {\bf Mandated function names for scheduling events.} As part of the instrumentation process, students tell Landslide where in their schedulers notable events happen. Landslide could automatically detect some of these if the project mandated the names of certain functions, such as the timer handler, context switcher, and runqueu manipulation routines.
 \end{enumerate}
+
+\subsection{Virtual Memory Bug-Finding}
+
+In this work, we focused especially on races related to the thread lifecycle routines. We believe Landslide would be immediately applicable to certain varieties of virtual memory bugs, but other types might not be easily exposed with Landslide's current model.
+
+For example, one of the groups in the user study said they were looking for a race that only arose in out of memory conditions. A test case that could expose that race, by exhausting the kernel's memory resources, would necessarily have a very large state space that would be impractical to explore systematically.
+
+We suggested to the group to configure their kernel to fail memory allocations every so often, so Landslide would be better able to find the race while still using a small test case. To make Landslide more applicable to such bugs in general, we might further investigate this debugging strategy in a more structured way.
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

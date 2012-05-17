@@ -1,22 +1,6 @@
-eval
-	case study
-		stress tests
-		backwards explorations
-future work
-	backwards numbers
 acknowledgements
 
-diagrams
-	eval
-		user study
-			- pie chart of time spent?
-		case study
-			- perf
-			- tree anatomy charts
-			- backwards vs forwards perf
-	future work
-		theoretical oddities
-			- picture of shapes of trees
+picture of shapes of trees
 
 scope
 fix the decision point configuring section
