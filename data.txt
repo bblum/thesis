@@ -1,3 +1,12 @@
+
+(averages and stdev of below)
+\bugnum{124.8}{4.9}
+\bugnum{106.3}{5.7}
+\bugnum{62.6}{3.4}
+\bugnum{21.4}{0.7}
+\bugnum{14.7}{0.9}
+\bugnum{13}{0.9}
+
 backwards exploration stuff
 
 pobbles vanish_vanish (a)
@@ -5,11 +14,11 @@ pobbles vanish_vanish (a)
 fwd:
 [BUG!]          Total choice points 4627, total backtracks 1264
 [BUG!]          Average instrs/choice 1709, average branch depth 18
-121.484s
-129.348s
-118.752s
-130.146s
-124.204s
+121.484
+129.348
+118.752
+130.146
+124.204
 trace length 7
 
 bwd trace length 11
@@ -19,11 +28,11 @@ pobbles vanish_vanish (b)
 fwd:
 [BUG!]          Total choice points 3732, total backtracks 1030
 [BUG!]          Average instrs/choice 1781, average branch depth 16
-113.674s
-102.053s
-104.012s
-100.763s
-111.118s
+113.674
+102.053
+104.012
+100.763
+111.118
 trace length 7
 
 bwd trace length 10
@@ -33,11 +42,11 @@ pobbles double_wait
 fwd:
 [BUG!]          Total choice points 607, total backtracks 132
 [BUG!]          Average instrs/choice 8377, average branch depth 10
-60.616s
-65.339s
-66.620s
-58.468s
-61.942s
+60.616
+65.339
+66.620
+58.468
+61.942
 trace length 8
 
 bwd:
@@ -51,11 +60,11 @@ fwd:
 [BUG!]          Total choice points 10, total backtracks 0
 [BUG!]          Average instrs/choice 19583, average branch depth 0
 trace length 6
-20.877s
-20.764s
-21.063s
-22.446s
-21.774s
+20.877
+20.764
+21.063
+22.446
+21.774
 
 bwd trace length 6
 
@@ -63,11 +72,11 @@ ludicros vanish/vanish
 
 [BUG!]          Total choice points 29, total backtracks 4
 [BUG!]          Average instrs/choice 14359, average branch depth 8
-15.183s
-13.915s
-16.107s
-14.447s
-14.041s
+15.183
+13.915
+16.107
+14.447
+14.041
 trace length 3
 
 bwd trace length 7
@@ -77,11 +86,11 @@ ludicros yield/vanish
 [BUG!]          Total choice points 22, total backtracks 3
 [BUG!]          Average instrs/choice 11419, average branch depth 7
 
-12.602s
-12.968s
-14.619s
-12.615s
-12.312s
+12.602
+12.968
+14.619
+12.615
+12.312
 
 trace length 3
 

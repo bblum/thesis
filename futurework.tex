@@ -198,6 +198,47 @@ During our in-depth case studies, we noticed two interesting properties about ce
 \subsection{``Backwards'' Exploration}
 \label{sec:future-backwards}
 
+\revision{
+\renewcommand\bugnum[2]{#1 {\scriptsize \em (#2)}}
+\begin{figure}[t]
+	\centering
+	\begin{tabular}{cc}
+	\multicolumn{2}{c}{\footnotesize
+	\centering
+	\begin{tabular}{|l|l||c|c|c|}
+	\hline
+	{\bf Bug} & {\bf Direction} & {\bf Time} & {\bf Backtracks} & {\bf Trace Length} \\
+	\hline\hline
+	\multirow{2}{*}{POBBLES vanish/vanish (a)} & Forwards & \bugnum{124.8}{4.9} & 1264 & 7 \\
+	& Backwards & \bugnum{57.1}{1.7} & 376 & 11 \\
+	\hline
+	\multirow{2}{*}{POBBLES vanish/vanish (b)} & Forwards & \bugnum{106.3}{5.7} & 1030 & 7 \\
+	& Backwards & \bugnum{51.5}{2.1} & 376 & 10 \\
+	\hline
+	\multirow{2}{*}{POBBLES wait/wait} & Forwards & \bugnum{62.6}{3.4} & 132 & 8 \\
+	& Backwards & \bugnum{27.9}{0.8} & 17 & 13 \\
+	\hline
+	\multirow{2}{*}{POBBLES thread\_fork/vanish} & Forwards & \bugnum{21.4}{0.7} & 0 & 6 \\
+	& Backwards & \bugnum{37.4}{1.1} & 70 & 6 \\
+	\hline
+	\multirow{2}{*}{LudicrOS vanish/vanish} & Forwards & \bugnum{14.7}{0.9} & 4 & 3 \\
+	& Backwards & \bugnum{13.7}{0.7} & 3 & 7 \\
+	\hline
+	\multirow{2}{*}{LudicrOS yield/vanish} & Forwards & \bugnum{13}{0.9} & 3 & 3 \\
+	& Backwards & \bugnum{11.4}{0.4} & 0 & 5 \\
+	\hline
+	\end{tabular}
+	}
+	\vspace{0.1in}
+	\\
+	\includegraphics[width=0.48\textwidth]{graphs/backwards-time.pdf} &
+	\includegraphics[width=0.48\textwidth]{graphs/backwards-trace.pdf}
+	\end{tabular}
+	\caption{Comparison of forwards and backwards explorations for the six case study bugs (using decision points on \texttt{mutex\_lock} but not \texttt{mutex\_unlock}). In general, backwards exploration finds bugs faster, but forwards exploration produces shorter (more understandable) decision traces.}
+	\label{fig:backwards}
+\end{figure}
+}
+
 We configured Landslide to be able to explore trees in two different orderings, and we found that the two orderings behaved substantially differently in terms of time taken to find bugs and length of decision traces produced.
 
 \begin{itemize}
@@ -209,8 +250,8 @@ We configured Landslide to be able to explore trees in two different orderings, 
 
 		Compared to forwards exploration, we found that backwards exploration tended to find bugs much more quickly, with fewer backtracks needed before the buggy branch was chosen.
 \end{itemize}
-% TODO: provide results here
-% FIXME: study diffs in trees with no bugs at all
+
+\revision{Figure~\ref{fig:backwards} compares the tree explorations and resulting decision traces. The one exception is the POBBLES thread\_fork/vanish bug, which Landslide found immediately during forwards exploration, because the race actually required no forced preemptions to expose.}
 
 Compared to Iterative Context Bounding\cite{chess}, which is based on the insight that bugs need fewer forced preemptions to expose, we believe that our insight is orthogonal. The ICB insight results in smaller decision trees overall needing to be explored before bugs appear, while our insight determines exploration ordering once the tree is constructed.
 
@@ -223,7 +264,7 @@ One member of Group 1 from the user study fully explored decision trees from \te
 
 When using decision points on just \texttt{mutex\_lock} or \texttt{mutex\_unlock}, the explorations for each test case took similar time. However, when using decision points on both mutex functions, \texttt{double\_wait} took substantially longer, despite the tree structure suggesting they should have been comparable, with \texttt{double\_wait} even being perhaps slightly faster. Figure~\ref{fig:nadim-stats} shows a comparison of the tree anatomy for these two test cases.
 
-\begin{figure}[h]
+\begin{table}[h]
 	\small
 	\centering
 	\begin{tabular}{|l||c|c|}
@@ -252,7 +293,7 @@ When using decision points on just \texttt{mutex\_lock} or \texttt{mutex\_unlock
 	\end{tabular}
 	\caption{Comparison of expensive \texttt{double\_wait} test and cheap \texttt{vanish\_vanish} test. The number of branches and depth of each branch are similar, but \texttt{double\_wait}'s backtracks were significantly longer, causing more total instructions to be executed.}
 	\label{fig:nadim-stats}
-\end{figure}
+\end{table}
 
 Despite the two trees having nearly equal numbers of branches and instructions executed per branch, \texttt{double\_wait} took significantly more time. This is because Landslide's backtracks during \texttt{double\_wait} were significantly {\em longer} than the backtracks in \texttt{vanish\_vanish} on average; i.e., the backtracks were targetting an earlier point during the test's execution.
 Hence, Landslide had to execute more total instructions overall to explore the longer branches in \texttt{double\_wait}.\footnote{
