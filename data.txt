@@ -1,3 +1,93 @@
+backwards exploration stuff
+
+pobbles vanish_vanish (a)
+
+fwd:
+[BUG!]          Total choice points 4627, total backtracks 1264
+[BUG!]          Average instrs/choice 1709, average branch depth 18
+2m1.484s
+2m9.348s
+1m58.752s
+2m10.146s
+2m4.204s
+trace length 7
+
+bwd trace length 11
+
+pobbles vanish_vanish (b)
+
+fwd:
+[BUG!]          Total choice points 3732, total backtracks 1030
+[BUG!]          Average instrs/choice 1781, average branch depth 16
+1m53.674s
+1m42.053s
+1m44.012s
+1m40.763s
+1m51.118s
+trace length 7
+
+bwd trace length 10
+
+pobbles double_wait
+
+fwd:
+[BUG!]          Total choice points 607, total backtracks 132
+[BUG!]          Average instrs/choice 8377, average branch depth 10
+1m0.616s
+1m5.339s
+1m6.620s
+0m58.468s
+1m1.942s
+trace length 8
+
+bwd:
+[BUG!]          Total choice points 102, total backtracks 17
+[BUG!]          Average instrs/choice 10502, average branch depth 10
+trace length 13
+
+pobbles double_thread_fork
+
+fwd:
+[BUG!]          Total choice points 10, total backtracks 0
+[BUG!]          Average instrs/choice 19583, average branch depth 0
+trace length 6
+0m20.877s
+0m20.764s
+0m21.063s
+0m22.446s
+
+bwd trace length 6
+
+ludicros vanish/vanish
+
+[BUG!]          Total choice points 29, total backtracks 4
+[BUG!]          Average instrs/choice 14359, average branch depth 8
+0m15.183s
+0m13.915s
+0m16.107s
+0m14.447s
+0m14.041s
+trace length 3
+
+bwd trace length 7
+
+ludicros yield/vanish
+
+[BUG!]          Total choice points 22, total backtracks 3
+[BUG!]          Average instrs/choice 11419, average branch depth 7
+
+0m12.602s
+0m12.968s
+0m14.619s
+0m12.615s
+0m12.312s
+
+trace length 3
+
+bwd trace length 5
+
+--------
+
 pobbles double_wait
 
 ----> default:
