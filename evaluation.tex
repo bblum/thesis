@@ -27,7 +27,7 @@ We wished to measure which phases of using Landslide are most time-consuming, so
 \begin{enumerate}
 	\item Annotating their kernel (Section~\ref{sec:using-annotations}).
 	\item Implementing instrumentation within Landslide (Section~\ref{sec:using-student-c}).
-	\item Fixing problems encountered getting Landslide to run, such as editing their kernel to meet Landslide's requirements and debugging incorrect instrumentation.
+	\item Fixing problems encountered getting Landslide to run, such as revising their kernel to meet Landslide's requirements and debugging incorrect instrumentation.
 	\item Customising Landslide's search parameters such as decision points (Section~\ref{sec:using-customise}).
 	\item Analysing the output from bugs that Landslide found.
 \end{enumerate}
@@ -60,14 +60,14 @@ Finally, we briefly studied each bug that the students found: whether they were 
 		& \asdf{annotating} & \asdf{config} & \asdf{student.c} & \asdf{fixing} & \asdf{customising} & \asdf{found races} & \asdf{required} & \asdf{refinement} \\
 		\hline \hline
 		% ntaha/jmchow
-		\multirow{2}{*}{Group 1} & 35 & {\footnotesize \em N/A} & {\footnotesize \em N/A} & 5 & {\footnotesize \em N/A} & {\footnotesize \em N/A} & {\footnotesize \em N/A} & {\footnotesize \em N/A} \\
+		\multirow{2}{*}{Group 1} & 35 & {\footnotesize \em --} & {\footnotesize \em --} & 5 & {\footnotesize \em --} & {\footnotesize \em --} & {\footnotesize \em --} & {\footnotesize \em --} \\
 		\cline{2-9}
-		& 5 & 30 & 10 & 100 & {\footnotesize \em N/A} & {\footnotesize \em N/A} & 145 & {\footnotesize \em N/A} \\
+		& 5 & 30 & 10 & 100 & {\footnotesize \em --} & {\footnotesize \em --} & 145 & {\footnotesize \em --} \\
 		\hline
 		% echo/margaret
-		\multirow{2}{*}{Group 2} & 20 & 30 & 10 & 80 & {\footnotesize \em N/A} & 10 & 140 & 10 \\
+		\multirow{2}{*}{Group 2} & 20 & 30 & 10 & 80 & {\footnotesize \em --} & 10 & 140 & 10 \\
 		\cline{2-9}
-		& 15 & 45 & 30 & 60 & {\footnotesize \em N/A} & 30 & 150 & 30 \\
+		& 15 & 45 & 30 & 60 & {\footnotesize \em --} & 30 & 150 & 30 \\
 		\hline
 		% tpassaro
 		\multirow{2}{*}{Group 3} & 15 & 10 & 5 & 60 & 30 & 30 & 90 & 60 \\
@@ -75,22 +75,22 @@ Finally, we briefly studied each bug that the students found: whether they were 
 		& 15 & 10 & 5 & 60 & 30 & 30 & 90 & 60 \\
 		\hline
 		% pjumde
-		\multirow{2}{*}{Group 4} & 10 & 42 & 3 & 5 & 30 & {\footnotesize \em N/A} & 60 & 30 \\
+		\multirow{2}{*}{Group 4} & 10 & 42 & 3 & 5 & 30 & {\footnotesize \em --} & 60 & 30 \\
 		\cline{2-9}
-		& 15 & 35 & {\footnotesize \em N/A} & 5 & 35 & {\footnotesize \em N/A} & {\footnotesize \em N/A} & 35 \\
+		& 15 & 35 & {\footnotesize \em --} & 5 & 35 & {\footnotesize \em --} & {\footnotesize \em --} & 35 \\
 		\hline
 		% apodolsk
-		Group 5 & 50 & 15 & {\footnotesize \em N/A} & 15 & {\footnotesize \em N/A} & {\footnotesize \em N/A} & {\footnotesize \em N/A} & {\footnotesize \em N/A} \\
+		Group 5 & 50 & 15 & {\footnotesize \em --} & 15 & {\footnotesize \em --} & {\footnotesize \em --} & {\footnotesize \em --} & {\footnotesize \em --} \\
 		\hline
-		Former TA & 40 & 20 & 3 & 95 & {\footnotesize \em N/A} & 30 & 158 & 30 \\
+		Former TA & 40 & 20 & 3 & 95 & {\footnotesize \em --} & 30 & 158 & 30 \\
 		\hline
 		\hline
 		{\bf Average } & {\bf 22 } & {\bf 26.33 } & {\bf 9.43 } & {\bf 48.5 } & {\bf 31.25 } & {\bf 26 } & {\bf 119 } & {\bf 36.43} \\
 		\hline
 	\end{tabular}
 	\end{center}
-	\caption{Self-reported times spent by users on each phase while using Landslide. ``N/A'' indicates a student reported spending no time on a particular phase. ``Required'' indicates the sum of the times from the first four phases; ``refinement'' inducates the sum from the last two phases.
-	``N/A'' indicates that a user did not report spending any time on a phase; the ``required'' field is ``N/A'' if any of its represented phases are, and ``N/A'' fields are not reflected in the averages.}
+	\caption{Self-reported times spent by users on each phase while using Landslide. ``--'' indicates a student reported spending no time on a particular phase. ``Required'' indicates the sum of the times from the first four phases; ``refinement'' inducates the sum from the last two phases.
+	``--'' indicates that a user did not report spending any time on a phase; the ``required'' field is ``--'' if any of its represented phases are, and ``--'' fields are not reflected in the averages.}
 	\label{fig:student-times}
 \end{table}
 

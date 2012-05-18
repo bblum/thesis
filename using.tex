@@ -196,7 +196,7 @@ These configuration options help Landslide identify potentially-conflicting shar
 \revision{These configuration options enable the user to whitelist or blacklist certain components of the kernel for the purposes of identifying decision points.}
 
 \begin{itemize}
-	\item \texttt{within\_function}: If the user configures decision points to happen in common code paths, such as \texttt{mutex\_lock}, it will likely generate more branching than needed. For example, if testing \texttt{vanish}, there's no need to branch on a \texttt{mutex\_lock} in \texttt{exec}.
+	\item \texttt{within\_function}: If the user configures decision points to happen in common code paths, such as \texttt{mutex\_lock}, it will likely generate more branching than needed. For example, if testing \texttt{vanish}, the user may judge there to be no need to branch on a \texttt{mutex\_lock} in \texttt{exec}.
 
 This configuration option allows the user to whitelist functions so that Landslide will only decide if the current thread is ``within'' one of those functions.
 	\item \texttt{without\_function}: Similar to above, but a blacklist. These two can be used together; later invocations take precedence over earlier ones.

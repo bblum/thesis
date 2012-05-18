@@ -49,21 +49,21 @@ While far from being able to replace talented humans for grading, we believe tha
 \revision{
 \subsection{Making Pebbles Landslide-Friendly}
 
-If Landslide becomes integrated into an undergraduate course curriculum, it will be important to minimise the amount of effort students have to go through to instrument their kernels. This could be achieved in part by changing the project definition in ways that make Landslide better able to automatically instrument kernels. For Pebbles, we recommend the following changes.
+If Landslide becomes integrated into an undergraduate course curriculum, it will be important to reduce the amount of effort students must go through to instrument their kernels. This could be achieved in part by changing the project definition in ways that make Landslide better able to automatically instrument kernels. For Pebbles, we recommend the following changes.
 
 \begin{enumerate}
 	\item {\bf Timer ticks control ``runnable'' threads.} As discussed in Section~\ref{sec:model-timer}. Additionally, to prevent the users from having to instrument non-descheduling mutexes, the project could mandate that all concurrency primitives actually remove blocked threads from the runqueue.
-	\item {\bf No idling when progress can be made.} Also as discussed in Section~\ref{sec:model-timer}. With the current specification, inappropriate idling is merely a performance bug, though it is incompatible with Landslide. If the project gave stricter requirements regarding this, fewer students would need to fix problems with their scheduler idling during the instrumentation process.
-	\item {\bf Mandated function names for scheduling events.} As part of the instrumentation process, students tell Landslide where in their schedulers notable events happen. Landslide could automatically detect some of these if the project mandated the names of certain functions, such as the timer handler, context switcher, and runqueu manipulation routines.
+	\item {\bf No idling when progress can be made.} Also as discussed in Section~\ref{sec:model-timer}. With the current specification, inappropriate idling is merely a performance bug, though it is incompatible with Landslide. %If the project gave stricter requirements regarding this, fewer students would need to fix problems with their scheduler idling during the instrumentation process.
+	\item {\bf Mandated function names for scheduling events.} As part of the instrumentation process, students tell Landslide where in their schedulers notable events happen. Landslide could automatically detect some of these if the project mandated the names of certain functions, such as the timer handler, context switcher, and runqueue manipulation routines.
 \end{enumerate}
 
 \subsection{Virtual Memory Bug-Finding}
 
 In this work, we focused especially on races related to the thread lifecycle routines. We believe Landslide would be immediately applicable to certain varieties of virtual memory bugs, but other types might not be easily exposed with Landslide's current model.
 
-For example, one of the groups in the user study said they were looking for a race that only arose in out of memory conditions. A test case that could expose that race, by exhausting the kernel's memory resources, would necessarily have a very large state space that would be impractical to explore systematically.
+For example, one of the groups in the user study said they were looking for a race that only arose in out-of-memory conditions. A test case that could expose that race, by exhausting the kernel's memory resources, would necessarily have a very large state space that would be impractical to explore systematically.
 
-We suggested to the group to configure their kernel to fail memory allocations every so often, so Landslide would be better able to find the race while still using a small test case. To make Landslide more applicable to such bugs in general, we might further investigate this debugging strategy in a more structured way.
+We suggested that the group configure their kernel to fail memory allocations every so often, so Landslide would be better able to find the race while still using a small test case. To make Landslide more applicable to such bugs in general, we might further investigate this debugging strategy in a more structured way.
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -151,7 +151,7 @@ These components would all be candidates for being scheduled at a decision point
 \section{Virtualisation}
 \label{sec:future-virt}
 
-Compared to executing the code being tested on real hardware (which tools such as \cite{dbug-ssv} are able to do for user-space programs), Simics is {\em slow}, and even slower with Landslide hooked up to it.
+Compared to executing the code being tested on real hardware (which tools such as \cite{dbug-ssv} are able to do for user-space programs), simulation in Simics is slow, and even slower with Landslide hooked up to it.
 
 Major benefit could be achieved by redesigning Landslide to work in a virtualised environment instead of a simulated one. This would pose several challenges, because Landslide would no longer be running in ``\revision{omniscient} mode'', having immediate access to every single instruction and memory access executed. It would, however, still be able to modify the kernel's memory and address space, which would be important to harness for increased control over the kernel's execution.
 
