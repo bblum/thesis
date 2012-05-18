@@ -228,13 +228,6 @@ At each decision point, Landslide creates a new node in the decision tree. It st
 \subsection{Test Lifecycle}
 \label{sec:components-test}
 
-\begin{figure}[h]
-	\begin{center}
-		\includegraphics[width=0.8\textwidth]{teststate.png}
-	\end{center}
-	\caption{The test lifecycle state machine.}
-	\label{fig:teststate}
-\end{figure}
 Landslide knows the state of the test case through a simple state machine, which is updated with information about the number of threads currently on the system, the number of threads on the runqueue, the state of the idle thread (if it exists), and whether or not the shell is waiting for keyboard input.
 
 The state machine relies on certain information provided by the scheduler (Section~\ref{sec:components-sched}).
@@ -246,6 +239,13 @@ The state machine relies on certain information provided by the scheduler (Secti
 	\item {\bf How many threads currently exist on the system?} This indicates whether the test has begun running.
 \end{itemize}
 
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{teststate.png}
+	\end{center}
+	\caption{The test lifecycle state machine.}
+	\label{fig:teststate}
+\end{figure}
 The states in the test lifecycle, and the rules for transitioning between them, are as follows.
 Figure~\ref{fig:teststate} depicts the states and transitions visually.
 
