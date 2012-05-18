@@ -149,7 +149,6 @@ For Landslide to be appealing as a debugging tool, we should improve the user in
 \subsubsection{Technical Feedback}
 
 Students also described compatibility issues they faced between their kernels and Landslide, which required them to make certain changes to their kernels.
-% FIXME: Say how we will address these issues?
 
 \begin{itemize}
 	\item {\bf Special-case context switch behaviour.} One kernel had a special context-switcher for the case when a thread was vanishing, which had to be special-cased in the instrumentation.
@@ -231,7 +230,8 @@ Here we describe each of the six bugs that we used as case studies. We rate thei
 
 We introduced this bug into POBBLES's vanish implementation. When a parent and child invoke vanish concurrently, the parent needs to modify the child's parent pointer to reparent it to the init process, and the child needs to read its parent pointer to signal to its parent that it can be reaped.
 
-In version (a) of this bug, we introduce a mutex for each process's parent pointer. When reparenting, the parent takes its own process control block (PCB) lock, iterates over its child-list, and takes its children's parent pointer locks. When signalling, the child takes its parent pointer lock, then takes the parent's PCB lock to ensure safe wake-up of waiters. This results in deadlock.
+In version (a) of this bug, we introduce a mutex for each process's parent pointer.
+\revision{While holding the lock around all related process structure accesses prevents data races, the circular nature of the lock acquisitions between parent and child results in deadlock.}
 
 This bug is exposed with the \texttt{vanish\_vanish} test case. It requires a very specific interleaving sequence to uncover.
 The fix is nontrivial, because the circular data structure access still needs to happen, but be protected in a way that doesn't involve circular wait.
@@ -245,7 +245,7 @@ This bug is exposed with the \texttt{vanish\_vanish} test case. The complexity a
 
 \subsubsection{POBBLES wait/wait}
 
-Finding this bug was somewhat of a surprise. When two threads in the same process wait for a child to exit, they both block on the same condition variable, and one of them has a pointer to the other in its \texttt{cond\_queue\_next} pointer. However, when awakened, the condition variable code did not clear the value of this pointer. Fortunately, an assert statement in the thread destruction code caught that the pointer was non-\texttt{NULL} when it should have been, and the kernel panicked.
+Finding this bug was somewhat of a surprise. When two threads in the same process wait for a child to exit, they both block on the same condition variable, and one of them has a pointer to the other in its \texttt{cond\_queue\_next} pointer. However, when awakened, the condition variable code did not clear the value of this pointer. Fortunately, an assert statement in the thread destruction code caught that the pointer was non-\texttt{NULL} when it should have been \texttt{NULL}, and the kernel panicked.
 
 Even with this assert, extremely mysterious behaviour could have arisen in other use cases, such as during stress testing: if the awakened thread had gone to sleep on another condition variable, its \texttt{cond\_queue\_next} pointer could point to a thread asleep on a different condition variable, in which case a broadcast on the new condition variable would cause a spurious wakeup of the second thread. Worse yet, if the second thread had also been awoken, and thence exited, a broadcast would result in scheduler data structure corruption.
 
@@ -280,9 +280,9 @@ This was the most complicated bug we studied. The fix would be nontrivial, like 
 
 \subsubsection{LudicrOS yield/vanish}
 
-This bug was also found during grading, and took substantially less time to verify by hand than the previous bug. When a thread does \texttt{yield} to a specific other TID, the other thread's thread control block (TCB) is not protected between lookup-by-TID and yield-to. If that thread exits during that time, a use-after-free (and worse, a completely invalid schedule to a nonexistent thread) results.
+This bug was also found during grading, and took substantially less time to verify by hand than the previous bug. When a thread does \texttt{yield} to a specific other TID, the other thread's thread control block (TCB) is not protected \revision{after being returned from the look-up function}. If that thread exits during that time, a use-after-free (and worse, a completely invalid schedule to a nonexistent thread) results.
 
-This bug is moderately complicated, requiring a preemption during that specific window of the first thread's execution during which the second thread must exit entirely and have its TCB freed. The fix is moderately complicated: some protection mechanism must be designed so that threads cannot exit after being looked-up by TID.
+This bug is moderately complicated, requiring a preemption during that specific window of the first thread's execution during which the second thread must exit entirely and have its TCB freed. The fix is moderately complicated \revision{as well; since simply reordering lines of code won't offer the necessary protection.}
 
 \subsection{Performance}
 \label{sec:eval-numbers}
@@ -406,11 +406,6 @@ The experimental set-up is as follows:
 
 Table~\ref{fig:trees} presents more detailed information about the decision trees that Landslide explored when finding these bugs.
 For each set of decision points on each bug, we give the total number of decision points in the tree, the total number of backtracks (i.e. branches explored before the bug was found), and the average branch depth (i.e. number of decision points in each branch).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\section{Summary of Bugs Found}
-
-% FIXME
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Discussion}
