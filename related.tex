@@ -23,7 +23,7 @@ There are also several tools, such as MaceMC~\cite{macemc} and MODIST~\cite{modi
 
 RacePRO~\cite{racepro} is a tool based in kernel space which uncovers ``process races'' \revision{(races involving interleaving system call patterns between multiple processes)} using systematic exploration of multi-process interactions in user-space. They use system calls, such as filesystem accesses, as points to explore different interleavings of concurrent code, and detect bugs which can corrupt persistent system resources.
 
-Finally, DeMeter~\cite{demeter} is a more recent tool for systematic exploration that introduces Dynamic Interface Reduction as a strategy for constraining the size of the state space, which means targetting the testing technique on only one component of the program at a time. Landslide makes use of the same general concept in its user interface (Chapter~\ref{sec:using}) by providing the user with options to constrain decision point identification to certain subsets of the kernel.
+Finally, DeMeter~\cite{demeter} is a more recent tool for systematic exploration that introduces Dynamic Interface Reduction as a strategy for constraining the size of the state space, which means targetting the testing technique to only one component of the program at a time. Landslide makes use of the same general concept in its user interface (Chapter~\ref{sec:using}) by providing the user with options to constrain decision point identification to certain subsets of the kernel.
 
 \section{Kernel-level Verification}
 

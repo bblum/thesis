@@ -1,6 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Terminology}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{sec:terminology}
 
 In this chapter we define certain terms that have specific meanings in the context of Landslide.
 
@@ -32,7 +33,7 @@ In this chapter we define certain terms that have specific meanings in the conte
 
 \section{Systematic Exploration Terms}
 
-\revision{The following terms refer to parts of Landslide's analysis, regardless of the kernel under test's implementation.}
+\revision{The following terms refer to parts of Landslide's analysis, regardless of the implementation of the kernel under test.}
 
 \resume{enumerate}
 	\item {\bf Decision point}:
@@ -54,7 +55,7 @@ In this chapter we define certain terms that have specific meanings in the conte
 	\item {\bf Backtracking}:
 		Performed at the end of each branch of the tree, when the test case has finished running. Landslide identifies a decision point from the current branch at which the \revision{next interleaving to explore diverges from the current one}, reverts the state of the guest kernel to what it was at that decision point, and causes a different thread to run, hence exploring a different branch/interleaving.
 	\item {\bf Decision trace}:
-		A list of information about all decision points in a given branch, printed when a bug is found to help the user analyse its cause. Contains, for each decision point, the TID of the thread that was running previously, the TID that was newly chosen, the current instruction pointer, and the stack trace of the previous thread at the point it was switched away from.\footnote{Though Landslide does not provide it, a decision trace may also contain for each transition a list of shared memory accesses that conflicted with other transitions, and/or a listing of happens-before relationships between transitions.}
+		A list of information about all decision points in a given branch, printed when a bug is found to help the user analyse its cause. Contains, for each decision point, the TID of the thread that was running previously, the TID that was newly chosen, the current instruction pointer, and the stack trace of the previous thread at the point it was switched away from.\footnote{Though Landslide does not provide it, a decision trace could also contain for each transition a list of shared memory accesses that conflicted with other transitions, and/or a listing of happens-before relationships between transitions.}
 \end{enumerate}
 
 \definecolor{thread1}{RGB}{87,172,255}

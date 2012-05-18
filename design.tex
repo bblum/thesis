@@ -21,7 +21,7 @@ Landslide makes use of Simics ``bookmarks'', a feature which enables checkpointi
 \subsection{Timer-Driven Scheduling}
 \label{sec:model-timer}
 
-In this work, we focus specifically on nondeterministic scheduling driven by timer interrupts. Landslide assumes that timer interrupts are the only source of nondeterminism for the guest kernel, so controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. In future work (Section~\ref{sec:future-drivers}), we may also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
+In this work, we focus specifically on nondeterministic scheduling driven by timer interrupts. Landslide assumes that timer interrupts are the only source of nondeterminism for the guest kernel, so controlling when they occur theoretically allows for complete control over the concurrent behaviour of the test case. In future work (Section~\ref{sec:future-drivers}), we also address causes of non-determinism more complex than timer-driven thread scheduling, such as interrupts and data I/O from peripheral devices.
 
 Landslide needs to impose some requirements on the guest kernel's scheduling behaviour, in order for its control over scheduling to work:
 
@@ -48,11 +48,11 @@ In addition to Dynamic Partial Order Reduction (DPOR) for automated state space 
 
 \begin{itemize}
 	\item {\bf Iterative refinement of interleaving granularity.} The recommended usage pattern is to begin by searching state spaces with coarse-grained interleavings, and then refining the decision set afterwards until bugs are found. Landslide automatically identifies a ``minimal decision set'', comprising only voluntary reschedules (Section~\ref{sec:components-arbiter}), to use as the coarsest granularity.
-	\item {\bf Decision point selection.} Landslide provides an interface for the user to manually limit identification of decision points to only ``relevant'' modules of the kernel, thereby only generating thread interleavings around points within those modules.
+	\item {\bf Decision point selection.} Landslide provides an interface for the user to manually limit identification of decision points to only ``relevant'' modules of the kernel, thereby generating thread interleavings only around points within those modules.
 	\item {\bf Memory conflict selection.} Landslide also provides a mechanism for ignoring shared memory conflicts on certain common data structures (especially those accessed in every thread transition, such as the scheduler queues), to enable DPOR to achieve greater reduction. Intuitively, this represents sacrificing the ability to find races around those data structures to make searching other components more feasible.
 \end{itemize}
 
-We advocate relying on the user for such information because the user need only understand the basics of their kernel design (which is difficult for Landslide to guess) while not knowing in advance what bugs are being looked for (which Landslide is able to provide). We claim that this combination of the user's knowledge and Landslide's testing mechanisms leads to an effective usage dynamic, in which the user ``steers'' Landslide towards focused search spaces that are more likely to find bugs.
+We advocate relying on the user for such information because the user need only understand the basics of their kernel design (which is difficult for Landslide to guess) while not knowing in advance which bugs are being looked for (which Landslide is able to provide). We claim that this combination of the user's knowledge and Landslide's testing mechanisms leads to an effective usage dynamic, in which the user ``steers'' Landslide towards focused search spaces that are more likely to find bugs.
 
 The interfaces by which the user provides this information are documented in Section~\ref{sec:using-customise}.
 }
@@ -64,7 +64,7 @@ In this section we briefly describe each major component of Landslide.
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.65\textwidth]{landslide.png}
+	\includegraphics[width=0.6\textwidth]{landslide.png}
 	\caption{A simple visualisation of Landslide and its components, and how they interact with the guest kernel.}
 	\label{fig:landslide}
 \end{figure}
@@ -86,7 +86,7 @@ The Landslide scheduler is responsible for keeping track of which threads exist 
 
 It maintains a ``mirror image'' of the guest kernel's scheduler state in the form of three queues, a pointer to the currently-running thread, and a pointer to the previously-running thread. The queues are the {\em runqueue}, containing the runnable threads, the {\em sleep queue}, containing threads which become runnable after a certain number of timer ticks, and the {\em deschedule queue}, which might not correspond to a data structure in the guest kernel, but contains all other threads that exist on the system, which are not runnable for whatever reason.
 
-The Landslide scheduler also tracks which important actions each thread is performing. These actions are {\em forking}, {\em vanishing}, and {\em sleeping}, which are described in the next section \revision{(note that ``vanish'' is simply Pebbles's name for ``exit'')}, and also {\em in\_timer\_handler} and {\em in\_context\_switch}, which express what type of context switch a given thread may be performing (voluntary reschedule, etc), and are useful for both thread scheduling (Section~\ref{sec:components-inflight}) and detecting voluntary reschedules (Section~\ref{sec:components-arbiter}).\footnote{
+The Landslide scheduler also tracks which important actions each thread is performing. These actions are {\em forking}, {\em vanishing}, and {\em sleeping}, which are described in the next section,\footnote{\revision{Note that ``vanish'' is simply Pebbles's name for ``exit''.}} and also {\em in\_timer\_handler} and {\em in\_context\_switch}, which express what type of context switch a given thread may be performing (voluntary reschedule, etc), and are useful for both thread scheduling (Section~\ref{sec:components-inflight}) and detecting voluntary reschedules (Section~\ref{sec:components-arbiter}).\footnote{
 There are also other minor actions: {\em readlining}, used to track test lifecycle (Section~\ref{sec:components-test}), {\em just\_forked}, used for special-case context switch behaviour (Section~\ref{sec:components-arbiter}), and also several flags for tracking mutex lock/unlock events.}
 
 \subsubsection{Thread Lifecycle Tracking}
@@ -183,7 +183,7 @@ One alternative simpler method would be, when triggering a timer interrupt, to t
 \label{sec:components-memory}
 
 Landslide maintains a mirror image of the guest kernel's dynamic allocation heap, so it can know at any point which memory ranges are allocated and which ranges used to be allocated but now are freed. This set is updated each time the guest kernel calls \texttt{malloc} or \texttt{free}.
-\revision{This heap tracking provides the ability to check for dynamic allocation errors (e.g., use-after-free and double-free bugs), such as in Valgrind~\cite{valgrind}.}
+\revision{This heap tracking provides the ability to check for dynamic allocation errors (e.g., use-after-free and double-free bugs), in a similar fashion to Valgrind~\cite{valgrind}.}
 
 Landslide also maintains a set of shared memory accesses made since the last decision point, for use with Partial Order Reduction (Section~\ref{sec:por-independence}). Whenever the guest kernel accesses memory in its heap or in its global data regions, Landslide adds the address of the access to the set, with a flag indicating whether it was a read or a write. (If the address was already present, and the recorded access was a read and the current access is a write, we upgrade the recorded access to a write. Otherwise if the address was already present, we do nothing.)
 
@@ -196,11 +196,11 @@ When Landslide reaches a decision point, this accumulated set is copied in the d
 
 The arbiter identifies points during execution that should count as decision points. The selection is mainly controlled by the user, during the annotation and configuration process. In addition, the arbiter also automatically identifies {\em voluntary reschedules}, which comprise the ``minimal necessary set'' of decision points.
 
-In Landslide, it is always necessary to identify a decision point during a voluntary reschedule, to maintain the invariant that each transition between decision points is comprised of the execution of only one thread.
+In Landslide, it is always necessary to identify a decision point during a voluntary reschedule, to maintain an invariant that each transition between decision points is comprised of the execution of only one thread.
 \revision{In future work, we may also investigate the implications of allowing some transitions to consist of multiple threads' executions, which would have applications for heuristic state space reduction.}
 
 \revision{
-Because voluntary reschedules happen of the guest kernel's own volition, when a thread begins one, it will necessarily not have been preempted by the timer handler. Hence, we identify voluntary reschedules when a thread enters the context switcher without having entered the timer handler.\footnote{
+Because voluntary reschedules happen of the guest kernel's own volition, when a thread begins one, it will necessarily not have been preempted by the timer handler. Hence, we identify voluntary reschedules by determining when a thread enters the context switcher without having entered the timer handler.\footnote{
 Landslide actually identifies voluntary reschedules at the point when the reschedule ends, so the {\em previous} thread would not have entered the timer handler, and the current thread may or may not have.
 We do this to avoid the complexity of dealing with the possibility that the guest kernel would have interrupts disabled at the beginning of the reschedule and not re-enable them until after the thread switch.}
 }
@@ -240,13 +240,14 @@ Landslide knows the state of the test case through a simple state machine, which
 The state machine relies on certain information provided by the scheduler (Section~\ref{sec:components-sched}).
 
 \begin{itemize}
-	\item {\bf Is the shell waiting for keyboard input?} In general, the shell only waits for keyboard input when the kernel is ready for the user (or Landslide) to cause a test to run, or after the test has finished and a new one could be run.
+	\item {\bf Is the shell waiting for keyboard input?} In general, the shell waits for keyboard input only when the kernel is ready for the user (or Landslide) to cause a test to run, or after the test has finished and a new one could be run.
 		However, the shell may sometimes be waiting for keyboard input while other threads have some work to do (for example, the init process might not yet have reaped a reparented child process), and this work may be affected by race conditions during the test, so we need to include it in the test as well. For these cases an additional check is needed.
 	\item {\bf Is the kernel idling?} This indicates whether any work is left to be done during bootup or during teardown.
 	\item {\bf How many threads currently exist on the system?} This indicates whether the test has begun running.
 \end{itemize}
 
 The states in the test lifecycle, and the rules for transitioning between them, are as follows.
+Figure~\ref{fig:teststate} depicts the states and transitions visually.
 
 \begin{enumerate}
 	\item {\bf Bootup.} Initial state. When the kernel is idling and the shell is waiting for keyboard input, advance state.
@@ -256,8 +257,6 @@ The states in the test lifecycle, and the rules for transitioning between them, 
 	\item {\bf Test cleanup.} The test processes have exited, but some housekeeping may yet remain. When the the kernel is idling and the shell is waiting for keyboard input, advance state.
 	\item {\bf Test ended.} Invoke the explorer (Section~\ref{sec:components-explore}) to decide whom to rewind, and backtrack (to step 3).
 \end{enumerate}
-
-Figure~\ref{fig:teststate} depicts the states and transitions visually.
 
 \section{Identifying Bugs}
 \label{sec:techniques-bugs}
@@ -273,6 +272,20 @@ In order to identify when the guest kernel has done something incorrect, Landsli
 \suspend{enumerate}
 
 \subsection{Probable Bug-Detection Conditions}
+
+\resume{enumerate}
+	\item {\bf Memory leak bugs.} Landslide records the state of the heap before the test case begins, and compares it to the state of the heap after the test case ends. If memory allocated during the test was not freed, Landslide assumes that it was leaked.
+		(Some kernel designs may legitimately behave this way, so this bug-check may be disabled when testing such kernels.)\footnote{There is, of course, much room for improvement in this metric, but it is not part of the research contribution.}
+	\item {\bf Infinite loop bugs.} Landslide judges whether the kernel has entered an infinite loop by comparing the current branch of the decision tree to past executions of the same test case.
+	Figure~\ref{fig:infiniteloop} depicts such tree structures in abstract.
+	\begin{itemize}
+		\item {\bf Infinite loops without decision points.} While exploring the decision tree, Landslide computes the average number of instructions executed between two consecutive decision points. If at any point the current number of instructions executed since the most recent decision point exceeds this average times a constant factor (arbitrarily chosen to be 2000), Landslide assumes the kernel must have gotten stuck in an infinite loop.
+		\item {\bf Infinite loops around decision points.} Landslide also computes the average number of decision points in each branch of the decision tree (the average ``branch depth''). If the depth of the current branch ever exceeds this average times a constant factor (arbitrarily chosen to be 20), Landslide assumes the kernel must have gotten stuck in an infinite loop.
+	\end{itemize}
+	\revision{In our experience, these heuristics have never falsely identified an infinite loop when the kernel was making real progress.
+	However, both of these heuristics require a minimum number of branches to be explored before Landslide considers the already-explored tree structure to be statistically significant (arbitrarily chosen to be 20).
+	As such, these heuristics occasionally fail to trigger on a real infinite loop in cases when the loop occurs before enough ``safe'' branches were explored. In the future we might improve this heuristic by scaling the associated cutoff factor depending on how many branches were explored: the fewer branches explored so far, the less reliable the comparison, and hence the higher the cutoff factor to be used.}
+\end{enumerate}
 
 \revision{
 \begin{figure}[ht]
@@ -293,20 +306,6 @@ In order to identify when the guest kernel has done something incorrect, Landsli
 	\label{fig:infiniteloop}
 \end{figure}
 }
-
-\resume{enumerate}
-	\item {\bf Memory leak bugs.} Landslide records the state of the heap before the test case begins, and compares it to the state of the heap after the test case ends. If memory allocated during the test was not freed, Landslide assumes that it was leaked.
-		(Some kernel designs may legitimately behave this way, so this bug-check may be disabled when testing such kernels.)\footnote{There is, of course, much room for improvement in this metric, but it is not part of the research contribution.}
-	\item {\bf Infinite loop bugs.} Landslide judges whether the kernel has entered an infinite loop by comparing the current branch of the decision tree to past executions of the same test case.
-	Figure~\ref{fig:infiniteloop} depicts such tree structures in abstract.
-	\begin{itemize}
-		\item {\bf Infinite loops without decision points.} While exploring the decision tree, Landslide computes the average number of instructions executed between two consecutive decision points. If at any point the current number of instructions executed since the most recent decision point exceeds this average times a constant factor (arbitrarily chosen to be 2000), Landslide assumes the kernel must have gotten stuck in an infinite loop.
-		\item {\bf Infinite loops around decision points.} Landslide also computes the average number of decision points in each branch of the decision tree (the average ``branch depth''). If the depth of the current branch ever exceeds this average times a constant factor (arbitrarily chosen to be 20), Landslide assumes the kernel must have gotten stuck in an infinite loop.
-	\end{itemize}
-	\revision{In our experience, these heuristics have never falsely identified an infinite loop when the kernel was making real progress.
-	However, both of these heuristics require a minimum number of branches to be explored before Landslide considers the already-explored tree structure to be statistically significant (arbitrarily chosen to be 20).
-	As such, these heuristics occasionally fail to trigger on a real infinite loop in cases when the loop occurs before enough ``safe'' branches were explored. In the future we might improve this heuristic by scaling the associated cutoff factor depending on how many branches were explored: the fewer branches explored so far, the less reliable the comparison, and hence the higher the cutoff factor to be used.}
-\end{enumerate}
 
 \section{Partial-Order Reduction}
 \label{sec:techniques-por}
@@ -402,7 +401,7 @@ Dynamic Partial Order Reduction works by identifying ``evil ancestors'' for each
 We found that implementing DPOR in this way violated our second notion of soundness, because it relies on the invariant that each transition contains only one inter-thread communication event (in kernel-space, this means a shared memory access).
 \revision{However, a key point of Landslide's recommended usage pattern is to sacrifice maximally-fine-grained decision points for performance, and so multiple different shared memory conflicts may happen in each transition.} Figure~\ref{fig:evil-ancestors} demonstrates a counterexample to the soundness of identifying only one evil ancestor per transition given our usage pattern.
 
-\revision{Instead, Landslide uses considers every evil ancestor of each transition when performing DPOR. This modification enables Landslide to avoid the problem presented in the figure, because it will identify both alternate interleavings after exploring the first one. We claim without certainty that this change restores the second notion of soundness to Landslide's search, and leave proving this property to future work.}
+\revision{Instead, Landslide considers every evil ancestor of each transition when performing DPOR. This modification enables Landslide to avoid the problem presented in the figure, because it will identify both alternate interleavings after exploring the first one. We claim without certainty that this change restores the second notion of soundness to Landslide's search, and leave proving this property to future work.}
 
 \section{Debugging Feedback}
 \label{sec:techniques-feedback}
@@ -451,7 +450,7 @@ Landslide also prints the stack trace of the currently-running thread at the poi
 \begin{enumerate}
 	\item If the kernel has panicked, Landslide prints the message used in the panic/assertion.
 	\item If a use-after-free bug is found, Landslide prints information about the most-recently-freed chunk containing the accessed address: the stack trace and TID both for when it was allocated and freed.
-	\item If deadlock is detected, Landslide prints the cycle of TIDs that are blocked on each other.\footnote{This currently only works when using the annotations for yielding mutexes, though it is not difficult to implement more generally.}
+	\item If deadlock is detected, Landslide prints the cycle of TIDs that are blocked on each other.\footnote{This currently works only when using the annotations for yielding mutexes, though it is not difficult to implement more generally.}
 	\item If a memory leak is suspected, Landslide prints how many bytes bigger the heap is after the test ended than when the test began.\footnote{Future feature: Printing when-allocated stack traces for each suspicious heap chunk.}
 	\item If an infinite loop is suspected, depending on which heuristic was triggered, Landslide prints either the number of instructions since the last decision point (and the previous average) or the current branch depth (and the previous average).
 \end{enumerate}
