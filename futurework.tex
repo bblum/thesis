@@ -305,7 +305,7 @@ When using decision points on just \texttt{mutex\_lock} or \texttt{mutex\_unlock
 Despite the two trees having nearly equal numbers of branches and instructions executed per branch, \texttt{double\_wait} took significantly more time. This is because Landslide's backtracks during \texttt{double\_wait} were significantly {\em longer} than the backtracks in \texttt{vanish\_vanish} on average; i.e., the backtracks were targetting an earlier point during the test's execution.
 Hence, Landslide had to execute more total instructions overall to explore the longer branches in \texttt{double\_wait}.\footnote{
 Of note, if backtracking had been implemented by restarting the test each time; i.e., executing the full depth of every branch from the root of the tree, the repeated work would have caused the execution times to be equal. The fact that Simics's backtracking avoids the cost of execution that happened before the backtrack target is to credit for this discrepancy.}
-We show an exaggerated visualisation of this tree structure in Figure~\ref{fig:nadim}
+\revision{We show an exaggerated visualisation of this tree structure in Figure~\ref{fig:nadim}.
 
 \begin{figure}[h]
 	\centering
@@ -313,5 +313,6 @@ We show an exaggerated visualisation of this tree structure in Figure~\ref{fig:n
 	\caption{Though the execution trees in \texttt{double\_wait} and in \texttt{vanish\_vanish} had the same number of branches, with each approximately as many instructions deep, the backtracks in \texttt{double\_wait} were much longer, resulting in more {\em total} instructions executed during the exploration.}
 	\label{fig:nadim}
 \end{figure}
+}
 
 This suggests that the ``interesting'' parts of \texttt{double\_wait} were earlier in the test case, whereas in \texttt{vanish\_vanish} they are more towards the end. We conjecture that, with theoretical study of these structural properties, we could develop search heuristics for focusing on the ``interesting'' parts of the trees, and avoid repeating the irrelevant instructions at the end of each branch.
