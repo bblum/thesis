@@ -144,14 +144,14 @@ There are two functions that the user needs to implement in Landslide itself, in
 	\begin{tabular}{l}
 	\texttt{\hilight{green}{bool}~kern\_current\_extra\_runnable(\hilight{green}{conf\_object\_t}~*cpu)} \\
 	\texttt{\{} \\
-	\texttt{~~~~\hilight{green}{int}~tcb = \hilight{cyan}{READ\_MEMORY}(cpu, GUEST\_CURRENT\_TCB\_POINTER);} \\
-	\texttt{~~~~\hilight{green}{int}~state\_flag = \hilight{cyan}{READ\_MEMORY}(cpu, tcb + GUEST\_TCB\_STATE\_FLAG\_OFFSET);} \\
-	\texttt{~~~~\hilight{brown}{return}~state\_flag == GUEST\_TCB\_RUNNABLE;} \\
+	\texttt{~~~~\hilight{green}{int}~tcb = \hilight{cyan}{READ\_MEMORY}(cpu, \hilight{Salmon}{GUEST\_CURRENT\_TCB\_POINTER});} \\
+	\texttt{~~~~\hilight{green}{int}~state\_flag = \hilight{cyan}{READ\_MEMORY}(cpu, tcb + \hilight{Salmon}{GUEST\_TCB\_STATE\_FLAG\_OFFSET});} \\
+	\texttt{~~~~\hilight{brown}{return}~state\_flag == \hilight{Salmon}{GUEST\_TCB\_RUNNABLE};} \\
 	\texttt{\}} \\
 	\texttt{\hilight{green}{bool}~kern\_ready\_for\_timer\_interrupt(\hilight{green}{conf\_object\_t}~*cpu)} \\
 	\texttt{\{} \\
-	\texttt{~~~~\hilight{green}{int}~x = \hilight{cyan}{READ\_MEMORY}(cpu, GUEST\_PREEMPTION\_FLAG);} \\
-	\texttt{~~~~\hilight{brown}{return}~x == GUEST\_PREEMPTION\_ENABLED;} \\
+	\texttt{~~~~\hilight{green}{int}~x = \hilight{cyan}{READ\_MEMORY}(cpu, \hilight{Salmon}{GUEST\_PREEMPTION\_FLAG});} \\
+	\texttt{~~~~\hilight{brown}{return}~x == \hilight{Salmon}{GUEST\_PREEMPTION\_ENABLED;}} \\
 	\texttt{\}} \\
 	\end{tabular}
 	}
