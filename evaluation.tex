@@ -93,12 +93,6 @@ Finally, we briefly studied each bug that the students found: whether they were 
 	``N/A'' indicates that a user did not report spending any time on a phase; the ``required'' field is ``N/A'' if any of its represented phases are, and ``N/A'' fields are not reflected in the averages.}
 	\label{fig:student-times}
 \end{table}
-\begin{figure}[h]
-	\center
-	\includegraphics[width=0.5\textwidth]{graphs/studence-pie.pdf}
-	\caption{Average time breakdown for each phase of instrumenting a kernel with Landslide, based on student self-reported times.}
-	\label{fig:student-pie}
-\end{figure}
 
 While the students were using Landslide, we asked them at intervals from 30 to 60 minutes to record how much time they had spent on each phase of instrumenting and using Landslide.
 
@@ -116,6 +110,13 @@ While the students were using Landslide, we asked them at intervals from 30 to 6
 		\item {\bf Investigating found race conditions.} In this phase, the user attempts to understand and fix bugs that Landslide found and reported.
 	\end{itemize}
 \end{itemize}
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+	\center
+	\includegraphics[width=0.4\textwidth]{graphs/studence-pie.pdf}
+	\caption{Average time breakdown for each phase of instrumenting a kernel with Landslide, based on student self-reported times.}
+	\label{fig:student-pie}
+\end{wrapfigure}
 
 Table~\ref{fig:student-times} presents the time breakdown among phases that students experienced while using Landslide, visualised in Figure~\ref{fig:student-pie}. On average, students spent two hours getting Landslide to work with their kernels, and slightly more than half an hour customising the search and/or studying found bugs on top of that.
 
@@ -295,7 +296,7 @@ Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using
 
 \begin{table}[t!]
 	\begin{center}
-	\footnotesize
+	\small
 	\begin{tabular}{|l||c|c|c|c|}
 		\hline
 		\multirow{2}{*}{\bf Kernel and test case} & \multicolumn{4}{c|}{\bf Decision points used} \\ % & \multirow{2}{*}{\bf Stress test} \\
@@ -314,20 +315,21 @@ Table~\ref{fig:numbers} shows the time it takes to find each of these bugs using
 		\hline
 		LudicrOS yield/vanish & \nobugnum{12.3}{0.3} & \bugnum{11.4}{0.4} & \nobugnum{27.4}{0.8} & \bugnum{11.7}{0.4} \\
 		\hline
-		\multicolumn{5}{c}{Key: \bugnum{seconds}{stddev} indicates bug found; \nobugnum{seconds}{stddev} indicates whole tree explored with no bug.} \\
 	\end{tabular}
 	\end{center}
 	\caption{Comparison of time taken (in seconds) to find bugs using Landslide with various decision sets:
 	the default set, consisting only of voluntary reschedules (Section~\ref{sec:components-arbiter}); and using custom decision points in addition to the default set: calls to \texttt{mutex\_lock}, calls to \texttt{mutex\_unlock}, and both.
-	All numbers represent the average from 5 trials, with the standard deviations given in parentheses. ``$\infty$'' indicates that Landslide's search did not finish (after 8 hours).
+	All numbers represent the average from 5 trials, with the standard deviations given in parentheses. \\
+	Key: \bugnum{seconds}{\footnotesize stddev} indicates bug found; \nobugnum{seconds}{\footnotesize stddev} indicates whole tree explored with no bug.
+	``$\infty$'' indicates that Landslide's search did not finish (after 8 hours).
 	}
 	\label{fig:numbers}
 \end{table}
 \revision{
 \begin{figure}[h]
 	\center
-	\includegraphics[width=0.7\textwidth]{graphs/decisions.pdf}
-	\caption{Bar graph visualisation of the exploration time in trials that did find bugs. The decision trees that did not expose bugs, and the ones that timed out, are not shown.}
+	\includegraphics[width=0.8\textwidth]{graphs/decisions.pdf}
+	\caption{Bar graph visualisation of the exploration time in trials that did find bugs. The decision trees that did not expose bugs and the ones that timed out are not shown.}
 	\label{fig:number-graph}
 \end{figure}
 }
@@ -367,7 +369,7 @@ The experimental set-up is as follows:
 \newcommand\nobugtree[1]{\textcolor{Blue}{[{\em #1}]}}
 \begin{table}[t!]
 	\begin{center}
-	\footnotesize
+	\small
 	\begin{tabular}{|l|l||c|c|c|c|}
 		\hline
 		\multirow{2}{*}{\bf Kernel and test case} & \multirow{2}{*}{\bf Property of tree} & \multicolumn{4}{|c|}{\bf Decision points used} \\
