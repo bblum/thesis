@@ -1,6 +1,3 @@
 acknowledgements
 
 redo landslide figure to have arbiter in it
-
-scope
-fix the decision point configuring section
