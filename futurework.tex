@@ -13,7 +13,7 @@ In Section~\ref{sec:eval-feedback}, we describe many ways in which Landslide's u
 Landslide is also missing functionality to automatically identify decision points when newly-forked threads become runnable but not immediately switched to. This was not necessary to find the \texttt{double\_thread\_fork} bug in POBBLES (Section~\ref{sec:eval-casestudy}) only because POBBLES automatically switched to the child thread immediately.}
 
 \begin{itemize}
-	\item {\bf Replay.} Landslide currently does not support ability to replay a particular choice sequence. If the user finds a bug, and wants to re-execute the interleaving that led to it, they have no choice but to re-explore the tree.
+	\item {\bf Replay.} Landslide currently does not support ability to replay a particular decision sequence. If the user finds a bug, and wants to re-execute the interleaving that led to it, they have no choice but to re-explore the tree.
 	\item {\bf Debug prompt support.} Although Simics can pause execution and give the user a debug prompt, Landslide currently does not support being interrupted during exploration.
 		This is because the current implementation uses a wrapper script around the Simics prompt which Landslide communicates with to perform backtracking.
 		Though it would be difficult to redesign, it would be good to work around, to enable the user to interrupt, use the Simics debug prompt arbitrarily, and resume Landslide when ready.
