@@ -177,7 +177,7 @@ Simics's convenient bookmarking mechanism will be no more in virtual-machine-lan
 
 \subsection{Control over Non-Determinism}
 
-Finally, Landslide will need to find new ways to control non-deterministic events in the system. Since virtualised kernels use the same timer interrupt as the host they run on, Landslide \revision{will need to intercept it, and perhaps control the guest kernel's context switching with a custom ``Landslide-driven'' context switcher instead.}
+Finally, Landslide will need to find new ways to control non-deterministic events in the system. Since timer ticks in virtualised kernels are mediated by the hypervisor, Landslide \revision{may need to intercept the timer, and perhaps control the guest kernel's context switching with a custom ``Landslide-driven'' context switcher instead.}
 
 Likewise, Landslide will need to control other non-deterministic inputs to the kernel, including device interrupts/input and even the system clock.
 
