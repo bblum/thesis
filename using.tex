@@ -135,7 +135,7 @@ There are two functions that the user needs to implement in Landslide itself, in
         \item \texttt{bool kern\_ready\_for\_timer\_interrupt(conf\_object\_t *cpu)}: This function can be used to express when the scheduler is ``locked'' in a way not involving disabled interrupts. Landslide will avoid trying to preempt the kernel whenever this is false.
 \end{itemize}
 
-\revision{Both of these functions are predicates on the guest kernel's execution state (usually on the contents of its scheduler's data structures). Example implementations are given in Figure~\ref{fig:student-c}.}
+\revision{Both of these functions are predicates on the guest kernel's execution state, usually on the contents of its scheduler's data structures. Example implementations are given in Figure~\ref{fig:student-c}.}
 
 \begin{figure}[h]
 	\centering

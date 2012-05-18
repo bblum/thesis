@@ -43,8 +43,8 @@
 
 \setcounter{changebargrey}{35}
 %\newcommand\revision[1]{\begin{samepage}\cbstart#1\cbend\end{samepage}}
-\newcommand\revision[1]{\cbstart#1\cbend}
-%\newcommand\revision[1]{#1}
+%\newcommand\revision[1]{\cbstart#1\cbend}
+\newcommand\revision[1]{#1}
 
 \begin{abstract}
 Systematic exploration is an approach to finding race conditions by deterministically executing every possible interleaving of thread transitions and identifying which ones expose bugs.
@@ -74,6 +74,7 @@ Systematic exploration provides a better alternative to conventional long-runnin
 In kernel space, race condition debugging becomes even more difficult. Many aspects of the concurrency implementation itself are part of the system being tested. While user-space testing frameworks rely on the underlying kernel to provide common concurrency abstractions which the framework can use to drive the test, systematic exploration in the kernel itself necessarily exists underneath such abstractions.
 Furthermore, a tool that supports testing multiple kernels must support many different possible scheduler designs.
 
+The claim of this dissertation is as follows.
 \begin{quote}
 \bf
 Systematic exploration in kernel space is possible by understanding a kernel's concurrency through instrumentation of its internal abstractions, and can be made efficient by relying on the user to control the scope of the test.
