@@ -13,12 +13,12 @@ In Section~\ref{sec:eval-feedback}, we describe many ways in which Landslide's u
 Landslide is also missing functionality to automatically identify decision points when newly-forked threads become runnable but not immediately switched to. This was not necessary to find the \texttt{double\_thread\_fork} bug in POBBLES (Section~\ref{sec:eval-casestudy}) only because POBBLES automatically switched to the child thread immediately.}
 
 \begin{itemize}
-	\item Landslide currently does not support ability to replay a particular choice sequence. If the user finds a bug, and wants to re-execute the interleaving that led to it, they have no choice but to re-explore the tree.
-	\item Although Simics can pause execution and give the user a debug prompt, Landslide currently does not support being interrupted during exploration.
+	\item {\bf Replay.} Landslide currently does not support ability to replay a particular choice sequence. If the user finds a bug, and wants to re-execute the interleaving that led to it, they have no choice but to re-explore the tree.
+	\item {\bf Debug prompt support.} Although Simics can pause execution and give the user a debug prompt, Landslide currently does not support being interrupted during exploration.
 		This is because the current implementation uses a wrapper script around the Simics prompt which Landslide communicates with to perform backtracking.
 		Though it would be difficult to redesign, it would be good to work around, to enable the user to interrupt, use the Simics debug prompt arbitrarily, and resume Landslide when ready.
-	\item Landslide could print its decision traces in a better format. The current format is basically a ``raw data dump''. Raw text is probably the wrong interface; a graphical/tabular format with distinct columns for the execution of each different thread would be easier to understand.
-	\item Landslide could attempt to detect when something has gone wrong that is not its fault (such as incorrect instrumentation, or the kernel violating some of its requirements), and print a useful error message rather than behaving mysteriously.
+	\item {\bf Decision trace formatting.} Landslide could print its decision traces in a better format. The current format is basically a ``raw data dump''. Raw text is probably the wrong interface; a graphical/tabular format with distinct columns for the execution of each different thread would be easier to understand.
+	\item {\bf Feedback for incorrect instrumentation.} Landslide could attempt to detect when something has gone wrong that is not its fault (such as incorrect instrumentation, or the kernel violating some of its requirements), and print a useful error message rather than behaving mysteriously.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

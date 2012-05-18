@@ -9,7 +9,7 @@ In this chapter we describe Landslide's implementation in detail. Section~\ref{s
 \section{Landslide's View of the World}
 \label{sec:model}
 
-Landslide's model for applying systematic exploration in kernel-space is comprised of four key points, which we overview here.
+Landslide's model for applying systematic exploration in kernel space is comprised of four key points, which we overview here.
 
 \subsection{Simulated Execution}
 \label{sec:model-simics}
@@ -29,7 +29,7 @@ Landslide needs to impose some requirements on the guest kernel's scheduling beh
 	\item {\bf Timer ticks control ``runnable'' threads.} With the exception of a non-preemptible ``scheduler lock'', and yield-looping mutexes (both of which must be instrumented by the user), a thread's presence on the runqueue indicates that a finite number of timer interrupts in succession will eventually cause it to run.
 
 	Landslide treats the sleep queue no differently from the runqueue when deciding which threads are runnable. The guest kernel will treat it differently, but since sleeping for a predetermined amount of time is never an appropriate way to solve race conditions, Landslide treats sleeping threads as notionally runnable. This fits directly into its model that runnable threads are ones that can be caused to run with a finite number of timer ticks in succession.
-	\item {\bf No idling when progress can be made.} The kernel must not enter its idle loop (whether in an explicit idle thread or no) when the kernel is not truly idle. Landslide uses the idle loop to detect when a test begins/ends (test lifecycle tracking) and to detect when all threads in a test are wedged (bug detection).
+	\item {\bf No idling when progress can be made.} The kernel must not enter its idle loop (whether in an explicit idle thread or not) when the kernel is not truly idle. Landslide uses the idle loop to detect when a test begins/ends (test lifecycle tracking) and to detect when all threads in a test are wedged (bug detection).
 \end{itemize}
 
 Section~\ref{sec:components-inflight} gives more detail about how Landslide abstracts raw timer interrupts into the ability to cause arbitrary threads to run.
@@ -255,7 +255,7 @@ Figure~\ref{fig:teststate} depicts the states and transitions visually.
 		When the current thread count is greater than the start population, advance state.
 	\item {\bf Test running.} Begin constructing the decision tree here (since it is pointless to backtrack to before the test begins). When the current thread count equals the start population, advance state.
 	\item {\bf Test cleanup.} The test processes have exited, but some housekeeping may yet remain. When the the kernel is idling and the shell is waiting for keyboard input, advance state.
-	\item {\bf Test ended.} Invoke the explorer (Section~\ref{sec:components-explore}) to decide whom to rewind, and backtrack (to step 3).
+	\item {\bf Test ended.} Invoke the explorer (Section~\ref{sec:components-explore}) to decide where to rewind to, and backtrack (to step 3).
 \end{enumerate}
 
 \section{Identifying Bugs}

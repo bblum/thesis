@@ -27,12 +27,12 @@ Finally, DeMeter~\cite{demeter} is a more recent tool for systematic exploration
 
 \section{Kernel-level Verification}
 
-DataCollider~\cite{datacollider} is a tool for detecting data races, a special kind of concurrency bug which involve concurrent unprotected accesses to memory that can interleave unsafely on a fine-grained level.
+DataCollider~\cite{datacollider} is a tool for detecting data races, a special kind of concurrency bug which involves concurrent unprotected accesses to memory that can interleave unsafely on a fine-grained level.
 DataCollider uses memory access sampling, and remains largely agnostic of synchronisation operations, to find data races in the Windows 7 kernel.
 In Section~\ref{sec:future-new} we discuss how systematic execution might be enhanced by integrating data race detection techniques.
 
 Carburizer~\cite{carburizer} is an effort to make imperfect kernel-level drivers work more reliably in the presence of faulty peripheral devices. They use static analysis to identify variables ``tainted'' by device input and unsafe uses thereof. Carburizer is able to transform such badly-written code to be more robust.
-Kernel device drivers are a ripe breeding ground for bugs, because they are frequently written by less careful developers, and the sheer volume of code makes it difficult to rigorously review.
+Kernel device drivers are a ripe breeding ground for bugs, because they are frequently written by less careful developers, and the sheer volume of code makes them difficult to rigorously review.
 Due to the interrupt-driven nature of many drivers, they are also prone to concurrency bugs, which Carburizer does not address.
 
 \revision{
