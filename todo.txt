@@ -1,8 +1,6 @@
 acknowledgements
 
 redo landslide figure to have arbiter in it
-picture of shapes of trees
-dear students
 
 scope
 fix the decision point configuring section

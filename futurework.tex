@@ -210,7 +210,7 @@ During our in-depth case studies, we noticed two interesting properties about ce
 \renewcommand\bugnum[2]{#1 {\scriptsize \em (#2)}}
 \begin{table}[t]
 	\centering
-	\footnotesize
+	\small
 	\begin{tabular}{|l|l||c|c|c|}
 	\hline
 	{\bf Bug} & {\bf Direction} & {\bf Time} & {\bf Backtracks} & {\bf Trace Length} \\
@@ -239,10 +239,10 @@ During our in-depth case studies, we noticed two interesting properties about ce
 \end{table}
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.47\textwidth]{graphs/backwards-time.pdf}
-	\hspace{0.02\textwidth}
+	\includegraphics[width=0.48\textwidth]{graphs/backwards-time.pdf}
+	\hspace{0.01\textwidth}
 	\includegraphics[width=0.48\textwidth]{graphs/backwards-trace.pdf}
-	\caption{In general, backwards exploration finds bugs faster, but forwards exploration produces shorter (more understandable) decision traces.}
+	\caption{In general, backwards exploration finds bugs faster, but forwards exploration produces shorter (more understandable) decision traces. (Lower is better in both graphs.)}
 	\label{fig:backwards-graphs}
 \end{figure}
 }
@@ -259,7 +259,7 @@ We configured Landslide to be able to explore trees in two different orderings, 
 		Compared to forwards exploration, we found that backwards exploration tended to find bugs much more quickly, with fewer backtracks needed before the buggy branch was chosen.
 \end{itemize}
 
-\revision{Table~\ref{fig:backwards} and Figure~\ref{fig:backwards-graphs} compare the tree explorations and resulting decision traces. The one exception is the POBBLES thread\_fork/vanish bug, which Landslide found immediately during forwards exploration, because the race actually required no forced preemptions to expose.}
+\revision{Table~\ref{fig:backwards} and Figure~\ref{fig:backwards-graphs} compare the tree explorations and resulting decision traces. The one exception to backwards being faster is the POBBLES thread\_fork/vanish bug, which Landslide found immediately during forwards exploration, because the race actually required no forced preemptions to expose.}
 
 Compared to Iterative Context Bounding~\cite{chess}, which is based on the insight that bugs need fewer forced preemptions to expose, we believe that our insight is orthogonal. The ICB insight results in smaller decision trees overall needing to be explored before bugs appear, while our insight determines exploration ordering once the tree is constructed.
 
@@ -270,7 +270,7 @@ We are not sure if combining these two insights is possible. In future work we m
 
 One member of Group 1 from the user study fully explored decision trees from \texttt{double\_wait} and \texttt{vanish\_vanish} (Section~\ref{sec:eval-victory}), and found an oddity in the exploration time for a particular decision set.
 
-When using decision points on just \texttt{mutex\_lock} or \texttt{mutex\_unlock}, the explorations for each test case took similar time. However, when using decision points on both mutex functions, \texttt{double\_wait} took substantially longer, despite the tree structure suggesting they should have been comparable, with \texttt{double\_wait} even being perhaps slightly faster. Figure~\ref{fig:nadim-stats} shows a comparison of the tree anatomy for these two test cases.
+When using decision points on just \texttt{mutex\_lock} or \texttt{mutex\_unlock}, the explorations for each test case took similar time. However, when using decision points on both mutex functions, \texttt{double\_wait} took substantially longer, despite the tree structure suggesting they should have been comparable, with \texttt{double\_wait} even being perhaps slightly faster. Table~\ref{fig:nadim-stats} shows a comparison of the tree anatomy for these two test cases.
 
 \begin{table}[h]
 	\small
@@ -287,7 +287,7 @@ When using decision points on just \texttt{mutex\_lock} or \texttt{mutex\_unlock
 		\hline
 		Average branch depth & 18.34 & 16.00 \\
 		\hline
-		Average instructions/branch& 1,975,033 & 1,984,249 \\
+		Average instructions/branch& {\bf 1,975,033} & {\bf 1,984,249} \\
 		\hline
 		Total instructions & 206,757,601 & 24,907,516 \\
 		\hline
@@ -305,6 +305,13 @@ When using decision points on just \texttt{mutex\_lock} or \texttt{mutex\_unlock
 Despite the two trees having nearly equal numbers of branches and instructions executed per branch, \texttt{double\_wait} took significantly more time. This is because Landslide's backtracks during \texttt{double\_wait} were significantly {\em longer} than the backtracks in \texttt{vanish\_vanish} on average; i.e., the backtracks were targetting an earlier point during the test's execution.
 Hence, Landslide had to execute more total instructions overall to explore the longer branches in \texttt{double\_wait}.\footnote{
 Of note, if backtracking had been implemented by restarting the test each time; i.e., executing the full depth of every branch from the root of the tree, the repeated work would have caused the execution times to be equal. The fact that Simics's backtracking avoids the cost of execution that happened before the backtrack target is to credit for this discrepancy.}
-% as visualised in figure\ldots TODO
+We show an exaggerated visualisation of this tree structure in Figure~\ref{fig:nadim}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.9\textwidth]{nadim.pdf}
+	\caption{Though the execution trees in \texttt{double\_wait} and in \texttt{vanish\_vanish} had the same number of branches, with each approximately as many instructions deep, the backtracks in \texttt{double\_wait} were much longer, resulting in more {\em total} instructions executed during the exploration.}
+	\label{fig:nadim}
+\end{figure}
 
 This suggests that the ``interesting'' parts of \texttt{double\_wait} were earlier in the test case, whereas in \texttt{vanish\_vanish} they are more towards the end. We conjecture that, with theoretical study of these structural properties, we could develop search heuristics for focusing on the ``interesting'' parts of the trees, and avoid repeating the irrelevant instructions at the end of each branch.
