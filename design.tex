@@ -64,7 +64,7 @@ In this section we briefly describe each major component of Landslide.
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.75\textwidth]{landslide.png}
+	\includegraphics[width=0.65\textwidth]{landslide.png}
 	\caption{A simple visualisation of Landslide and its components, and how they interact with the guest kernel.}
 	\label{fig:landslide}
 \end{figure}
@@ -86,7 +86,7 @@ The Landslide scheduler is responsible for keeping track of which threads exist 
 
 It maintains a ``mirror image'' of the guest kernel's scheduler state in the form of three queues, a pointer to the currently-running thread, and a pointer to the previously-running thread. The queues are the {\em runqueue}, containing the runnable threads, the {\em sleep queue}, containing threads which become runnable after a certain number of timer ticks, and the {\em deschedule queue}, which might not correspond to a data structure in the guest kernel, but contains all other threads that exist on the system, which are not runnable for whatever reason.
 
-The Landslide scheduler also tracks which important actions each thread is performing. These actions are {\em forking}, {\em vanishing}, and {\em sleeping}, which are described in the next section \revision{(note that ``vanish'' is simply Pebbles's name for ``exit'')}, and also {\em in\_timer\_handler} and {\em in\_context\_switch}, which express what type of context switch a given thread may be performing, and are useful for both thread scheduling (Section~\ref{sec:components-inflight}) and detecting voluntary reschedules (Section~\ref{sec:components-arbiter}).\footnote{
+The Landslide scheduler also tracks which important actions each thread is performing. These actions are {\em forking}, {\em vanishing}, and {\em sleeping}, which are described in the next section \revision{(note that ``vanish'' is simply Pebbles's name for ``exit'')}, and also {\em in\_timer\_handler} and {\em in\_context\_switch}, which express what type of context switch a given thread may be performing (voluntary reschedule, etc), and are useful for both thread scheduling (Section~\ref{sec:components-inflight}) and detecting voluntary reschedules (Section~\ref{sec:components-arbiter}).\footnote{
 There are also other minor actions: {\em readlining}, used to track test lifecycle (Section~\ref{sec:components-test}), {\em just\_forked}, used for special-case context switch behaviour (Section~\ref{sec:components-arbiter}), and also several flags for tracking mutex lock/unlock events.}
 
 \subsubsection{Thread Lifecycle Tracking}
@@ -130,7 +130,7 @@ There are also other minor actions: {\em readlining}, used to track test lifecyc
 	\label{alg:tell-landslide}
 \end{algorithm}
 
-The Landslide scheduler relies on the guest kernel informing it about certain important events in the thread lifecycle. The guest kernel does this by means of annotations (which are described in Section~\ref{sec:using-annotations}). Algorithm~\ref{alg:tell-landslide} shows how Landslide handles these annotations internally.\footnote{
+The Landslide scheduler relies on the guest kernel to inform it about certain important events in the thread lifecycle. The guest kernel does this by means of annotations (which are described in Section~\ref{sec:using-annotations}). Algorithm~\ref{alg:tell-landslide} shows how Landslide handles these annotations internally.\footnote{
 There are also cases for the runqueue annotations, \texttt{tell\_landslide\_on\_rq} and \texttt{tell\_landslide\_off\_rq}, which we omit for brevity. One important note is that the routine for \texttt{tell\_landslide\_on\_rq} must also check the ``forking'' flag, in case the kernel's \texttt{fork} implementation does not immediately switch to the new thread but instead adds it to the runqueue for later.}
 
 \subsubsection{Thread Scheduling}
@@ -175,7 +175,7 @@ Finally, the Landslide scheduler is responsible for managing involuntary preempt
 
 Though we define timer interrupts as the only source of non-determinism in our environment, it is more useful to view the concurrent behaviour with a higher-level abstraction, in terms of the set of runnable threads and the ability to preempt the currently-running thread with any different runnable one.
 
-Landslide's scheduling technique, called the {\em schedule in-flight}, involves successive triggering of timer interrupts to trigger context switches until the desired thread begins to run. Algorithm~\ref{alg:inflight} shows how Landslide makes this happen.
+Landslide's scheduling technique, called the {\em schedule in-flight}, involves successively injecting timer interrupts to trigger context switches until the desired thread begins to run. Algorithm~\ref{alg:inflight} shows how Landslide makes this happen.
 
 One alternative simpler method would be, when triggering a timer interrupt, to tell the guest kernel explicitly which thread should be run next. This approach could potentially save the cost of extra context switches, especially in test cases with very many threads. However, it would also require the kernel programmer to write extra code in their timer handler and/or context switcher. Because we mostly focus on test cases with few threads, we judged that ease of use was more important than the marginal performance increase, so we chose the ``in-flight'' approach instead.
 
