@@ -1,0 +1,130 @@
+\documentclass{llncs}
+%\usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,subfig,wrapfig,appendix,hyperref,mdwlist,wasysym}
+%\usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,appendix,hyperref,mdwlist,wasysym}
+\usepackage{upgreek}
+%\usepackage{times}
+%\usepackage[charter]{mathdesign}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{multirow}
+\usepackage[usenames,dvipsnames]{xcolor}
+%\usepackage{epsfig}
+\usepackage[bottom]{footmisc}
+%\usepackage{mjz-titlepage}
+\usepackage{framed}
+\usepackage{setspace}
+\setstretch{1.05}
+\usepackage{subfig}
+\usepackage{changebar}
+\usepackage{colortbl}
+\usepackage{wrapfig}
+
+\begin{document}
+%\captionsetup{width=.75\textwidth,font=small,labelfont=bf}
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+\title{\bf Landslide: Systematic Exploration for Kernel-Space Race Detection}
+\author{Ben Blum \and Garth Gibson}
+\institute{Computer Science Department, Carnegie Mellon University, Pittsburgh}
+\date{May 2012}
+
+%\support{This research was sponsored by the U.S. Army Research Office under grant number W911NF0910273.}
+
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand\true{\;\textit{true}}
+\newcommand\false{\;\textit{false}}
+
+\newcommand\alpher\alpha
+\newcommand\beter\beta
+\newcommand\gammer\gamma
+\newcommand\delter\delta
+\newcommand\zeter\zeta
+\newcommand\Sigmer\Sigma
+
+\newcommand\NN{\mathbb{N}}
+\newcommand\QQ{\mathbb{Q}}
+\newcommand\RR{\mathbb{R}}
+\newcommand\ZZ{\mathbb{Z}}
+
+\setcounter{changebargrey}{35}
+%\newcommand\revision[1]{\begin{samepage}\cbstart#1\cbend\end{samepage}}
+%\newcommand\revision[1]{\cbstart#1\cbend}
+\newcommand\revision[1]{#1}
+
+\begin{abstract}
+Systematic exploration is an approach to finding race conditions by deterministically executing many thread interleavings and identifying which ones expose bugs.
+Current techniques are suitable for testing user-space programs, but are inadequate for testing kernels.
+Testing kernel-level code necessitates understanding the kernel's design in order to effectively control nondeterminism and achieve reasonable state-space reduction.
+
+We present Landslide, a systematic exploration tool for finding races in kernels.
+Landslide relies on user-provided configuration to enable efficient exploration and testing of meaningful interleavings.
+The user instruments their kernel to inform Landslide of important concurrency events, and configures Landslide to focus its search on relevant kernel components.
+This combines the user's design knowledge with Landslide's ability to explore large state spaces, and encourages the user to steer Landslide towards focused searches that are more likely to find bugs.
+We claim that this steering is an effective approach for kernel-space race detection.
+
+%Landslide targets Pebbles, the kernel specification that students implement in the undergraduate Operating Systems course at Carnegie Mellon University (15-410).
+%We discuss the techniques Landslide uses to address the general challenges of kernel-level concurrency, and we evaluate its effectiveness and usability as a debugging aid.
+%We show that our techniques make systematic testing in kernel-space feasible and that Landslide is a useful tool for doing so in the context of 15-410.
+%%%%
+
+\noindent {\bf Keywords:} concurrency, kernel debugging, race conditions, runtime verification
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% put this somewhere
+%We claim that this combination of the user's knowledge and Landslide's testing mechanisms leads to an effective usage dynamic, in which the user steers Landslide towards focused search spaces that are more likely to find bugs.
+
+Race conditions are notoriously difficult to debug.
+Because of their nondeterministic nature, they frequently do not manifest at all during testing, and when they do manifest, it is difficult to reproduce them reliably enough to collect enough information to help debugging.
+
+\revision{
+Many techniques exist for dynamic testing of concurrent systems for race conditions.
+Systematic exploration~\cite{verisoft}, the strategy we focus on in this work, involves making educated guesses as to what points during execution a preemption would be most likely to expose a bug, enumerating the different possibilities for interleaving threads around these points, and forcing the system to execute all such interleavings to check if any of them results in incorrect behaviour.
+Systematic exploration provides a better alternative to conventional long-running stress tests, because it is less likely to overlook buggy execution patterns, and it enables a testing framework to report more thorough debugging information. Compared to other dynamic analyses, such as data race detection~\cite{datacollider}, systematic exploration is able to find a wider range of types of concurrency errors because of its ability to manipulate the execution of the system under test.
+
+In kernel space, race condition debugging becomes even more difficult. Many aspects of the concurrency implementation itself are part of the system being tested. While user-space testing frameworks rely on the underlying kernel to provide common concurrency abstractions which the framework can use to drive the test, systematic exploration in the kernel itself necessarily exists underneath such abstractions.
+Furthermore, a tool that supports testing multiple kernels must support many different possible scheduler designs.
+
+The claim of this dissertation is as follows.
+\begin{quote}
+\bf
+Systematic exploration in kernel space is possible by understanding a kernel's concurrency through instrumentation of its internal abstractions, and can be made efficient by relying on the user to control the scope of the test.
+\end{quote}
+}
+
+We present Landslide,\footnote{
+Landslide {\em (n)}: a phenomenon which demonstrates that Pebbles are not as stable as you might think.}
+a tool for applying systematic race detection techniques to kernel-level code.
+It is geared towards kernels that implement the Pebbles specification, the main project in Operating System Design and Implementation (15-410) at CMU, and is implemented as a module for Wind River Simics\textsuperscript{\texttrademark}~\cite{simics}, the x86 simulator that students use to run their Pebbles kernels.
+\revision{In order to use Landslide, a kernel programmer must instrument their kernel to inform Landslide of important concurrency events during the execution, and configure Landslide to focus its search on components of the kernel most relevant to the test.
+%During a kernel's execution, Landslide records important actions performed by the kernel, decides at which points in the kernel's execution a preemption will be most likely to expose a bug, and then exercises all possible interleavings of kernel threads around such points.
+Using this instrumentation and configuration, Landslide is able to enumerate all possible interleavings of kernel threads at a granularity both fine-grained enough to expose interesting concurrency behaviour and coarse-grained enough to produce state spaces that are feasible to explore. Landslide then forces the kernel to exercise each of these interleavings, and checks for race conditions in each of them.}
+When Landslide finds a bug (predicted by a set of common checks and heuristics), it stops execution and prints information about the sequence of interleavings that exposed the bug.
+
+\revision{
+In this work, we study the challenges inherent in applying systematic testing techniques in kernel-space, in contrast with user-space applications (Chapter~\ref{sec:challenges}), define common terms used in the rest of this document (Chapter~\ref{sec:terminology}), present our techniques (some sound, and some heuristic) for addressing them (Chapter~\ref{sec:design}), and document the process of using Landslide (Chapter~\ref{sec:using}).
+We evaluate Landslide both by studying its potential to be a helpful debugging aid in 15-410 and by studying certain bugs in detail to determine effective usage strategies (Chapter~\ref{sec:evaluation}).
+Finally, we discuss possible avenues for future work in education, use of additional testing techniques, application to general purpose kernels, long-running testing approaches, and theoretical study of systematic exploration (Chapter~\ref{sec:future}).
+}
+
+%\input{related} % COMPLETE!
+%\input{challenges} % COMPLETE!
+%\input{terminology} % almost complete
+%\input{design}
+%\input{using}
+%\input{evaluation}
+%\input{futurework}
+%\input{conclusion}
+
+
+\bibliography{citations}{}
+\bibliographystyle{splncs03}
+
+\end{document}
