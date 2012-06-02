@@ -1,6 +1,7 @@
 \documentclass{llncs}
 %\usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,subfig,wrapfig,appendix,hyperref,mdwlist,wasysym}
 %\usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,appendix,hyperref,mdwlist,wasysym}
+\usepackage{amsmath,amssymb,fullpage,yfonts,graphicx,proof,appendix,hyperref,mdwlist,wasysym}
 \usepackage{upgreek}
 %\usepackage{times}
 %\usepackage[charter]{mathdesign}
@@ -28,9 +29,6 @@
 \author{Ben Blum \and Garth Gibson}
 \institute{Computer Science Department, Carnegie Mellon University, Pittsburgh}
 \date{May 2012}
-
-%\support{This research was sponsored by the U.S. Army Research Office under grant number W911NF0910273.}
-
 
 \maketitle
 
@@ -63,8 +61,11 @@ Testing kernel-level code necessitates understanding the kernel's design in orde
 We present Landslide, a systematic exploration tool for finding races in kernels.
 Landslide relies on user-provided configuration to enable efficient exploration and testing of meaningful interleavings.
 The user instruments their kernel to inform Landslide of important concurrency events, and configures Landslide to focus its search on relevant kernel components.
-This combines the user's design knowledge with Landslide's ability to explore large state spaces, and encourages the user to steer Landslide towards focused searches that are more likely to find bugs.
-We claim that this steering is an effective approach for kernel-space race detection.
+This combines the user's design knowledge with Landslide's ability to explore large state spaces.
+Our experience with Landslide shows that a tool built for this usage pattern is capable of identifying otherwise-overlooked kernel-space races.
+
+%, and encourages the user to steer Landslide towards focused searches that are more likely to find bugs.
+%We claim that this steering is an effective approach for kernel-space race detection.
 
 %Landslide targets Pebbles, the kernel specification that students implement in the undergraduate Operating Systems course at Carnegie Mellon University (15-410).
 %We discuss the techniques Landslide uses to address the general challenges of kernel-level concurrency, and we evaluate its effectiveness and usability as a debugging aid.
@@ -73,6 +74,35 @@ We claim that this steering is an effective approach for kernel-space race detec
 
 \noindent {\bf Keywords:} concurrency, kernel debugging, race conditions, runtime verification
 \end{abstract}
+
+%%%% Outline %%%%
+
+% challenges of kernel space
+% = causes of concurrency
+% = ad-hoc
+% - design independence (merge into model/scope)
+%
+% implementation
+% + model (maybe separate into a scope section, add talk of 15410)
+% - components (keep only challenge-addressing stuff)
+% + bug identification
+% = por (-soundness)
+%
+% user interface
+% - requirements (timer-driven should be in model)
+% = instrumenting (cut very short)
+% + configuring
+% = test cases (merge into model maybe -- probably not though?)
+%
+% future work
+% - education
+% = new techniques
+% + linux
+% = virtualisation (merge into linux?)
+% ? shaping
+% - oddities
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
