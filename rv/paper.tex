@@ -186,20 +186,38 @@ Many of these bugs required complicated thread interleavings to expose, and coul
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Challenges of Kernel Space}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Scope}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Environment}
 % 410, requirements, simulated
 \subsection{Testing Approach}
+\label{sec:approach}
 % timer driven, false negative bugs, coarse granularity search
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Challenges of Kernel Space}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FIXME: maybe say in each paragraph how we address the issue?
+
+Compared to systematic exploration in user space, Landslide faces several challenges when applying the same techniques in kernel space.
+
+{\bf Causes of concurrency.} In user space, a testing framework may rely on system calls to the underlying kernel to deterministically control the concurrent execution of the system under test.
+However, since Landslide tests the kernel itself, it must control the underlying causes of nondeterminism, such as interrupts from the timer, disk, or network. (In this work we focus only on timer events, as discussed in \S\ref{sec:approach}.)
+Landslide contains its own internal scheduler, which manages timer interrupts to provide a mechanism for causing an arbitrarily-chosen thread to preempt execution of the current one (see \S\ref{sec:design}).
+
+{\bf Understanding the kernel's design.} In order to track the state of the kernel's scheduler, such as which threads exist or are runnable at any given time, a testing framework must know when certain important concurrency events happen during the kernel's execution.
+Landslide relies on in-kernel annotations to provide this information (see \S\ref{sec:instrument}).
+
+{\bf Shared memory conflicts.} Since the kernel contains its own concurrency implementation, every thread switch will execute through a common path that modifies shared scheduler data structures.
+Because Dynamic Partial Order Reduction relies on a memory independence relation between thread transitions, this abundance of shared memory conflicts threatens Landslide's ability to achieve good state space reduction.
+We provide an interface with which the user can configure Landslide to ignore such conflicts to more efficiently test unrelated components of the kernel (see \S\ref{sec:config}).
+
+% Talk about frame_lock in user interface as a "side benefit" of addressing this.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Design}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{sec:design}
 %%%% solving challenges %%%%
 % timer-driven scheduling
 % tracking which threads
@@ -207,6 +225,12 @@ Many of these bugs required complicated thread interleavings to expose, and coul
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{User Interface}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Instrumenting Kernels with Landslide}
+\label{sec:instrument}
+
+\subsection{Configuring Landslide}
+\label{sec:config}
 % decision trace
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
