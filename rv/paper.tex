@@ -189,10 +189,23 @@ Many of these bugs required complicated thread interleavings to expose, and coul
 \section{Scope}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Environment}
+\label{sec:environment}
 % 410, requirements, simulated
+
+% FIXME awkward paragraph
+Landslide's ability to test different types of kernels in different execution environments is currently very limited.
+We built Landslide to test Pebbles kernels, which students implement from the ground up in a six-week project in 15-410 at CMU. The Pebbles specification is a set of UNIX-like system calls which includes routines for thread lifecycle management and virtual memory management.
+
+Landslide is implemented as a module for Simics, a full-system x86 simulator which students in 15-410 use as an execution environment for their kernels. Simics can load Landslide while booting a kernel, and Landslide will perform systematic exploration on that kernel using Simics interface calls during the simulated execution.
+
+Currently, Landslide assumes that timer interrupts are the only nondeterministic events that control a kernel's concurrent execution. While this prevents us from finding races related to external input such as disk or network I/O, Landslide is already able to find many types of complicated races by controlling timer-driven thread scheduling.
+
 \subsection{Testing Approach}
 \label{sec:approach}
-% timer driven, false negative bugs, coarse granularity search
+% false negative bugs, coarse granularity search
+
+Landslide's testing approach is false-negative-oriented both in terms of identifying bugs and in terms of constructing the state space to search. 
+We identify bugs only when something definitely wrong happens, rather than flagging suspicious behaviours which might indicate underlying bugs, and we rely on the user to define a granularity for thread interleavings which will produce meaningful results.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Challenges of Kernel Space}
@@ -202,7 +215,7 @@ Many of these bugs required complicated thread interleavings to expose, and coul
 Compared to systematic exploration in user space, Landslide faces several challenges when applying the same techniques in kernel space.
 
 {\bf Causes of concurrency.} In user space, a testing framework may rely on system calls to the underlying kernel to deterministically control the concurrent execution of the system under test.
-However, since Landslide tests the kernel itself, it must control the underlying causes of nondeterminism, such as interrupts from the timer, disk, or network. (In this work we focus only on timer events, as discussed in \S\ref{sec:approach}.)
+However, since Landslide tests the kernel itself, it must control the underlying causes of nondeterminism, such as interrupts from the timer, disk, or network. (In this work we focus only on timer events, as discussed in \S\ref{sec:environment}.)
 Landslide contains its own internal scheduler, which manages timer interrupts to provide a mechanism for causing an arbitrarily-chosen thread to preempt execution of the current one (see \S\ref{sec:design}).
 
 {\bf Understanding the kernel's design.} In order to track the state of the kernel's scheduler, such as which threads exist or are runnable at any given time, a testing framework must know when certain important concurrency events happen during the kernel's execution.
@@ -222,6 +235,9 @@ We provide an interface with which the user can configure Landslide to ignore su
 % timer-driven scheduling
 % tracking which threads
 
+% bugs
+% With false-negative bug detection, the kernel might execute a buggy behaviour yet Landslide would miss it. However, when Landslide does identify a bug, the user can be sure that a race exists.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{User Interface}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -232,6 +248,8 @@ We provide an interface with which the user can configure Landslide to ignore su
 \subsection{Configuring Landslide}
 \label{sec:config}
 % decision trace
+
+% Likewise, with user-defined state spaces to search, Landslide might not explore thread interleavings at a granularity fine enough to cause a bug to arise. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}
