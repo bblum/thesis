@@ -159,7 +159,7 @@ Furthermore, execution in the kernel's scheduler and other similar components is
 % \end{quote}
 % }
 
-We present Landslide,
+We present Landslide \cite{landslide},
 %\footnote{Landslide {\em (n)}: a phenomenon which demonstrates that Pebbles are not as stable as you might think.}
 a tool for applying systematic race detection techniques to kernel-level code.
 Landslide is implemented as a module for Wind River Simics\textsuperscript{\texttrademark}~\cite{simics}, and targets Pebbles, a fully preemptible UNIX-like kernel specification that students implement in Carnegie Mellon University's undergraduate operating systems class (15-410).
@@ -184,6 +184,19 @@ Many of these bugs required complicated thread interleavings to expose, and coul
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Related Work}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Among related dynamic race condition detection tools, some are systematic exploration tools, and others are kernel race-finding tools. To our knowledge, Landslide is the first to combine the former with the latter.
+
+% remove dbug-retreat citation if need be
+{\bf Systematic exploration.} Many techniques have been developed for efficient systematic exploration of concurrent systems. Dynamic Partial Order Reduction (DPOR) \cite{dpor,dbug-retreat} is an algorithm for achieving state space reduction by identifying ``independent'' thread transitions. dBug \cite{dbug-ssv} is a tool that makes use of DPOR in user-space; Landslide applies it to test kernels.
+
+% Among other systematic testing tools are CHESS \cite{chess}, which heuristically orders its search by number of preemptions; MaceMC \cite{macemc} and MODIST \cite{modist}, which provide systematic testing frameworks for networked and distributed applications; RacePRO \cite{racepro}, which uncovers races between system calls made by multiple processes; and DeMeter \cite{demeter}, which focuses its search on only one component of a system at a time.
+
+{\bf Kernel-level verification.}
+% Kernel-level code has seen many dynamic testing techniques apart from systematic exploration.
+DataCollider \cite{datacollider} uses memory access sampling to find data races in Windows 7. Compared to systematic exploration, data race detection is less expensive, but is limited in which types of races it can find.
+% Carburizer \cite{carburizer} is a tool for enhancing resiliency of imperfect kernel drivers in the presence of faulty peripheral devices.
+SimTester \cite{simtester} is another driver testing tool; like Landslide, it runs in Simics, and injects interrupts to control the system's concurrency. SimTester focuses on races involving device interrupts, whereas Landslide focuses on non-driver inter-thread races. Additionally, SimTester only injects one interrupt per test run, which is both less expensive and less powerful than systematic exploration.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Scope}
@@ -254,11 +267,18 @@ We provide an interface with which the user can configure Landslide to ignore su
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%We evaluated Landslide in two ways: first, by instrumenting two kernels the authors were familiar with and experimenting with many different configurations for Landslide's search, and second, by meeting with students 
+
+We evaluated Landslide in two ways: first, by instrumenting two kernels we were familiar with to measure time spent to find many different races, and second, by meeting with students of 15-410 to see if they could find bugs on their own with Landslide.
+
+We instrumented one kernel the first author wrote when he was a student and also one kernel he had manually graded as a teaching assistant. We configured Landslide to search for five complicated already-known race conditions. In addition to finding all five races, Landslide also found a sixth previously unknown race in the author's own kernel. Using decision points only on calls to \texttt{mutex\_lock}, Landslide found each of the six bugs in between 11 and 57 seconds, executing between 1 and 377 distinct interleavings for each.
+% FIXME: also say 'on voluntary rescheds'?
+
+In the user study, we found that students spent on average 119 minutes (60 to 158) on the required instrumentation, and a further 36 minutes (10 to 60) refining Landslide's search. Of the four groups who finished the required part, all four found previously unknown bugs with Landslide: two race conditions and two deterministic errors. These bugs manifested as infinite loops, a kernel panic, and a use-after-free.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Future Work}
+\section{Future Work and Conclusion}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 
 \bibliography{citations}{}
