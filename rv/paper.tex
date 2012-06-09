@@ -187,10 +187,9 @@ Many of these bugs required complicated thread interleavings to expose, and coul
 
 Among related dynamic race condition detection tools, some are systematic exploration tools, and others are kernel race-finding tools. To our knowledge, Landslide is the first to combine the former with the latter.
 
-% remove dbug-retreat citation if need be
-{\bf Systematic exploration.} Many techniques have been developed for efficient systematic exploration of concurrent systems. Dynamic Partial Order Reduction (DPOR) \cite{dpor,dbug-retreat} is an algorithm for achieving state space reduction by identifying ``independent'' thread transitions. dBug \cite{dbug-ssv} is a tool that makes use of DPOR in user-space; Landslide applies it to test kernels.
+{\bf Systematic exploration.} Many techniques have been developed for efficient systematic exploration of concurrent systems. Dynamic Partial Order Reduction (DPOR) \cite{dpor} is an algorithm for achieving state space reduction by identifying ``independent'' thread transitions. dBug \cite{dbug-ssv} is a tool that makes use of DPOR in user-space; Landslide applies it to test kernels.
 
-% Among other systematic testing tools are CHESS \cite{chess}, which heuristically orders its search by number of preemptions; MaceMC \cite{macemc} and MODIST \cite{modist}, which provide systematic testing frameworks for networked and distributed applications; RacePRO \cite{racepro}, which uncovers races between system calls made by multiple processes; and DeMeter \cite{demeter}, which focuses its search on only one component of a system at a time.
+Among other systematic testing tools are CHESS \cite{chess}, with a heuristic for search ordering; MaceMC \cite{macemc} and MODIST \cite{modist}, which test networked and distributed applications; RacePRO \cite{racepro}, which uncovers inter-process races; and DeMeter \cite{demeter}, which focuses its search on only one component of a system at a time.
 
 {\bf Kernel-level verification.}
 % Kernel-level code has seen many dynamic testing techniques apart from systematic exploration.
@@ -224,19 +223,17 @@ We identify bugs only when something definitely wrong happens, rather than flagg
 \section{Challenges of Kernel Space}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % FIXME: maybe say in each paragraph how we address the issue?
+% TODO: get rid of this section
 
 Compared to systematic exploration in user space, Landslide faces several challenges when applying the same techniques in kernel space.
 
-{\bf Causes of concurrency.} In user space, a testing framework may rely on system calls to the underlying kernel to deterministically control the concurrent execution of the system under test.
-However, since Landslide tests the kernel itself, it must control the underlying causes of nondeterminism, such as interrupts from the timer, disk, or network. (In this work we focus only on timer events, as discussed in \S\ref{sec:environment}.)
-Landslide contains its own internal scheduler, which manages timer interrupts to provide a mechanism for causing an arbitrarily-chosen thread to preempt execution of the current one (see \S\ref{sec:design}).
+% {\bf Causes of concurrency.} In user space, a testing framework may rely on system calls to the underlying kernel to deterministically control the concurrent execution of the system under test.
+% However, since Landslide tests the kernel itself, it must control the underlying causes of nondeterminism, such as interrupts from the timer, disk, or network. (In this work we focus only on timer events, as discussed in \S\ref{sec:environment}.)
+% Landslide contains its own internal scheduler, which manages timer interrupts to provide a mechanism for causing an arbitrarily-chosen thread to preempt execution of the current one (see \S\ref{sec:design}).
 
 {\bf Understanding the kernel's design.} In order to track the state of the kernel's scheduler, such as which threads exist or are runnable at any given time, a testing framework must know when certain important concurrency events happen during the kernel's execution.
 Landslide relies on in-kernel annotations to provide this information (see \S\ref{sec:instrument}).
 
-{\bf Shared memory conflicts.} Since the kernel contains its own concurrency implementation, every thread switch will execute through a common path that modifies shared scheduler data structures.
-Because Dynamic Partial Order Reduction relies on a memory independence relation between thread transitions, this abundance of shared memory conflicts threatens Landslide's ability to achieve good state space reduction.
-We provide an interface with which the user can configure Landslide to ignore such conflicts to more efficiently test unrelated components of the kernel (see \S\ref{sec:config}).
 
 % Talk about frame_lock in user interface as a "side benefit" of addressing this.
 
@@ -244,25 +241,55 @@ We provide an interface with which the user can configure Landslide to ignore su
 \section{Design}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:design}
-%%%% solving challenges %%%%
-% timer-driven scheduling
-% tracking which threads
+% prelude: define decision point and maybe voluntary reschedule
 
-% bugs
+The design of Landslide's exploration is based around {\em decision points}. These are places during the execution at which we force preemptions and cause different threads to interleave execution around. Searching with few decision points results in coarser-grained interleavings, smaller state spaces, and less likelihood of finding bugs; searching with more results in the opposite.
+
+Landslide automatically identifies a minimal set of decision points at voluntary reschedules between threads (e.g. \texttt{yield}). We also provide an interface for configuring additional decision points (see \S\ref{sec:config}).
+
+\subsection{Exploration Mechanism}
+
+Landslide's exploration mechanism has two parts. First, at each decision point, it is able to force an arbitary thread to run. Second, upon termination of the test case, it can revert the system to an earlier state to explore additional interleavings.
+
+{\bf Thread scheduling.} Compared with user space testing frameworks, Landslide cannot rely on kernel-provided system calls to control the concurrent execution of the system under test. Instead, Landslide has an internal abstraction for scheduling arbitrary threads built upon injecting timer interrupts.
+
+If thread $X$ is running and Landslide decides to preempt with thread $Z$, it fires a timer interrupt and waits for the kernel to finish the triggered context switch. Then if the kernel is running thread $Y$, Landslide repeats until thread $Z$ begins running, at which point it lets the kernel continue execution.
+
+{\bf Backtracking.} Landslide makes use of Simics ``bookmarks'', a feature
+which enables checkpointing and restoring the kernel's state, to implement
+backtracking when the end of the test case is reached.
+
+\subsection{Identifying Bugs}
+% TODO
 % With false-negative bug detection, the kernel might execute a buggy behaviour yet Landslide would miss it. However, when Landslide does identify a bug, the user can be sure that a race exists.
+
+% decision trace
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{User Interface}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{sec:interface}
+
+% Likewise, with user-defined state spaces to search, Landslide might not explore thread interleavings at a granularity fine enough to cause a bug to arise. 
+% TODO
 
 \subsection{Instrumenting Kernels with Landslide}
 \label{sec:instrument}
 
+% TODO
+
+Finally, there are two two-line functions within Landslide itself that the user must implement. These are predicates on the kernel's scheduler state, and express potentially nontrivial conditions: whether the current thread is runnable but not on the runqueue, and whether preemption is disabled while interrupts are on.
+
 \subsection{Configuring Landslide}
 \label{sec:config}
-% decision trace
 
-% Likewise, with user-defined state spaces to search, Landslide might not explore thread interleavings at a granularity fine enough to cause a bug to arise. 
+{\bf Configuring decision points.} % TODO
+
+{\bf Configuring Dynamic Partial Order Reduction.} Performing DPOR requires establishing a memory independence relation between transitions.
+Unfortunately, since the kernel contains its own concurrency implementation, every thread switch will execute through a common path that modifies shared scheduler data structures.
+Unchecked, this would cause every transition to conflict with each other and result in no reduction.
+
+We provide an interface with which the user can configure Landslide to ignore such conflicts to more efficiently test unrelated components of the kernel.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}
@@ -270,8 +297,7 @@ We provide an interface with which the user can configure Landslide to ignore su
 
 We evaluated Landslide in two ways: first, by instrumenting two kernels we were familiar with to measure time spent to find many different races, and second, by meeting with students of 15-410 to see if they could find bugs on their own with Landslide.
 
-We instrumented one kernel the first author wrote when he was a student and also one kernel he had manually graded as a teaching assistant. We configured Landslide to search for five complicated already-known race conditions. In addition to finding all five races, Landslide also found a sixth previously unknown race in the author's own kernel. Using decision points only on calls to \texttt{mutex\_lock}, Landslide found each of the six bugs in between 11 and 57 seconds, executing between 1 and 377 distinct interleavings for each.
-% FIXME: also say 'on voluntary rescheds'?
+We instrumented one kernel the first author wrote when he was a student and also one kernel he had manually graded as a teaching assistant. We configured Landslide to search for five complicated already-known race conditions. In addition to finding all five races, Landslide also found a sixth previously unknown race in the author's own kernel. Using decision points only on calls to \texttt{mutex\_lock} and on voluntary reschedules, Landslide found each of the six bugs in between 11 and 57 seconds, executing between 1 and 377 distinct interleavings for each.
 
 In the user study, we found that students spent on average 119 minutes (60 to 158) on the required instrumentation, and a further 36 minutes (10 to 60) refining Landslide's search. Of the four groups who finished the required part, all four found previously unknown bugs with Landslide: two race conditions and two deterministic errors. These bugs manifested as infinite loops, a kernel panic, and a use-after-free.
 
@@ -279,6 +305,8 @@ In the user study, we found that students spent on average 119 minutes (60 to 15
 \section{Future Work and Conclusion}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% prob. don't actually say future work here; say it inline
+% TODO
 
 
 \bibliography{citations}{}
