@@ -352,11 +352,22 @@ In the user study of current students, we found that students spent on average 1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \squish
-\section{Conclusion}
+\section{Concluding Remarks}
 \squish
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-We have built Landslide, a tool for systematic exploration on kernel-level code. Landslide runs as a Simics module during simulated execution of Pebbles kernels. It uses user-provided instrumentation to keep track of the kernel's state, such as the set of runnable threads, and it provides the user configuration options for making its search more effective. It identifies decision points in the kernel around which to interleave thread executions, and it controls how threads preempt each other by injecting timer interrupts. We found that Landslide identified previously unknown bugs in kernels we were already familiar with, and also that novice kernel programmers were able to find otherwise-overlooked bugs with Landslide without investing large amounts of time.
+We have built Landslide, a tool for systematic exploration on kernel-level code.
+% Landslide runs as a Simics module during simulated execution of Pebbles kernels.
+It uses user-provided instrumentation to keep track of the kernel's state, such as the set of runnable threads, and it provides configuration options for making its search more effective.
+%It identifies decision points in the kernel around which to interleave thread executions, and it controls how threads preempt each other by injecting timer interrupts.
+We found that it was able to identify previously unknown bugs in familiar kernels, and also that novice kernel programmers were able to find otherwise-overlooked bugs with Landslide without investing large amounts of time.
+
+Our experience with Landslide to date indicates that systematic exploration is feasible in environments that lack clean standardized interfaces like message passing.
+% Operating systems kernels, tied strongly to hardware details, external events, timing, efficient execution and shared memory, are such environments.
+We believe our techniques can be applied to mainstream production kernels, especially Linux.
+% Reflection on the evolution of the Linux operating system indicates that kernel developers extensively define and discuss internal interfaces, even as they change them, so requiring kernel developers to expose a little about these interfaces seems feasible.
+Moreover, our experience with Landslide differs from user-level systematic testing in that we emphasize user guided testing rather than exhaustive testing. This is suggestive of tools in which bug finding for races can be effective for complex concurrent codes long before we have the computing resources or state space reduction techniques to allow exhaustive testing to be feasible.
+
 
 
 \bibliography{citations}{}
