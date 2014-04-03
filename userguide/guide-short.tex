@@ -1,0 +1,387 @@
+\documentclass{article}
+\usepackage{amsmath,amsthm,amssymb,fullpage,yfonts,graphicx,proof,subfig,wrapfig,appendix,hyperref,mdwlist,wasysym}
+\usepackage{multirow}
+\usepackage{upgreek}
+\usepackage{epsfig}
+\usepackage[bottom]{footmisc}
+\usepackage[charter]{mathdesign}
+
+\begin{document}
+\captionsetup{width=.75\textwidth,font=small,labelfont=bf}
+\title{\bf Landslide User Guide}
+\author{Ben Blum (\texttt{bblum@cs.cmu.edu})}
+\maketitle
+
+\newcommand\true{\;\textit{true}}
+\newcommand\false{\;\textit{false}}
+
+\newcommand\alpher\alpha
+\newcommand\beter\beta
+\newcommand\gammer\gamma
+\newcommand\delter\delta
+\newcommand\zeter\zeta
+\newcommand\Sigmer\Sigma
+
+\newcommand\NN{\mathbb{N}}
+\newcommand\QQ{\mathbb{Q}}
+\newcommand\RR{\mathbb{R}}
+\newcommand\ZZ{\mathbb{Z}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+This document is a guide to instrumenting a Pebbles kernel for Landslide. If you have not seen the associated lecture, please review the slides on the course website (\texttt{http://www.cs.cmu.edu/{\textasciitilde}410/}).
+A longer, more comprehensive, and slightly outdated version of this guide can be found at \texttt{http://bblum.net/landslide-guide.pdf}.
+This version is intended to get you started as soon as possible.
+Nevertheless, I must bore you one final time with the words of warning.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Perspective}
+\label{sec:expect}
+
+When working with Landslide, please keep realistic expectations about the nature of the tool.
+
+Landslide is not a stress tester or a fuzzer, like the \texttt{cho} family of test cases.
+Tests such as \texttt{cho} attempt to break the kernel by making many system calls in as many different calling patterns as possible, and hoping that some of them will fail.
+Landslide attempts to break the kernel by exploring all possible interleavings of kernel threads in one particular pattern of a few system calls.
+Systematic and stress testing are orthogonal, incompatible testing strategies.
+
+Landslide is not a ``race condition oracle''. If you run Landslide with a certain test case and a certain set of preemption points, and it finishes exploring the preemption tree and found no bugs, it does not mean that the system calls that got executed are free of race conditions.
+It does, however, mean that the interactions caused by the test case's pattern of system calls do not race at the granularity of the specific preemption points chosen.
+It is up to your human intuition to choose an appropriate set of preemption points, and if Landslide says ``I didn't find a race'', it is up to you to judge whether that assurance is strong enough.
+
+%Landslide is a {\em framework} that enables you, the programmer, to explore properties of a concurrent test case that you previously could not. It relies on you to configure it accurately in accordance with your goals: whether you are seeking to find a race that you suspect exists, or seeking to show that your kernel doesn't race on a particular test, it is your responsibility to choose a set of preemption points that is relevant, granular enough to yield a meaningful exploration, yet minimal enough that Landslide can finish in a reasonable amount of time. More on this in section~\ref{sec:choice}.
+
+%While instrumenting your kernel, it may seem tempting to look for ``simpler'' ways of circumventing some of the more complicated parts of the instrumentation process. Please do not do this - it will make your instrumentation brittle, and quite likely to break in more mysterious ways. If you are confused about what some part of the process is asking you to do, do not guess randomly (it will lead to frustrating crashes!); ask Ben for help instead.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Roadmap}
+\label{sec:stepbystep}
+
+I recommend you work on the Andrew Linux machines, as they are supported by the 410 environment, and Landslide has only been tested with Simics installation on AFS.
+
+%As a way of keeping the attack plan steps small, we recommend not adding/configuring custom decision points until after getting Landslide working with the automatic minimal set of decision points (i.e., it explores the tree to completion).
+
+\begin{itemize}
+	\item Get the repository: \texttt{git clone git://github.com/bblum/landslide.git}
+		\footnote{All directory paths henceforth are relative to the base directory of the repository.}
+	\item Read section~\ref{sec:requirements} to make sure your kernel is Landslide-compatible.
+	\item Build your kernel for Landslide\dots
+	\begin{itemize}
+		\item Run \texttt{prepare-workspace.sh}
+		\item Copy your kernel sources/build directory into \texttt{pebsim/}.
+		\item Add \texttt{tell\_landslide.c} and \texttt{tell\_landslide.h} to your kernel, and add \texttt{tell\_landslide.o} to your kernel's \texttt{config.mk}.
+		\item Copy in the test program(s) you want to run, from \texttt{tests/}, and add them to your kernel's \texttt{config.mk}. (section~\ref{sec:testcase})
+		\item Add calls to the annotation functions in your kernel. (section~\ref{sec:tell})
+		\item Build your kernel, and put \texttt{bootfd.img} and \texttt{kernel} in \texttt{pebsim/}.
+	\end{itemize}
+	\item Fill out \texttt{config.landslide} in \texttt{pebsim/}. (section~\ref{sec:config})
+	\item In \texttt{pebsim/}, run \texttt{./landslide}. This will build everything (if necessary), and then run Landslide.
+	\item Iterate reconfiguring Landslide until satisfied with the results. (section~\ref{sec:choice})
+	\item Fill out feedback. (appendix~\ref{sec:30mins})
+\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Kernel Requirements}
+\label{sec:requirements}
+
+\subsection{Scheduler Functionality}
+\label{sec:schedfunc}
+
+Landslide assumes that timer interrupts will always trigger context switches, and that if a thread is ``runnable'', at any point where interrupts/preemption is enabled, a finite number of timer preemptions will eventually cause that thread to run.
+
+The kernel must not spin-wait anywhere, especially in \texttt{readline} or \texttt{sleep}. The kernel must also never run the idle loop when there are other runnable threads.
+
+\subsection{VM}
+
+The kernel should direct-map kernel memory (i.e. below \texttt{USER\_MEM\_START}). It should also use the LMM allocator (i.e. the \texttt{malloc} package provided in the base code).
+
+\subsection{System Calls}
+
+The following system calls must be implemented and working in at least a rudimentary way:
+\texttt{fork}, \texttt{exec}, \texttt{vanish}, \texttt{wait}, \texttt{readline}.
+
+The following system calls are exercised in some, but not all, of the included test programs, so will be helpful to have:
+\texttt{thread\_fork}, \texttt{yield}.
+
+Apart from the system calls which init and shell execute, the rest are irrelevant and do not need to be implemented to use Landslide.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Instrumenting Your Kernel with Landslide}
+
+\subsection{Annotations}
+\label{sec:tell}
+
+The kernel should call certain annotation functions, provided in \texttt{tell\_landslide.c}, to communicate what interesting events are happening.
+
+{\bf Important note about runqueues}.
+Two of these annotations, \texttt{on\_rq()} and \texttt{off\_rq()}, track the state of the scheduler's runqueue at each point during execution.
+Note that this refers to the {\em actual runqueue data structure}, which does not necessarily correspond to the abstract ``set of all runnable threads'', depending on whether or not your kernel keeps the current thread on the runqueue. Use \texttt{CURRENT\_THREAD\_LIVES\_ON\_RQ} in the config file (next section) to deal with this if necessary.
+
+%\subsubsection{Required Annotations}
+\begin{itemize}
+	\item \texttt{tell\_landslide\_thread\_switch(int new\_tid)} - Call this in your context switcher, when a new thread is switched to.
+	\item \texttt{tell\_landslide\_sched\_init\_done()} - Call this when your scheduler is done being initialized. Until this is called, Landslide will ignore all other annotations. (This corresponds to \texttt{starting\_threads} in section~\ref{sec:config}.)
+	\item \texttt{tell\_landslide\_forking()} - Call this when a new thread is being forked.
+		(Hint: call it twice, once in \texttt{fork} and once in \texttt{thread\_fork}.)
+
+		Call it ``just before'' the action which makes the new thread runnable - whether your kernel just adds it to the runqueue (in which case the next annotation called would be \texttt{thread\_on\_rq}) or begins running it immediately (in which case \texttt{thread\_switch}); Landslide handles both cases.\footnote{It may help to think of this as setting a ``currently forking'' state flag in the calling thread: when the next annotation is called, Landslide will see the flag is set and act accordingly.
+		%It is okay if interrupts are on between this call and the subsequent event.
+		}
+	\item \texttt{tell\_landslide\_vanishing()} - Call this when a thread is about to go away.
+		Call it ``just before'' the relevant context switch; i.e., the one that should never return.
+	\item \texttt{tell\_landslide\_sleeping()} - Call this when a thread is about to go to sleep (that's \texttt{sleep()} the system call).
+		Call it ``just before'' the relevant context switch; i.e., the one that won't return for as long as the thread requested to sleep.
+	\item \texttt{tell\_landslide\_thread\_on\_rq(int tid)} - Call this when a thread is about to be added to the runqueue.\footnote{If there are multiple such places, which is likely if you use \texttt{variable\_queue}, I recommend wrapping them in a helper function which contains the annotation.}
+		%(Make sure this call is done within whatever protection is also used for the runqueue modification itself.)
+	\item \texttt{tell\_landslide\_thread\_off\_rq(int tid)} - Call this when a thread is about to be removed from the runqueue.
+		%(Same protection clause as above applies.)
+	%\item Mutex annotations - These are only necessary if your kernel uses mutexes that leave blocked threads on the runqueue, rather than explicitly descheduling them.
+	%\begin{itemize}
+	%	\item \texttt{tell\_landslide\_mutex\_locking(void *mutex\_addr)} - Call this when a thread is about to start locking a mutex. Landslide needs the mutex address for deadlock detection, to track which mutex each thread is blocked on.
+	%	\item \texttt{tell\_landslide\_mutex\_locking\_done()} - Call this when a thread finishes locking a mutex (and now owns it).
+	%	\item \texttt{tell\_landslide\_mutex\_unlocking(void *mutex\_addr)} - Call this when a thread is about to start unlocking a mutex.
+	%	\item \texttt{tell\_landslide\_mutex\_unlocking\_done()} - Call this when a thread finishes unlocking a mutex (and no longer owns it).
+	%	\item \texttt{tell\_landslide\_mutex\_blocking(int owner\_tid)} - Call this when a thread is contending on a locked mutex, and hence is no longer logically ``runnable'' yet still on the runqueue. Landslide needs to know who owns the mutex for deadlock detection.
+	%\end{itemize}
+\end{itemize}
+
+If your kernel uses mutexes that leave blocked threads on the runqueue but blocked in some implicit sense, rather than explicitly descheduling them, you will also need to use the \texttt{tell\_landslide\_mutex\_*} annotations.
+
+%\subsubsection{Optional Annotations}
+%\begin{itemize}
+%	\item \texttt{tell\_landslide\_decide()} - Call this to define additional decision points. See section~\ref{sec:choice}.
+%	\item \texttt{assert()} or \texttt{panic()} - You should be using these already, but they are extra useful in Landslide.
+%		The more important invariants for which you have \texttt{assert}s in your kernel, the more likely Landslide is to find bugs that would trigger them - otherwise, even if they do happen, Landslide might never know (just like in conventional stress testing).
+%		\footnote{Relatedly, a useful trick is to use poison values for memory that should not be read from until it is written again, and to use canary members in data structures that should not get scribbled over. Functions that operate on such memory can assert that poison values don't appear and that canary values don't change.}
+%\end{itemize}
+
+\subsection{Config File}
+\label{sec:config}
+
+You will also need to fill out the file \texttt{config.landslide}. Some of the fields are required information, and some are tweaks that change the way Landslide behaves. They are documented in more detail in the comments in the file.
+
+\subsubsection{Required Fields}
+\begin{itemize}
+	\item \texttt{KERNEL\_IMG} - The build scripts use \texttt{objdump} on this file to extract code and data addresses.
+	\item \texttt{KERNEL\_SOURCE\_DIR} - Used for file and line number information in stack traces.
+	\item \texttt{TEST\_CASE} - What userspace program should Landslide explore the state space of?
+	\item \texttt{TIMER\_WRAPPER} - Used for controlling timer interrupts and tracking whether a thread is handling an interrupt.
+	\item \texttt{CONTEXT\_SWITCH} - Used for detecting voluntary reschedules.
+	\item \texttt{READLINE} - Used for detecting when the kernel is ready to run a test, and when the test finishes.
+	\item \texttt{INIT\_TID}, \texttt{SHELL\_TID}, \texttt{IDLE\_TID}, \texttt{FIRST\_TID} - Used for initialization, and tracking of test state.
+	\item \texttt{starting\_threads} - This lets you tell Landslide what threads exist at the point where \\ \texttt{tell\_landslide\_sched\_init\_done} will be called. You should probably use it for each of init and (if it exists in your kernel) idle (but probably not shell).
+	\item \texttt{CURRENT\_THREAD\_LIVES\_ON\_RQ} - Set to 1 or 0 to indicate whether or not your kernel keeps the currently-running thread on the runqueue.
+\end{itemize}
+
+{\bf Important note about preemptions.} Some schedulers are designed in such a way that sometimes, interrupts may be enabled but the kernel is ``not ready'' for a timer interrupt to cause a context switch. If your kernel uses such a design, ask Ben about what extra config options should be set to deal with this.
+
+\subsubsection{Optimizations}
+
+Landslide prunes redundant thread interleavings out of the state space with an algorithm called {\em partial order reduction}. This algorithm determines which interleavings are redundant by identifying
+{\em independent} transitions between preemption points - that is, they that have no conflicting memory accesses.
+
+However, as this is the kernel, every such transition will inevitably touch some scheduler state (such as the runqueue and the timer tick count) that we don't care about.
+\texttt{config.landslide} provides some options for ignoring irrelevant memory accesses when it comes to pruning the state space. {\bf Directing Landslide to ignore certain memory accesses will prune the state space better, but sacrifice the ability to find races related to those accesses.}
+
+\begin{itemize}
+	\item \texttt{sched\_func} - Landslide will ignore shared memory accesses from scheduler functions.\footnote{Accesses to scheduler data structures happen during {\em every} transition, so ignoring these is necessary for achieving any reduction at all.}
+	\item \texttt{ignore\_sym} - You may wish to ignore memory accesses from other global data structures as well, such as certain irrelevant global mutexes or counters.
+\end{itemize}
+
+If you configure preemption points to happen in common code paths, such as \texttt{mutex\_lock}, you may have way too many preemption points on your hands. (For example, if you're testing \texttt{vanish}, there's no need to branch on a \texttt{mutex\_lock} in \texttt{exec}.) \texttt{within\_function} and \texttt{without\_function} allow you to configure which parts of your kernel preemption points are allowed to show up in.
+
+\begin{itemize}
+	\item \texttt{within\_function} - Whitelist functions so that Landslide will only preempt if the current thread is ``within'' one of the functions listed.
+	\item \texttt{without\_function} - Similar to above, but a blacklist. These two can be used together; later invocations take precedence over earlier ones.
+\end{itemize}
+
+\subsubsection{Behaviour Tweaks}
+\begin{itemize}
+	\item \texttt{BUG\_ON\_THREADS\_WEDGED} - Landslide's deadlock detection is not perfect. The default is to let the kernel keep running, but if it seems like you have an ``all threads are wedged'' bug, turn this on.
+	\item \texttt{EXPLORE\_BACKWARDS} - In which order to explore the branches? Backwards means with more preemptions first; forwards means tending to let the current thread keep running more often. Backwards tends to find bugs more quickly, but produces longer (more difficult to understand) preemption traces.
+	\item \texttt{DONT\_EXPLORE} - This option makes Landslide stop after one branch, and output the list of preemption points it identified using the current config. Useful if you want to see all preemption points, and tweak settings to get rid of frivolous ones.
+	\item \texttt{BREAK\_ON\_BUG} - If you want to drop into the simics debug prompt when a bug is found, turn this on. By default Landslide will instead quit simics entirely.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Userspace Test Cases}
+\label{sec:testcase}
+
+Landslide comes with a suite of small test cases designed to expose several common races in Pebbles kernels.\footnote{You may wonder why some of these are written in assembly.
+This is because using your userspace thread library for thread creation (a) is not guaranteed to work, (b) might forcibly serialise certain operations that would expose kernel bugs only if concurrent, and (c) necessitates many more system calls, which dramatically increases the size of the state space.}
+
+\begin{itemize}
+	\item \texttt{vanish\_vanish} - Tests when a parent and child process \texttt{vanish()} simultaneously. (This test is identical to \texttt{fork\_test1} from the P3 hurdle suite.)
+	\item \texttt{fork\_wait} - Tests basic interaction of \texttt{fork()} and \texttt{wait()}. (This test is from the P3 hurdle suite.)
+	%\item \texttt{wild\_test2} - Tests simultaneous thread death by unnatural causes. (This test is an upgrade of \texttt{wild\_test1} from the P3 hurdle suite.)
+	\item \texttt{double\_wait} - Tests interactions of multiple waiters on a single child. (new)
+	\item \texttt{double\_thread\_fork} - Tests for interactions of multiple threads in one process vanishing. (new)\footnote{This test tests for the use-after-free bug presented in lecture - if your \texttt{thread\_fork} implementation has ``\texttt{return child->tid;}'' as its last line of code.}
+	\item \texttt{yield\_vanish} - Tests for interactions between \texttt{yield()} and \texttt{vanish()}. (new)
+\end{itemize}
+
+It may help your intuition to note why all of these test cases are ``Landslide-friendly'': they all perform very little work on a single run, enabling Landslide to completely explore the state space. They also run several, but not too many, threads at once, producing potentially interesting interleavings.
+
+To warm up, I recommend you test \texttt{double\_thread\_fork} (and edit your kernel explicitly to introduce the associated bug - see the footnote in the test's description above).
+After that, I recommend trying \texttt{vanish\_vanish}, which is the most likely to expose many different types of bugs in many different kernel designs.
+But of course all of them are interesting -- with \texttt{double\_wait} I once found an obscure panic in my student kernel several years later, that neither I, the TA who graded me, or the stress tests knew about.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Configuring Preemption Points}
+\label{sec:choice}
+
+Getting a good set of preemption points is important to being able both to explore reasonably quickly and to produce meaningful interleavings that are likely to find bugs. By default, Landslide only preempts during ``voluntary reschedules'' -- that is, whenever your kernel does \texttt{yield()} of its own accord. After you get Landslide working with this default set of preemption points, it's time to get creative.
+
+In no particular order, think about the following things when building your set of preemption points.
+
+\begin{itemize}
+	\item Use \texttt{tell\_landslide\_preempt()} to indicate preemption points. Recommended places are at the start of \texttt{mutex\_lock}, and if that doesn't find bugs, at the end of \texttt{mutex\_unlock} as well. But use your own intuition, depending on what system call(s) you're testing.
+	\item Use \texttt{sched\_func} and \texttt{ignore\_sym} to make Landslide ignore global memory accesses, to enable better pruning.
+	\item Use \texttt{DECISION\_INFO\_ONLY} to examine the set of preemption points, and figure out which ones you want to get rid of.
+	\item Use \texttt{within\_func} and \texttt{without\_func} to make Landslide only pay attention to parts of your kernel that you care about.
+\end{itemize}
+
+%Example tip: If you \texttt{tell\_landslide\_preempt()} in \texttt{mutex\_lock}, you could surround the call with an if statement that makes sure the mutex is not some global mutex you don't care about. You could also (or instead) make Landslide ignore it by using \texttt{without\_func} on whatever function takes the mutex you don't care about.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section{Interpreting Landslide's Results}
+%
+%Landslide prints a lot of information. Most of it is only useful for development, but you may find some of it interesting anyway.
+%
+%The most important thing that Landslide prints is the preemption trace, when it finds a bug. Landslide prints the following information:
+%
+%\begin{itemize}
+%	\item Before proclaiming ``A bug was found!'', there should be a message in bright red explaining what the bug is.
+%	\item The trace itself consists of a list of the preemption points that were encountered in the buggy interleaving. For each preemption point, Landslide says what thread used to be running, what thread it chose to run next, and the stack trace of the old thread at the point it was switched away from.
+%	\item At the end, there will be a stack trace for the current point in time, which will be where the bug was detected, and not a preemption point itself.
+%	\item Also at the end there will be some statistics about the exploration: how many preemption points were visited, how many backtracks were taken (i.e., how many interleavings were explored), the average number of preemption points per branch, etc.
+%\end{itemize}
+%
+%We ship Landslide with a somewhat high verbosity setting. If you want it to be quieter, you can edit it in \texttt{work/modules/landslide/common.h} - \texttt{CHOICE} is the recommended minimum level (\texttt{INFO} is highest, \texttt{DEV} is default).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section{Feedback}
+%\label{sec:feedback}
+%
+%Ben needs feedback about your experience using Landslide to help him present his thesis. He wants to find answers to the following questions:
+%
+%\begin{itemize}
+%	\item What ways can Landslide be improved to make it a better race-finding tool? (This means in terms of the high-level process of finding useful preemption points, less so in terms of nasty implementation details - the latter would be good for development and bug reports, but has little research value.)
+%	\item Does using Landslide make you think differently about race conditions, in a way that makes you better at debugging them, even at times when you're not using Landslide?
+%	\item Is Landslide effective at finding bugs, when properly configured? Also, is it effective at saying it found no bug when using a reasonably-thorough set of preemption points?
+%\end{itemize}
+%
+%Of course, you shouldn't try to answer those questions directly. But keep them in mind as the goal of the study, when answering the following questions.
+%
+%\subsection{While using Landslide}
+%
+%While you're using Landslide, please try to take 5 minutes approximately every half-hour to give short updates. For convenience, you can print out appendix~\ref{sec:30mins} and fill it in as you go.
+%
+%\subsection{After using Landslide}
+%
+%After you've finished with Landslide, please write some conclusions about your experience:
+%
+%\begin{itemize}
+%	\item Were you able to get Landslide to work with your kernel (i.e., run through a minimal exploration tree completely)? If so, how long did it take, from sitting down to getting it to work? If not, did your kernel do something that was incompatible with Landslide, or were you unable to get the instrumentation right for some other reason?
+%	\item Did you find bugs while using Landslide, that you imagine would have been very hard to find otherwise? Did Landslide's output help you understand what caused them?
+%	\item Were you able to get Landslide to say ``you survived!'' with custom preemption points? Did you think the set of preemption points you used for this provide a strong guarantee about the absence of races?
+%	\item Describe your experience configuring the set of preemption points. What was intuitive, obvious to do? Did you feel stuck at any point, not knowing where to go next?
+%	\item Was there anything you wanted to make Landslide do that it didn't support?
+%\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\appendix
+% TODO A section for debuggng landslide problems
+
+\newpage
+\section{While-You-Work Feedback Form}
+\label{sec:30mins}
+
+Questions to be thinking about while you're working:
+\begin{itemize}
+	\item How much time did you spend on each phase of the process? (annotating your kernel, doing \texttt{config.landslide}, fixing instrumentation problems/crashes, customizing preemption points for more efficient search, or trying to understand/solve a race that was found)
+	\item What problems were you fighting, getting things to work? (conceptual understanding, fixing instrumentation, finding good preemption points)
+	\item Did you have to change your kernel at all to make it compatible?
+	\item Is there a feature you wish Landslide had to help you out, that it doesn't offer?
+	\item Did you realize anything interesting or surprising about Landslide, or about your kernel?
+\end{itemize}
+Please fill out a row after every 30-60 minutes spent. Approximate time estimates are totally fine.
+
+%\addtolength{\oddsidemargin}{-.5in} 
+\newcommand\asdf[1]{\hspace{-0.05in}\small{#1}\hspace{-0.05in}}
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|c||c|}
+	\hline
+	\multirow{2}{*}{Time} & \multicolumn{5}{|c||}{Minutes spent doing\dots} & Remarks \\
+	\cline{2-7}
+	& \asdf{annotate} & \asdf{config} & \asdf{fixing} & \asdf{customizing} & \asdf{found races} & \hspace{0.7in} (problems, realizations, features) \hspace{0.7in} \\
+	\hline \hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+	& & & & & & \\
+	& & & & & & \\
+	& & & & & & \\
+	\hline
+\end{tabular}
+\end{center}
+
+\end{document}
