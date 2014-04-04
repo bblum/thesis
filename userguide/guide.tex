@@ -375,12 +375,12 @@ After you've finished with Landslide, please write some conclusions about your e
 \section{Step-by-Step Setup}
 \label{sec:stepbystep}
 
-We recommend you work on the Andrew Linux machines, as they are supported by the 410 environment, and Landslide has only been tested with Simics installation on AFS.
+We recommend you work on the Andrew Linux machines, as they are supported by the 410 environment, and Landslide has only been tested with the Simics installation on AFS.
 
 As a way of keeping the attack plan steps small, we recommend not adding/configuring custom decision points until after getting Landslide working with the automatic minimal set of decision points (i.e., it explores the tree to completion).
 
 \begin{itemize}
-	\item Get the repository: \texttt{http://www.cs.cmu.edu/{\textasciitilde}410/landslide.tar.bz2}
+	\item Get the repository: \texttt{git clone git://github.com/bblum/landslide.git}
 		\footnote{All directory paths henceforth are relative to the base directory of the repository.}
 	\item Read section~\ref{sec:requirements} to make sure your kernel is Landslide-compatible. (If not, fix it and/or ask Ben for help.)
 	\item Build your kernel for Landslide
