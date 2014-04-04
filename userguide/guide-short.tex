@@ -71,19 +71,19 @@ I recommend you work on the Andrew Linux machines, as they are supported by the 
 \begin{itemize}
 	\item Get the repository: \texttt{git clone git://github.com/bblum/landslide.git}
 		\footnote{All directory paths henceforth are relative to the base directory of the repository.}
-	\item Read section~\ref{sec:requirements} to make sure your kernel is Landslide-compatible.
+	\item Read Section~\ref{sec:requirements} to make sure your kernel is Landslide-compatible.
 	\item Build your kernel for Landslide\dots
 	\begin{itemize}
 		\item Run \texttt{prepare-workspace.sh}
 		\item Copy your kernel sources/build directory into \texttt{pebsim/}.
 		\item Add \texttt{tell\_landslide.c} and \texttt{tell\_landslide.h} to your kernel, and add \texttt{tell\_landslide.o} to your kernel's \texttt{config.mk}.
-		\item Copy in the test program(s) you want to run, from \texttt{tests/}, and add them to your kernel's \texttt{config.mk}. (section~\ref{sec:testcase})
-		\item Add calls to the annotation functions in your kernel. (section~\ref{sec:tell})
+		\item Copy in the test program(s) you want to run, from \texttt{tests/}, and add them to your kernel's \texttt{config.mk}. (Section~\ref{sec:testcase})
+		\item Add calls to the annotation functions in your kernel. (Section~\ref{sec:tell})
 		\item Build your kernel, and put \texttt{bootfd.img} and \texttt{kernel} in \texttt{pebsim/}.
 	\end{itemize}
-	\item Fill out \texttt{config.landslide} in \texttt{pebsim/}. (section~\ref{sec:config})
-	\item In \texttt{pebsim/}, run \texttt{./landslide}. This will build everything (if necessary), and then run Landslide.
-	\item Iterate reconfiguring Landslide until satisfied with the results. (section~\ref{sec:choice})
+	\item Fill out \texttt{config.landslide} in \texttt{pebsim/}. (Section~\ref{sec:config})
+	\item In \texttt{pebsim/}, run \texttt{./landslide}. This will recompile Landslide's source (if necessary), and then run Landslide.
+	\item Iterate reconfiguring Landslide until satisfied with the results. (Section~\ref{sec:choice})
 	\item Fill out feedback. (appendix~\ref{sec:30mins})
 \end{itemize}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -131,7 +131,7 @@ Note that this refers to the {\em actual runqueue data structure}, which does no
 %\subsubsection{Required Annotations}
 \begin{itemize}
 	\item \texttt{tell\_landslide\_thread\_switch(int new\_tid)} - Call this in your context switcher, when a new thread is switched to.
-	\item \texttt{tell\_landslide\_sched\_init\_done()} - Call this when your scheduler is done being initialized. Until this is called, Landslide will ignore all other annotations. (This corresponds to \texttt{starting\_threads} in section~\ref{sec:config}.)
+	\item \texttt{tell\_landslide\_sched\_init\_done()} - Call this when your scheduler is done being initialized. Until this is called, Landslide will ignore all other annotations. (This corresponds to \texttt{starting\_threads} in Section~\ref{sec:config}.)
 	\item \texttt{tell\_landslide\_forking()} - Call this when a new thread is being forked.
 		(Hint: call it twice, once in \texttt{fork} and once in \texttt{thread\_fork}.)
 
@@ -156,7 +156,7 @@ Note that this refers to the {\em actual runqueue data structure}, which does no
 	%\end{itemize}
 \end{itemize}
 
-If your kernel uses mutexes that leave blocked threads on the runqueue but blocked in some implicit sense, rather than explicitly descheduling them, you will also need to use the \texttt{tell\_landslide\_mutex\_*} annotations.
+If your kernel uses mutexes that leave blocked threads on the runqueue but blocked in some implicit sense, instead of explicitly descheduling them, you will also need to use the \texttt{tell\_landslide\_mutex\_*} annotations.
 
 %\subsubsection{Optional Annotations}
 %\begin{itemize}
@@ -176,8 +176,8 @@ You will also need to fill out the file \texttt{config.landslide}. Some of the f
 	\item \texttt{KERNEL\_IMG} - The build scripts use \texttt{objdump} on this file to extract code and data addresses.
 	\item \texttt{KERNEL\_SOURCE\_DIR} - Used for file and line number information in stack traces.
 	\item \texttt{TEST\_CASE} - What userspace program should Landslide explore the state space of?
-	\item \texttt{TIMER\_WRAPPER} - Used for controlling timer interrupts and tracking whether a thread is handling an interrupt.
-	\item \texttt{CONTEXT\_SWITCH} - Used for detecting voluntary reschedules.
+	\item \texttt{TIMER\_WRAPPER} - The name of the timer interrupt wrapper registered in the IDT. Used for controlling timer interrupts and tracking whether a thread is handling an interrupt.
+	\item \texttt{CONTEXT\_SWITCH} - The name of the context switch function (does not need to be the innermost and/or assembly function). Used for detecting voluntary reschedules.
 	\item \texttt{READLINE} - Used for detecting when the kernel is ready to run a test, and when the test finishes.
 	\item \texttt{INIT\_TID}, \texttt{SHELL\_TID}, \texttt{IDLE\_TID}, \texttt{FIRST\_TID} - Used for initialization, and tracking of test state.
 	\item \texttt{starting\_threads} - This lets you tell Landslide what threads exist at the point where \\ \texttt{tell\_landslide\_sched\_init\_done} will be called. You should probably use it for each of init and (if it exists in your kernel) idle (but probably not shell).
@@ -211,7 +211,7 @@ If you configure preemption points to happen in common code paths, such as \text
 	\item \texttt{BUG\_ON\_THREADS\_WEDGED} - Landslide's deadlock detection is not perfect. The default is to let the kernel keep running, but if it seems like you have an ``all threads are wedged'' bug, turn this on.
 	\item \texttt{EXPLORE\_BACKWARDS} - In which order to explore the branches? Backwards means with more preemptions first; forwards means tending to let the current thread keep running more often. Backwards tends to find bugs more quickly, but produces longer (more difficult to understand) preemption traces.
 	\item \texttt{DONT\_EXPLORE} - This option makes Landslide stop after one branch, and output the list of preemption points it identified using the current config. Useful if you want to see all preemption points, and tweak settings to get rid of frivolous ones.
-	\item \texttt{BREAK\_ON\_BUG} - If you want to drop into the simics debug prompt when a bug is found, turn this on. By default Landslide will instead quit simics entirely.
+	\item \texttt{BREAK\_ON\_BUG} - If you want to drop into the Simics debug prompt when a bug is found, turn this on. By default Landslide will instead quit Simics entirely.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -244,7 +244,7 @@ But of course all of them are interesting -- with \texttt{double\_wait} I once f
 \section{Configuring Preemption Points}
 \label{sec:choice}
 
-Getting a good set of preemption points is important to being able both to explore reasonably quickly and to produce meaningful interleavings that are likely to find bugs. By default, Landslide only preempts during ``voluntary reschedules'' -- that is, whenever your kernel does \texttt{yield()} of its own accord. After you get Landslide working with this default set of preemption points, it's time to get creative.
+Getting a good set of preemption points is important to being able both to explore reasonably quickly and to produce meaningful interleavings that are likely to find bugs. By default, Landslide preempts only during ``voluntary reschedules'' -- that is, whenever your kernel does \texttt{yield()} of its own accord. After you get Landslide working with this default set of preemption points, it's time to get creative.
 
 In no particular order, think about the following things when building your set of preemption points.
 
