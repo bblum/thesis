@@ -130,7 +130,7 @@ Note that this refers to the {\em actual runqueue data structure}, which does no
 
 %\subsubsection{Required Annotations}
 \begin{itemize}
-	\item \texttt{tell\_landslide\_thread\_switch(int new\_tid)} - Call this in your context switcher, when a new thread is switched to.
+	\item \texttt{tell\_landslide\_thread\_switch(int new\_tid)} - Call this in your context switcher, just before switching to a different thread's context.
 	\item \texttt{tell\_landslide\_sched\_init\_done()} - Call this when your scheduler is done being initialized. Until this is called, Landslide will ignore all other annotations. (This corresponds to \texttt{starting\_threads} in Section~\ref{sec:config}.)
 	\item \texttt{tell\_landslide\_forking()} - Call this when a new thread is being forked.
 		(Hint: call it twice, once in \texttt{fork} and once in \texttt{thread\_fork}.)
